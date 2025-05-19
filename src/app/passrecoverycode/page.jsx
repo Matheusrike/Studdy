@@ -15,6 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { useRouter } from 'next/navigation';
 import {
 	InputOTP,
 	InputOTPGroup,
@@ -28,7 +29,9 @@ const formSchema = z.object({
 	code: z.string().regex(/^\d{6}/, 'O código deve conter 6 digitos.')
 });
 
-const PassRecoveryPage = () => {
+const PassRecoveryCode = () => {
+
+	const router = useRouter();
 
 	const form = useForm({
 		defaultValues: {
@@ -39,13 +42,14 @@ const PassRecoveryPage = () => {
 
 	const onSubmit = (data) => {
 		console.log(data);
+		router.push('/passrecoverynewpass');
 	};
 
 	return (
-		<div className="bg-slate-100 h-screen flex items-center justify-center">
+		<div className="background bg-slate-100 h-screen flex items-center justify-center">
 			<div className="w-full h-full grid  p-4">
 
-				<div className="max-w-xs m-auto w-full flex flex-col justify-center items-center">
+				<div className="bg-white p-5 max-w-xs m-auto w-full flex flex-col justify-center items-center">
 					<Logo className="h-9 w-9" variant="icon" />
 					<p className="mt-4 text-xl font-bold tracking-tight">Recuperação de senha</p>
 					<p className="mt-4 text-l tracking-tight text-center">Insira o código de recuperação que enviamos para você em seu E-mail para redefinir sua senha.</p>
@@ -91,7 +95,7 @@ const PassRecoveryPage = () => {
 						</Button>
 					</div>
 					<div className="mt-5 space-y-5">
-						<Link href="login" className="cursor-pointer text-sm block underline text-muted-foreground text-center">
+						<Link href="login" className="cursor-pointer text-sm block underline stone-500 text-center">
 							Voltar para o login
 						</Link>
 					</div>
@@ -104,4 +108,4 @@ const PassRecoveryPage = () => {
 };
 
 
-export default PassRecoveryPage;
+export default PassRecoveryCode;

@@ -36,18 +36,18 @@ export default function LoginPage() {
 	};
 
 	return (
-		<div className="bg-slate-100 h-screen flex items-center justify-center">
-			<div className="w-full h-full grid lg:grid-cols-2 p-4">
+		<div className="background bg-slate-100 h-screen flex items-center justify-center">
+			<div className=" w-full h-full grid lg:grid-cols-[3fr_600px] ">
 
 				<div className=" hidden lg:flex rounded-lg items-center justify-center">
 					<img
-						className="w-[90%] h-[90%] object-contain"
-						src="/assets/login_illustration.svg"
+						className=" w-full h-full object-cover"
+						src="/assets/students.webp"
 						alt="illustration"
 					/>
 				</div>
 
-				<div className="max-w-xs m-auto w-full flex flex-col items-center">
+				<div className="bg-white p-5 max-w-xs m-auto w-full flex flex-col items-center">
 					<Logo className="h-9 w-9" variant="icon" />
 					<p className="mt-4 text-xl font-bold tracking-tight">Entrar no Studdy</p>
 
@@ -86,7 +86,7 @@ export default function LoginPage() {
 					</Form>
 
 					<div className="mt-5 space-y-5">
-						<Link href="passrecovery" className="cursor-pointer text-sm block underline text-muted-foreground text-center">
+						<Link href="passrecovery" className="cursor-pointer text-sm block underline stone-500 text-center">
 							Esqueceu sua senha?
 						</Link>
 					</div>

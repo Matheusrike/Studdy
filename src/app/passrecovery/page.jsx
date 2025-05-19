@@ -39,10 +39,10 @@ const PassRecoveryPage = () => {
 	};
 
 	return (
-		<div className="bg-slate-100 h-screen flex items-center justify-center">
+		<div className="background h-screen flex items-center justify-center">
 			<div className="w-full h-full grid  p-4">
 
-				<div className="max-w-xs m-auto w-full flex flex-col justify-center items-center">
+				<div className="bg-white max-w-xs m-auto w-full flex flex-col justify-center items-center p-5">
 					<Logo className="h-9 w-9" variant="icon" />
 					<p className="mt-4 text-xl font-bold tracking-tight">Recuperação de senha</p>
 					<p className="mt-4 text-l tracking-tight text-center">Insira seu E-mail e enviaremos um código de recuperação para você</p>
@@ -69,7 +69,7 @@ const PassRecoveryPage = () => {
 					</Form>
 
 					<div className="mt-5 space-y-5">
-						<Link href="login" className="cursor-pointer text-sm block underline text-muted-foreground text-center">
+						<Link href="login" className="cursor-pointer text-sm block underline stone-500 text-center">
 							Voltar para o login
 						</Link>
 					</div>
