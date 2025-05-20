@@ -25,7 +25,6 @@ import {
 	InputOTPSlot,
 } from "@/components/ui/input-otp"
 
-
 // Validação para o e-mail
 const formSchemaEmail = z.object({
 	recoveryemail: z.string().email('E-mail inválido'),
@@ -35,8 +34,6 @@ const formSchemaEmail = z.object({
 const formSchemaCode = z.object({
 	code: z.string().length(6, 'O código deve ter 6 dígitos'),
 });
-
-
 
 export default function PassRecoveryPage() {
 	const [email, setEmail] = useState('');
@@ -65,7 +62,7 @@ export default function PassRecoveryPage() {
 	const validarEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
 	// Função para enviar token por e-mail usando emailjs
-	const enviarToken = (data) => {
+	const enviarToken = async (data) => {
 		const emailValue = data.recoveryemail;
 
 		if (!validarEmail(emailValue)) {
@@ -75,35 +72,52 @@ export default function PassRecoveryPage() {
 
 		setLoading(true);
 		setMsg('');
-		setEmail(emailValue);
 
-		const novoToken = Math.floor(100000 + Math.random() * 900000);
+		try {
+			// Verifica se o email existe na API
+			const response = await fetch(`http://localhost:3001/api/alunos/email/${emailValue}`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			});
 
-		const templateParams = {
-			to_email: emailValue,
-			token: novoToken,
-			name: 'MeuApp Support',
-			from_email: 'suporte@meuapp.com',
-		};
+			if (!response.ok) {
+				setMsg('Este e-mail não está cadastrado em nossa base.');
+				setLoading(false);
+				return;
+			}
 
-		emailjs
-			.send(
+			setEmail(emailValue);
+			const novoToken = Math.floor(100000 + Math.random() * 900000);
+
+			const templateParams = {
+				to_email: emailValue,
+				token: novoToken,
+				name: 'Studdy Support',
+				from_email: 'suporte@studdy.com',
+			};
+
+			await emailjs.send(
 				'service_qxntt75',
 				'template_8wqsmdm',
 				templateParams,
 				'yIhgqahZ0aUqL-5De'
-			)
-			.then(() => {
-				setMsg('Token enviado para seu e-mail!');
-				setToken(novoToken);
-				setValidado(true); // Avança para a tela de validação do código
-				formCode.reset();
-			})
-			.catch(() => setMsg('Erro ao enviar e-mail.'))
-			.finally(() => setLoading(false));
+			);
+
+			setMsg('Token enviado para seu e-mail!');
+			setToken(novoToken);
+			setValidado(true);
+			formCode.reset();
+		} catch (error) {
+			console.error('Erro:', error);
+			setMsg('Erro ao processar sua solicitação. Tente novamente.');
+		} finally {
+			setLoading(false);
+		}
 	};
 
-	const reenviarToken = () => {
+	const reenviarToken = async () => {
 		if (!email) {
 			setMsg('E-mail não encontrado para reenviar o código.');
 			return;
@@ -111,53 +125,43 @@ export default function PassRecoveryPage() {
 		setLoading(true);
 		setMsg('');
 
-		const novoToken = Math.floor(100000 + Math.random() * 900000);
+		try {
+			const novoToken = Math.floor(100000 + Math.random() * 900000);
 
-		const templateParams = {
-			to_email: email,
-			token: novoToken,
-			name: 'MeuApp Support',
-			from_email: 'suporte@meuapp.com',
-		};
+			const templateParams = {
+				to_email: email,
+				token: novoToken,
+				name: 'MeuApp Support',
+				from_email: 'suporte@meuapp.com',
+			};
 
-		emailjs
-			.send(
+			await emailjs.send(
 				'service_qxntt75',
 				'template_8wqsmdm',
 				templateParams,
 				'yIhgqahZ0aUqL-5De'
-			)
-			.then(() => {
-				setMsg('Novo token enviado para seu e-mail!');
-				setToken(novoToken);
-				formCode.reset();
-			})
-			.catch(() => setMsg('Erro ao enviar e-mail.'))
-			.finally(() => setLoading(false));
-	};
+			);
 
-
-	// Função para validar token digitado pelo usuário
-	const verificarToken = (data) => {
-		const codigoDigitado = data.code;
-
-		if (codigoDigitado === String(token)) {
-			setMsg('Token validado com sucesso! Você pode trocar a senha.');
-			// Aqui você pode adicionar lógica para permitir trocar a senha ou redirecionar
-		} else {
-			setMsg('Token inválido. Tente novamente.');
+			setMsg('Novo token enviado para seu e-mail!');
+			setToken(novoToken);
+			formCode.reset();
+		} catch (error) {
+			console.error('Erro:', error);
+			setMsg('Erro ao enviar e-mail.');
+		} finally {
+			setLoading(false);
 		}
 	};
 
 	return !validado ? (
-		<div className="bg-slate-100 h-screen flex items-center justify-center">
-			<div className="w-full max-w-xs p-4">
+		<div className="background h-screen flex items-center justify-center">
+			<div className="w-full max-w-md p-8 space-y-6 shadow-lg rounded-xl bg-white">
 				<Logo className="h-9 w-9 mx-auto" variant="icon" />
-				<p className="mt-4 text-xl font-bold tracking-tight text-center">
+				<h1 className="text-2xl font-bold text-gray-900 text-center">
 					Recuperação de senha
-				</p>
+				</h1>
 				<p className="mt-2 text-center">
-					Insira seu E-mail e enviaremos um código de recuperação para você
+					Insira seu E-mail e enviaremos um código de recuperação para você.
 				</p>
 
 				<Form {...formEmail}>
@@ -175,7 +179,7 @@ export default function PassRecoveryPage() {
 									<FormControl>
 										<Input
 											type="email"
-											placeholder="E-mail"
+											placeholder="seu@email.com"
 											{...field}
 											disabled={loading}
 											className="bg-white w-full"
@@ -185,7 +189,7 @@ export default function PassRecoveryPage() {
 								</FormItem>
 							)}
 						/>
-						<Button type="submit" disabled={loading} className="w-full">
+						<Button type="submit" disabled={loading} className="w-full hover:bg-blue-700 text-white font-medium py-2.5">
 							{loading ? 'Enviando...' : 'Enviar código de recuperação'}
 						</Button>
 					</form>
@@ -197,28 +201,23 @@ export default function PassRecoveryPage() {
 					</p>
 				)}
 
-				<div className="mt-5 text-center">
-					<Link href="/login" className="text-sm underline text-muted-foreground">
+				<div className="mt-2 text-center">
+					<Link href="/login" className="text-sm underline text-muted-foreground hover:text-gray-900 transition-colors">
 						Voltar para o login
 					</Link>
 				</div>
 			</div>
 		</div>
 	) : (
-		<div className="bg-slate-100 h-screen flex items-center justify-center">
-	return (
 		<div className="background h-screen flex items-center justify-center">
-			<div className="w-full h-full grid  p-4">
-
-				<div className="bg-white max-w-xs m-auto w-full flex flex-col justify-center items-center p-5">
-					<Logo className="h-9 w-9" variant="icon" />
-					<p className="mt-4 text-xl font-bold tracking-tight">Recuperação de senha</p>
+			<div className="w-full max-w-md p-4">
+				<div className="w-full max-w-md p-8 space-y-6 shadow-lg rounded-xl bg-white text-center">
+					<Logo className="h-9 w-9 mx-auto" variant="icon" />
+					<h1 className="text-2xl font-bold text-gray-900 text-center">Recuperação de senha</h1>
 					<p className="mt-4 text-l tracking-tight text-center">Insira o código de recuperação que enviamos para você em seu E-mail para redefinir sua senha.</p>
-
 					<Form {...formCode}>
 						<form
 							className="mt-8 w-full space-y-3 justify-center items-center"
-							onSubmit={formCode.handleSubmit(verificarToken)}
 						>
 							<FormField
 								control={formCode.control}
@@ -227,7 +226,22 @@ export default function PassRecoveryPage() {
 									<FormItem className="text-center w-full justify-center items-center">
 										<FormLabel className="w-full text-center justify-center items-center">Código de recuperação</FormLabel>
 										<FormControl>
-											<InputOTP maxLength={6} value={field.value} onChange={field.onChange}>
+											<InputOTP 
+												maxLength={6} 
+												value={field.value} 
+												onChange={(value) => {
+													field.onChange(value);
+													if (value.length === 6) {
+														if (value === String(token)) {
+															// Salva o token válido no localStorage
+															localStorage.setItem('validRecoveryToken', 'true');
+															window.location.href = '/passrecoverynewpass';
+														} else {
+															setMsg('Token inválido. Tente novamente.');
+														}
+													}
+												}}
+											>
 												<InputOTPGroup>
 													<InputOTPSlot index={0} />
 													<InputOTPSlot index={1} />
@@ -241,35 +255,25 @@ export default function PassRecoveryPage() {
 												</InputOTPGroup>
 											</InputOTP>
 										</FormControl>
-
 										<FormMessage />
 									</FormItem>
 								)}
 							/>
-							<Button type="submit" className="cursor-pointer mt-4 w-full">
-								Redefinir senha
-							</Button>
 						</form>
 					</Form>
 
-					{msg && (
-						<p className="mt-4 text-center text-red-600 whitespace-pre-line">
-							{msg}
-						</p>
-					)}
+				
 
-					<div className="mt-5 space-y-1">
-						<p className="mt-4 text-l tracking-tight text-center">Não recebeu o código?</p>
+					<div className="mt-5 space-y-1 flex flex-col items-center justify-center gap-2">
 						<Button
 							onClick={reenviarToken}
 							disabled={loading}
-							className="cursor-pointer mt-4 w-full"
+							className="w-full  hover:bg-blue-700 text-white font-medium py-2.5"
 						>
-							{loading ? 'Enviando...' : 'Enviar novo código'}
+							{loading ? 'Enviando...' : 'Enviar novo código de recuperação'}
 						</Button>
-					</div>
-					<div className="mt-5 space-y-5">
-						<Link href="login" className="cursor-pointer text-sm block underline stone-500 text-center">
+					
+						<Link href="/login" className="text-sm underline text-muted-foreground hover:text-gray-900 transition-colors">
 							Voltar para o login
 						</Link>
 					</div>
@@ -278,3 +282,4 @@ export default function PassRecoveryPage() {
 		</div>
 	);
 }
+

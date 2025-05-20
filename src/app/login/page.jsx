@@ -37,8 +37,8 @@ export default function LoginPage() {
 	};
 
 	return (
-		<div className="background bg-slate-100 h-screen flex items-center justify-center">
-			<div className=" w-full h-full grid lg:grid-cols-[3fr_600px] ">
+		<div className="bg-white bg-slate-100 h-screen flex items-center justify-center">
+			<div className="w-full h-full grid lg:grid-cols-[3fr_600px] ">
 
 				<div className=" hidden lg:flex rounded-lg items-center justify-center">
 					<img
@@ -48,48 +48,69 @@ export default function LoginPage() {
 					/>
 				</div>
 
-				<div className="bg-white p-5 max-w-xs m-auto w-full flex flex-col items-center">
-					<Logo className="h-9 w-9" variant="icon" />
-					<p className="mt-4 text-xl font-bold tracking-tight">Entrar no Studdy</p>
+				<div className="w-full h-full flex items-center justify-center">
+					<div className="w-full max-w-md p-8 space-y-6 rounded-xl ">
+						<Logo className="h-9 w-9 mx-auto" variant="icon" />
+						<h1 className="text-2xl font-bold text-gray-900 text-center">
+							Entrar no Studdy
+						</h1>
+						<p className="mt-2 text-center">
+							Insira seu e-mail e senha para acessar o Studdy.
+						</p>
 
-					<Form {...form}>
-						<form className="mt-8 w-full space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-							<FormField
-								control={form.control}
-								name="email"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>E-mail</FormLabel>
-										<FormControl>
-											<Input type="email" placeholder="E-mail" className="bg-white w-full" {...field} />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								control={form.control}
-								name="password"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Senha</FormLabel>
-										<FormControl>
-											<Input type="password" placeholder="Senha" className="bg-white w-full" {...field} />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<Button type="submit" className="cursor-pointer mt-4 w-full">
-								Continuar com E-mail
-							</Button>
-						</form>
-					</Form>
+						<Form {...form}>
+							<form
+								className="mt-8 space-y-4"
+								onSubmit={form.handleSubmit(onSubmit)}
+								noValidate
+							>
+								<FormField
+									control={form.control}
+									name="email"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>E-mail</FormLabel>
+											<FormControl>
+												<Input
+													type="email"
+													placeholder="seu@email.com"
+													{...field}
+													className="bg-white w-full"
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={form.control}
+									name="password" 
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Senha</FormLabel>
+											<FormControl>
+												<Input
+													type="password"
+													placeholder="********"
+													{...field}
+													className="bg-white w-full"
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<Button type="submit" className="w-full  hover:bg-blue-700 text-white font-medium py-2.5">
+									Continuar com E-mail
+								</Button>
+							</form>
+						</Form>
 
-					<div className="mt-5 space-y-5">
-						<Link href="passrecovery" className="cursor-pointer text-sm block underline stone-500 text-center">
-							Esqueceu sua senha?
-						</Link>
+						<div className="mt-2 text-center">
+							<Link href="/passrecovery" className="text-sm underline text-muted-foreground hover:text-gray-900 transition-colors">
+								Esqueceu sua senha?
+							</Link>
+						</div>
 					</div>
 				</div>
 

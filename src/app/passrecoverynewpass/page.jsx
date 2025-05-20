@@ -16,10 +16,15 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 const formSchema = z
     .object({
-        newpassword: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+        newpassword: z
+            .string()
+            .min(6, 'A senha deve ter pelo menos 6 caracteres')
+            .regex(/[A-Z]/, 'A senha deve conter pelo menos uma letra maiúscula')
+            .regex(/\d/, 'A senha deve conter pelo menos um número'),
         confirmnewpassword: z.string().min(6, 'A confirmação deve ter pelo menos 6 caracteres'),
     })
     .refine((data) => data.newpassword === data.confirmnewpassword, {
@@ -29,6 +34,17 @@ const formSchema = z
 
 const PassRecoveryNewPass = () => {
     const router = useRouter();
+    const [loading, setLoading] = useState(false);
+    const [msg, setMsg] = useState('');
+
+    useEffect(() => {
+        // Verifica se existe um token válido
+        const validToken = localStorage.getItem('validRecoveryToken');
+        if (!validToken) {
+            // Se não houver token válido, redireciona para a página 404
+            router.push('/passrecovery/not-found');
+        }
+    }, [router]);
 
     const form = useForm({
         defaultValues: {
@@ -37,7 +53,7 @@ const PassRecoveryNewPass = () => {
         },
         resolver: zodResolver(formSchema),
     });
-
+    
     const newPassword = form.watch('newpassword');
 
     const passwordRequirements = [
@@ -55,45 +71,68 @@ const PassRecoveryNewPass = () => {
         },
     ];
 
-    const onSubmit = (data) => {
-        console.log(data);
-        router.push('/login');
+    const onSubmit = async (data) => {
+        try {
+            setLoading(true);
+            setMsg('');
+            
+            // Aqui você pode adicionar a lógica para atualizar a senha no backend
+            // Por exemplo:
+            // await updatePassword(data.newpassword);
+            
+            setMsg('Senha atualizada com sucesso!');
+            // Remove o token após atualizar a senha
+            localStorage.removeItem('validRecoveryToken');
+            setTimeout(() => {
+                router.push('/login');
+            }, 2000);
+        } catch (error) {
+            setMsg('Erro ao atualizar a senha. Tente novamente.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <div className="background bg-slate-100 h-screen flex items-center justify-center">
-            <div className="w-full h-full grid p-4">
-                <div className="bg-white  p-5 max-w-xs m-auto w-full flex flex-col justify-center items-center">
-                    <Logo className="h-9 w-9" variant="icon" />
-                    <p className="mt-4 text-xl font-bold tracking-tight">Recuperação de senha</p>
-                    <p className="mt-4 text-l tracking-tight text-center">Insira a senha nova:</p>
+        <div className="min-h-screen background flex items-center justify-center p-4">
+            <div className="w-full max-w-md">
+                <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
+                    <div className="flex flex-col items-center space-y-4">
+                        <Logo className="h-12 w-12" variant="icon" />
+                        <h1 className="text-2xl font-bold text-gray-900">Recuperação de senha</h1>
+                        <p className="text-gray-600 text-center">
+                            Insira sua nova senha
+                        </p>
+                    </div>
 
                     <Form {...form}>
-                        <form className="mt-8 w-full space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+                        <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
                             <FormField
                                 control={form.control}
                                 name="newpassword"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Senha Nova</FormLabel>
+                                        <FormLabel className="text-gray-700">Nova Senha</FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="password"
-                                                placeholder="Nova Senha"
-                                                className="bg-white w-full"
+                                                placeholder="Digite sua nova senha"
+                                                className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                                disabled={loading}
                                                 {...field}
                                             />
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-red-500" />
 
-                                        {/* Requisitos da senha com ícones */}
-                                        <ul className="mt-2 text-sm space-y-1">
+                                        <ul className="mt-4 space-y-2">
                                             {passwordRequirements.map((req, idx) => (
-                                                <li key={idx} className="flex items-center gap-2">
+                                                <li key={idx} className="flex items-center gap-2 text-sm">
                                                     <span className={req.isValid ? 'text-green-600' : 'text-red-600'}>
-                                                        {req.isValid ? '✅' : '❌'}
+                                                        {req.isValid ? '⦿' : '⦾'}
                                                     </span>
-                                                    {req.label}
+                                                    <span className={req.isValid ? 'text-green-600' : 'text-red-600'}>
+                                                        {req.label}
+                                                    </span>
                                                 </li>
                                             ))}
                                         </ul>
@@ -106,28 +145,42 @@ const PassRecoveryNewPass = () => {
                                 name="confirmnewpassword"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Confirmar Senha</FormLabel>
+                                        <FormLabel className="text-gray-700">Confirmar Nova Senha</FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="password"
-                                                placeholder="Nova Senha"
-                                                className="bg-white w-full"
+                                                placeholder="Confirme sua nova senha"
+                                                className="bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                                disabled={loading}
                                                 {...field}
                                             />
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-red-500" />
                                     </FormItem>
                                 )}
                             />
 
-                            <Button type="submit" className="cursor-pointer mt-4 w-full">
-                                Redefinir senha
+                            {msg && (
+                                <p className={`text-center text-sm ${msg.includes('sucesso') ? 'text-green-600' : 'text-red-600'}`}>
+                                    {msg}
+                                </p>
+                            )}
+
+                            <Button 
+                                type="submit" 
+                                disabled={loading} 
+                                className="w-full hover:bg-blue-700 text-white font-medium py-2.5"
+                            >
+                                {loading ? 'Atualizando...' : 'Redefinir senha'}
                             </Button>
                         </form>
                     </Form>
 
-                    <div className="mt-5 space-y-5">
-                        <Link href="login" className="cursor-pointer text-sm block underline text-center stone-500">
+                    <div className="text-center">
+                        <Link 
+                            href="/login" 
+                            className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                        >
                             Voltar para o login
                         </Link>
                     </div>
