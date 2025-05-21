@@ -185,7 +185,7 @@ function CadastroForm() {
 
     return (
         <div className="bg-slate-100 min-h-screen flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
+            <div className="w-full max-w-2xl bg-white rounded-lg shadow-lg p-6">
                 <div className="flex flex-col items-center mb-6">
                     <Logo className="h-9 w-9" variant="icon" />
                     <h1 className="mt-4 text-2xl font-bold tracking-tight">Cadastro</h1>

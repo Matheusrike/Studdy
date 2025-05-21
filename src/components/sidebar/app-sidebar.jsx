@@ -14,17 +14,18 @@ import {
   SquareTerminal,
 } from "lucide-react"
 
-import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
-import { NavUser } from "@/components/nav-user"
-import { NavMainDropdown } from "@/components/nav-main"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { NavMain } from "@/components/sidebar/nav-main"
+import { NavProjects } from "@/components/sidebar/nav-projects"
+import { NavUser } from "@/components/sidebar/nav-user"
+import { NavMainDropdown } from "@/components/sidebar/nav-main"
+import { TeamSwitcher } from "@/components/sidebar/team-switcher"
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar"
 import Logo from "@/components/ui/logo"
@@ -36,6 +37,25 @@ const dataAluno = {
     email: "aluno@example.com",
     avatar: "/avatars/aluno.jpg",
   },
+
+  navMain: [
+    {
+      title: "Início",
+      url: "#",
+      icon: SquareTerminal,
+      isActive: true,
+    },
+    {
+      title: "Simulados",
+      url: "#",
+      icon: Bot,
+    },
+    {
+      title: "Estatísticas  ",
+      url: "#",
+      icon: BookOpen,
+    },
+  ],
   navMainDropdown: [
     {
       title: "Material de Estudo",
@@ -48,40 +68,6 @@ const dataAluno = {
         { title: "Exercícios", url: "#" }
       ],
     }
-  ],
-  navMain: [
-    {
-      title: "Início",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        { title: "Painel Principal", url: "#" },
-        { title: "Meu Progresso", url: "#" },
-        { title: "Perfil", url: "#" }
-      ],
-    },
-    {
-      title: "Simulados",
-      url: "#",
-      icon: Bot,
-      items: [
-        { title: "Disponíveis", url: "#" },
-        { title: "Em Andamento", url: "#" },
-        { title: "Concluídos", url: "#" }
-      ],
-    },
-    {
-      title: "Estatísticas  ",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        { title: "Provas Anteriores", url: "#" },
-        { title: "Questões Comentadas", url: "#" },
-        { title: "Correções", url: "#" },
-        { title: "Estatísticas", url: "#" }
-      ],
-    },
   ],
   projects: [
     { name: "ENEM 2024", url: "#", icon: Frame },
@@ -226,9 +212,10 @@ function AdminNav() {
 }
 
 export function AppSidebar({
+  children,
   ...props
 }) {
-  const { state } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const [role, setRole] = React.useState("aluno");
 
   let NavComponent;
@@ -254,32 +241,39 @@ export function AppSidebar({
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <div className="flex flex-col items-center gap-2 mt-2">
-          <Logo className="h-9 w-9 " variant="icon" />
+          {/* Logo como trigger da sidebar */}
+          <button
+            onClick={toggleSidebar}
+            className="focus:outline-none"
+            aria-label="Alternar sidebar"
+          >
+            <Logo className="h-9 w-9 cursor-pointer transition-transform hover:scale-105" variant="icon" />
+          </button>
+          {/* Exibe o texto da logo e os botões de perfil só se expandida */}
           {state !== "collapsed" && (
-            <img src="/assets/logo_text.svg" alt="logo" className="h-10 w-25" />
-          )}
-          {/* Botões de seleção de perfil */}
-          {state !== "collapsed" && (
-            <div className="flex gap-2 mt-2">
-              <button
-                className={`px-2 py-1 rounded ${role === "aluno" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
-                onClick={() => setRole("aluno")}
-              >
-                Aluno
-              </button>
-              <button
-                className={`px-2 py-1 rounded ${role === "professor" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
-                onClick={() => setRole("professor")}
-              >
-                Professor
-              </button>
-              <button
-                className={`px-2 py-1 rounded ${role === "admin" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
-                onClick={() => setRole("admin")}
-              >
-                Admin
-              </button>
-            </div>
+            <>
+              <img src="/assets/logo_text.svg" alt="logo" className="h-10 w-25" />
+              <div className="flex gap-2 mt-2">
+                <button
+                  className={`px-2 py-1 rounded ${role === "aluno" ? "bg-[#133D86] text-white" : "bg-gray-200"}`}
+                  onClick={() => setRole("aluno")}
+                >
+                  Aluno
+                </button>
+                <button
+                  className={`px-2 py-1 rounded ${role === "professor" ? "bg-[#133D86] text-white" : "bg-gray-200"}`}
+                  onClick={() => setRole("professor")}
+                >
+                  Professor
+                </button>
+                <button
+                  className={`px-2 py-1 rounded ${role === "admin" ? "bg-[#133D86] text-white" : "bg-gray-200"}`}
+                  onClick={() => setRole("admin")}
+                >
+                  Admin
+                </button>
+              </div>
+            </>
           )}
         </div>
       </SidebarHeader>
