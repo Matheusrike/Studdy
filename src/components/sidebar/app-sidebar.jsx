@@ -19,6 +19,7 @@ import { NavProjects } from "@/components/sidebar/nav-projects"
 import { NavUser } from "@/components/sidebar/nav-user"
 import { NavMainDropdown } from "@/components/sidebar/nav-main"
 import { TeamSwitcher } from "@/components/sidebar/team-switcher"
+import { useUser } from "@/contexts/UserContext"
 import {
   Sidebar,
   SidebarContent,
@@ -40,39 +41,40 @@ const dataAluno = {
 
   navMain: [
     {
-      title: "Início",
-      url: "#",
+      title: "Painel",
+      url: "/pages/painel",
       icon: SquareTerminal,
       isActive: true,
     },
     {
       title: "Simulados",
-      url: "#",
+      url: "/pages/simulados",
       icon: Bot,
     },
     {
       title: "Estatísticas  ",
-      url: "#",
+      url: "/pages/estatisticas",
       icon: BookOpen,
-    },
+    }
   ],
   navMainDropdown: [
     {
-      title: "Material de Estudo",
-      url: "#",
+      title: "Biblioteca",
+      
+      url: "/pages/material",
       icon: BookOpen,
       itemsDropdown: [
-        { title: "Videoaulas", url: "#" },
-        { title: "Apostilas", url: "#" },
-        { title: "Resumos", url: "#" },
-        { title: "Exercícios", url: "#" }
+        { title: "Materiais", url: "/pages/material" },
+        { title: "Videoaulas", url: "/pages/material/videoaulas" },
+        { title: "Apostilas", url: "/pages/material/apostilas" },
+        { title: "Resumos", url: "/pages/material/resumos" },
+        { title: "Exercícios", url: "/pages/material/exercicios" }
       ],
     }
   ],
   projects: [
-    { name: "ENEM 2024", url: "#", icon: Frame },
-    { name: "Concursos", url: "#", icon: PieChart },
-    { name: "Vestibulares", url: "#", icon: Map },
+    { name: "Concursos", url: "/pages/concursos", icon: PieChart },
+    { name: "Vestibulares", url: "/pages/vestibulares", icon: Map },
   ],
 };
 
@@ -97,22 +99,14 @@ const dataProfessor = {
   navMain: [
     {
       title: "Painel",
-      url: "#",
+      url: "/pages/painel",
       icon: SquareTerminal,
       isActive: true,
-      items: [
-        { title: "Visão Geral", url: "#" },
-        { title: "Minhas Turmas", url: "#" }
-      ],
     },
     {
       title: "Atividades",
       url: "#",
-      icon: Bot,
-      items: [
-        { title: "Criar Atividade", url: "#" },
-        { title: "Corrigir Atividades", url: "#" }
-      ],
+      icon: Bot,  
     },
   ],
   projects: [
@@ -142,36 +136,20 @@ const dataAdmin = {
   ],
   navMain: [
     {
-      title: "Dashboard",
-      url: "#",
+      title: "Painel",
+      url: "/pages/painel",
       icon: SquareTerminal,
       isActive: true,
-      items: [
-        { title: "Visão Geral", url: "#" },
-        { title: "Relatórios", url: "#" },
-        { title: "Logs do Sistema", url: "#" }
-      ],
     },
     {
       title: "Conteúdo",
       url: "#",
       icon: Bot,
-      items: [
-        { title: "Gerenciar Materiais", url: "#" },
-        { title: "Categorias", url: "#" },
-        { title: "Biblioteca", url: "#" }
-      ],
     },
     {
       title: "Administração",
       url: "#",
       icon: BookOpen,
-      items: [
-        { title: "Backup", url: "#" },
-        { title: "Manutenção", url: "#" },
-        { title: "Segurança", url: "#" },
-        { title: "Auditoria", url: "#" }
-      ],
     },
   ],
   projects: [
@@ -216,12 +194,12 @@ export function AppSidebar({
   ...props
 }) {
   const { state, toggleSidebar } = useSidebar();
-  const [role, setRole] = React.useState("aluno");
+  const { userRole, setUserRole } = useUser();
 
   let NavComponent;
   let userData;
 
-  switch (role) {
+  switch (userRole) {
     case "admin":
       NavComponent = <AdminNav />;
       userData = dataAdmin.user;
@@ -241,7 +219,6 @@ export function AppSidebar({
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <div className="flex flex-col items-center gap-2 mt-2">
-          {/* Logo como trigger da sidebar */}
           <button
             onClick={toggleSidebar}
             className="focus:outline-none"
@@ -249,26 +226,25 @@ export function AppSidebar({
           >
             <Logo className="h-9 w-9 cursor-pointer transition-transform hover:scale-105" variant="icon" />
           </button>
-          {/* Exibe o texto da logo e os botões de perfil só se expandida */}
           {state !== "collapsed" && (
             <>
               <img src="/assets/logo_text.svg" alt="logo" className="h-10 w-25" />
               <div className="flex gap-2 mt-2">
                 <button
-                  className={`px-2 py-1 rounded ${role === "aluno" ? "bg-[#133D86] text-white" : "bg-gray-200"}`}
-                  onClick={() => setRole("aluno")}
+                  className={`px-2 py-1 rounded ${userRole === "aluno" ? "bg-[#133D86] text-white" : "bg-gray-200"}`}
+                  onClick={() => setUserRole("aluno")}
                 >
                   Aluno
                 </button>
                 <button
-                  className={`px-2 py-1 rounded ${role === "professor" ? "bg-[#133D86] text-white" : "bg-gray-200"}`}
-                  onClick={() => setRole("professor")}
+                  className={`px-2 py-1 rounded ${userRole === "professor" ? "bg-[#133D86] text-white" : "bg-gray-200"}`}
+                  onClick={() => setUserRole("professor")}
                 >
                   Professor
                 </button>
                 <button
-                  className={`px-2 py-1 rounded ${role === "admin" ? "bg-[#133D86] text-white" : "bg-gray-200"}`}
-                  onClick={() => setRole("admin")}
+                  className={`px-2 py-1 rounded ${userRole === "admin" ? "bg-[#133D86] text-white" : "bg-gray-200"}`}
+                  onClick={() => setUserRole("admin")}
                 >
                   Admin
                 </button>

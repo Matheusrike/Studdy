@@ -118,7 +118,7 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
                                         placeholder="Digite sua pergunta"
                                         {...field}
                                         disabled={isSubmitting}
-                                        className="min-h-[100px] resize-none"
+                                        className="min-h-[100px] resize-none focus-visible:border-[#1e40af] focus-visible:ring-[#1e40af] focus-visible:ring-[3px]"
                                     />
                                 </FormControl>
                                 <FormMessage />
@@ -137,7 +137,7 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
                                         placeholder="Digite a resposta correta"
                                         {...field}
                                         disabled={isSubmitting}
-                                        className="focus:border-red-500 focus:ring-red-500 active:border-red-500 active:ring-red-500"
+                                        className="focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px]"
                                     />
                                 </FormControl>
                                 <FormMessage />
@@ -156,6 +156,7 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
                                             ...prev,
                                             alternativa1: e.target.value
                                         }))}
+                                        className="focus-visible:border-red-500 focus-visible:ring-red-500/50 focus-visible:ring-[3px]"
                                     />
                                 </FormControl>
                             </FormItem>
@@ -169,6 +170,7 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
                                             ...prev,
                                             alternativa2: e.target.value
                                         }))}
+                                        className="focus-visible:border-red-500 focus-visible:ring-red-500/50 focus-visible:ring-[3px]"
                                     />
                                 </FormControl>
                             </FormItem>
@@ -182,7 +184,7 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
                                             ...prev,
                                             alternativa3: e.target.value
                                         }))}
-                                        className="focus:border-red-500 focus:ring-red-500 active:border-red-500 active:ring-red-500"
+                                        className="focus-visible:border-red-500 focus-visible:ring-red-500/50 focus-visible:ring-[3px]"
                                     />
                                 </FormControl>
                             </FormItem>

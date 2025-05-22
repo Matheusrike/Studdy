@@ -37,18 +37,18 @@ export default function LoginPage() {
 	};
 
 	return (
-		<div className="bg-white bg-slate-100 h-screen flex items-center justify-center">
-			<div className="w-full h-full grid lg:grid-cols-[3fr_600px] ">
+		<div className="bg-white min-w-screen h-screen flex items-center justify-center">
+			<div className="w-full h-full flex flex-row">
 
-				<div className=" hidden lg:flex rounded-lg items-center justify-center">
+				<div className="hidden w-[65	%] lg:flex rounded-lg items-center justify-center">
 					<img
-						className=" w-full h-full object-cover"
+						className="w-full h-full object-cover"
 						src="/assets/students.webp"
 						alt="illustration"
 					/>
 				</div>
 
-				<div className="w-full h-full flex items-center justify-center">
+				<div className="w-screen lg:w-[35%] h-full  flex items-center justify-center">
 					<div className="w-full max-w-md p-8 space-y-6 rounded-xl ">
 						<Logo className="h-9 w-9 mx-auto" variant="icon" />
 						<h1 className="text-2xl font-bold text-gray-900 text-center">
@@ -84,7 +84,7 @@ export default function LoginPage() {
 								/>
 								<FormField
 									control={form.control}
-									name="password" 
+									name="password"
 									render={({ field }) => (
 										<FormItem>
 											<FormLabel>Senha</FormLabel>

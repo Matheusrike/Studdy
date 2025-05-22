@@ -64,7 +64,7 @@ export default function NotFound() {
                             asChild
                             className="relative overflow-hidden bg-[#133d86] hover:bg-[#3b79c4] text-white font-medium text-xl px-10 py-8 rounded-2xl shadow-lg transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#3b79c4]"
                         >
-                            <Link href="/">
+                            <Link href="/pages/painel">
                                 <span className="relative z-10">Voltar ao Dashboard</span>
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shine"></div>
                             </Link>
