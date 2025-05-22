@@ -194,7 +194,6 @@ input[type='number']::-webkit-outer-spin-button {
 input[type='number'] {
 	-moz-appearance: textfield;
 }
-
 .background {
 	opacity: 1;
 	background-image: radial-gradient(#133d8680 1.25px, transparent 1.25px), radial-gradient(#133d86a4 1.25px, #f1f5f9 1.25px);
