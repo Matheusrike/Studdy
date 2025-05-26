@@ -22,18 +22,241 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { ExternalLink, GraduationCap, Calendar, BookOpen, School, Search, Star, StarOff, Shield, Briefcase, Building2, Landmark, Scale } from "lucide-react";
 import Alert from "@/components/ui/alerts";
+
+const CONCURSOS_ICON_OPTIONS = [
+    { label: 'Escudo', value: 'Shield', icon: Shield },
+    { label: 'Escola', value: 'School', icon: School },
+    { label: 'Pasta', value: 'Briefcase', icon: Briefcase },
+    { label: 'Prédio', value: 'Building2', icon: Building2 },
+    { label: 'Monumento', value: 'Landmark', icon: Landmark },
+    { label: 'Balança', value: 'Scale', icon: Scale }
+];
+
+const VESTIBULARES_ICON_OPTIONS = [
+    { label: 'Graduação', value: 'GraduationCap', icon: GraduationCap },
+    { label: 'Livro', value: 'BookOpen', icon: BookOpen },
+    { label: 'Escola', value: 'School', icon: School },
+    { label: 'Calendário', value: 'Calendar', icon: Calendar }
+];
 
 const formSchema = z.object({
     tipo: z.string().min(1, "Selecione um tipo de usuário"),
-    nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-    email: z.string().email("Email inválido"),
-    senha: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
-    matricula: z.string().optional(),
-    curso: z.string().optional(),
-    formacao: z.string().optional(),
-    area: z.string().optional(),
+    name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+    email: z.string().email("Email inválido").optional().or(z.literal('')),
+    password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").optional().or(z.literal('')),
+    cpf: z.string().min(11, "CPF deve ter 11 dígitos").optional().or(z.literal('')),
+    birth_date: z.string().optional().or(z.literal('')),
+    class: z.string().min(1, "Selecione uma turma").optional().or(z.literal('')),
+    curso: z.string().optional().or(z.literal('')),
+    formacao: z.string().optional().or(z.literal('')),
+    area: z.string().optional().or(z.literal('')),
+    descricao: z.string().optional().or(z.literal('')),
+    horario: z.string().optional().or(z.literal('')),
+    data: z.string().optional().or(z.literal('')),
+    icone: z.string().optional().or(z.literal('')),
+    color: z.string().optional().or(z.literal('')),
+    tipo_concurso: z.string().optional().or(z.literal('')),
+    link: z.string().optional().or(z.literal('')),
+    category: z.string().optional().or(z.literal('')),
 });
+
+// Componentes de Formulário
+const BaseFormField = ({ control, name, label, type = "text", placeholder, ...props }) => (
+    <FormField
+        control={control}
+        name={name}
+        render={({ field }) => (
+            <FormItem>
+                <FormLabel>{label}</FormLabel>
+                <FormControl>
+                    <Input type={type} placeholder={placeholder} {...field} {...props} />
+                </FormControl>
+                <FormMessage />
+            </FormItem>
+        )}
+    />
+);
+
+const SelectFormField = ({ control, name, label, options, placeholder, disabled }) => (
+    <FormField
+        control={control}
+        name={name}
+        render={({ field }) => (
+            <FormItem>
+                <FormLabel>{label}</FormLabel>
+                <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={disabled}
+                >
+                    <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder={placeholder} />
+                        </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        {options.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <FormMessage />
+            </FormItem>
+        )}
+    />
+);
+
+// Formulários específicos
+const DisciplinaForm = ({ control }) => (
+    <BaseFormField
+        control={control}
+        name="name"
+        label="Nome da Disciplina"
+        placeholder="Nome da Disciplina"
+    />
+);
+
+const ProfessorForm = ({ control, areas, isLoading, error }) => (
+    <>
+        <BaseFormField
+            control={control}
+            name="name"
+            label="Nome"
+            placeholder="Nome"
+        />
+        <BaseFormField
+            control={control}
+            name="email"
+            label="Email"
+            type="email"
+            placeholder="Email"
+        />
+        <BaseFormField
+            control={control}
+            name="password"
+            label="Senha"
+            type="password"
+            placeholder="Senha"
+        />
+        <BaseFormField
+            control={control}
+            name="cpf"
+            label="CPF"
+            placeholder="CPF"
+        />
+        <BaseFormField
+            control={control}
+            name="birth_date"
+            label="Data de Nascimento"
+            type="date"
+            placeholder="Data de Nascimento"
+        />
+    
+        <SelectFormField
+            control={control}
+            name="area"
+            label="Disciplina 1"
+            options={areas.map((area, index) => ({ 
+                value: (index + 1).toString(), 
+                label: area 
+            }))}
+            placeholder="Selecione uma disciplina"
+            disabled={isLoading}
+        />
+
+        <SelectFormField
+            control={control}
+            name="area2"
+            label="Disciplina 2"
+            options={areas.map((area, index) => ({ 
+                value: (index + 1).toString(), 
+                label: area 
+            }))}
+            placeholder="Selecione uma disciplina"
+            disabled={isLoading}
+        />
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {isLoading && <p className="text-sm text-muted-foreground">Carregando disciplinas...</p>}
+    </>
+);
+
+const AlunoForm = ({ control, turmas, isLoading, error }) => (
+    <>
+        <BaseFormField
+            control={control}
+            name="name"
+            label="Nome"
+            placeholder="Nome"
+        />
+        <BaseFormField
+            control={control}
+            name="email"
+            label="Email"
+            type="email"
+            placeholder="Email"
+        />
+        <BaseFormField
+            control={control}
+            name="password"
+            label="Senha"
+            type="password"
+            placeholder="Senha"
+        />
+        <BaseFormField
+            control={control}
+            name="cpf"
+            label="CPF"
+            placeholder="CPF"
+        />
+        <BaseFormField
+            control={control}
+            name="birth_date"
+            label="Data de Nascimento"
+            type="date"
+            placeholder="Data de Nascimento"
+        />
+        <SelectFormField
+            control={control}
+            name="class"
+            label="Turma"
+            placeholder="Selecione uma turma"
+            options={turmas.map(turma => ({ 
+                value: turma.id.toString(), 
+                label: `${turma.name} - ${turma.shift} (${turma.course})` 
+            }))}
+            disabled={isLoading}
+        />
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {isLoading && <p className="text-sm text-muted-foreground">Carregando turmas...</p>}
+    </>
+);
+
+const TurmaForm = ({ control }) => (
+    <>
+        <BaseFormField
+            control={control}
+            name="name"
+            label="Nome da Turma"
+            placeholder="Nome da Turma"
+        />
+        <BaseFormField
+            control={control}
+            name="shift"
+            label="Turno"
+            placeholder="Turno da turma"
+        />
+        <BaseFormField
+            control={control}
+            name="course"
+            label="Curso"
+            placeholder="Curso"
+        />
+    </>
+);
 
 function CadastroForm() {
     const [areas, setAreas] = useState([]);
@@ -42,48 +265,92 @@ function CadastroForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState(null);
     const [submitSuccess, setSubmitSuccess] = useState(false);
-    const [isGeneratingMatricula, setIsGeneratingMatricula] = useState(false);
+    const [turmas, setTurmas] = useState([]);
+    const [isLoadingTurmas, setIsLoadingTurmas] = useState(true);
+    const [errorTurmas, setErrorTurmas] = useState(null);
 
     const form = useForm({
         resolver: zodResolver(formSchema),
         defaultValues: {
             tipo: "selecione",
-            nome: "",
+            name: "",
             email: "",
-            senha: "",
-            matricula: "",
+            password: "",
+            cpf: "",
+            birth_date: "",
             curso: "",
             formacao: "",
             area: "",
+            descricao: "",
+            horario: "",
+            data: "",
+            icone: "",
+            color: "#133D86",
+            class: "",
+            tipo_concurso: "",
+            link: "",
+            category: "",
         },
     });
 
     const tipo = form.watch("tipo");
 
     useEffect(() => {
+        const fetchTurmas = async () => {
+            try {
+                setIsLoadingTurmas(true);
+                setErrorTurmas(null);
+                console.log('Iniciando busca de turmas...');
+
+                const response = await fetch('http://localhost:3001/class', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                console.log('Resposta recebida:', response.status);
+
+                const data = await response.json();
+                console.log('Dados recebidos:', data);
+                
+                setTurmas(data);
+            } catch (error) {
+                console.error('Erro ao buscar turmas:', error);
+                setErrorTurmas(error.message || 'Não foi possível carregar as turmas');
+            } finally {
+                setIsLoadingTurmas(false);
+            }
+        };
+
+        fetchTurmas();
+    }, []);
+
+    useEffect(() => {
         const fetchAreas = async () => {
             try {
                 setIsLoading(true);
                 setError(null);
-                const response = await fetch('https://api-studdy.onrender.com/api/disciplinas', {
+                
+                console.log("Iniciando busca de áreas...");
+                
+                const response = await fetch('http://localhost:3001/subject', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                    mode: 'cors',
+                    }
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Erro ao buscar áreas: ${response.status}`);
-                }
+                console.log("Resposta recebida:", response.status);
+
 
                 const data = await response.json();
-                if (!Array.isArray(data)) {
-                    throw new Error('Formato de resposta inválido');
-                }
+                console.log("Dados recebidos:", data);
 
-                const areasList = data.map(item => item.nome || item.name || item);
+                // Ajustando para a estrutura do Prisma
+                const areasList = data.map(item => item.name);
+                console.log("Lista de áreas processada:", areasList);
+                
                 setAreas(areasList);
             } catch (error) {
                 console.error('Erro ao buscar áreas:', error);
@@ -96,38 +363,46 @@ function CadastroForm() {
         fetchAreas();
     }, []);
 
-    const gerarMatriculaUnica = async () => {
-        try {
-            setIsGeneratingMatricula(true);
-            let matriculaUnica = false;
-            let novaMatricula = "";
+    const getEndpoint = (tipo) => {
+        const endpoints = {
+            alunos: "http://localhost:3001/student",
+            professores: "http://localhost:3001/teacher",
+            turmas: "http://localhost:3001/class",
+            concursos: "http://localhost:3001/contest",
+            vestibulares: "http://localhost:3001/vestibular",
+            disciplinas: "http://localhost:3001/subject"
+        };
+        return endpoints[tipo] || null;
+    };
 
-            while (!matriculaUnica) {
-                const numeroAleatorio = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-                novaMatricula = "2425" + numeroAleatorio;
+    const formatDate = (dateString) => {
+        if (!dateString) return null;
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
 
-                const response = await fetch(`https://api-studdy.onrender.com/api/alunos/matricula/${novaMatricula}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                });
+    const formatPayloadForConcursos = (data) => {
+        const selectedIcon = CONCURSOS_ICON_OPTIONS.find(opt => opt.value === data.icone);
+        const formattedDate = formatDate(data.data);
 
-                if (response.status === 404) {
-                    matriculaUnica = true;
-                } else if (!response.ok) {
-                    throw new Error('Erro ao verificar matrícula');
-                }
-            }
+        return {
+            title: data.name,
+            description: data.descricao,
+            link: data.link || "#",
+            icon: selectedIcon ? selectedIcon.value : 'Star',
+            color: `bg-${data.color.replace('#', '')}`,
+            date: formattedDate,
+            category: data.tipo_concurso || "geral"
+        };
+    };
 
-            form.setValue("matricula", novaMatricula);
-        } catch (error) {
-            console.error('Erro ao gerar matrícula:', error);
-            setSubmitError('Erro ao gerar matrícula. Tente novamente.');
-        } finally {
-            setIsGeneratingMatricula(false);
-        }
+    const formatPayloadForMaterias = (data) => {
+        return {
+            name: data.name
+        };
     };
 
     const onSubmit = async (data) => {
@@ -136,50 +411,406 @@ function CadastroForm() {
             setSubmitError(null);
             setSubmitSuccess(false);
 
-            let payload;
-            if (data.tipo === "professores") {
-                payload = {
-                    nome: data.nome,
-                    email: data.email,
-                    senha: data.senha,
-                    formacao: data.formacao,
-                    area_atuacao: data.area
-                };
-            } else {
-                payload = {
-                    nome: data.nome,
-                    email: data.email,
-                    senha: data.senha,
-                    matricula: data.matricula,
-                    curso: data.curso
-                };
-            }
+            const endpoint = getEndpoint(data.tipo);
+            if (!endpoint) throw new Error("Tipo de cadastro inválido");
 
-            const response = await fetch(`https://api-studdy.onrender.com/api/${data.tipo}`, {
+            // Formata a data para o padrão correto (DD/MM/YYYY)
+            const formatDate = (dateString) => {
+                if (!dateString) return null;
+                const date = new Date(dateString);
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}/${month}/${year}`;
+            };
+
+            // Limpa os dados antes de enviar
+            const cleanData = {
+                disciplinas: {
+                    name: data.name
+                },
+                professores: {
+                    user: {
+                        name: data.name,
+                        email: data.email,
+                        password: data.password,
+                        cpf: data.cpf.replace(/\D/g, ''),
+                        birth_date: formatDate(data.birth_date),
+                        role: "Teacher"
+                    },
+                    teacher: {
+                        subjects: [parseInt(data.area || '1'),parseInt(data.area2 || '2')].filter(id => !isNaN(id)) // Remove valores inválidos
+                    }
+                },
+                alunos: {
+                    user: {
+                        name: data.name,
+                        email: data.email,
+                        password: data.password,
+                        cpf: data.cpf.replace(/\D/g, ''),
+                        birth_date: formatDate(data.birth_date),
+                        role: "Student"
+                    },
+                    student: {
+                        class_id: data.class ? parseInt(data.class) : null
+                    }
+                },
+                turmas: {
+                    name: data.name,
+                    shift: data.shift,
+                    course: data.course
+                }
+            }[data.tipo];
+
+            console.log("Dados do formulário:", data);
+            console.log("Payload a ser enviado:", JSON.stringify(cleanData, null, 2));
+            console.log("Endpoint:", endpoint);
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json',
+                    'Accept': 'application/json'
                 },
-                body: JSON.stringify(payload)
+                mode: 'cors',
+                credentials: 'include',
+                body: JSON.stringify(cleanData)
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                const errorMessage = errorData.message || errorData.error || 'Erro ao realizar cadastro';
-                throw new Error(errorMessage);
-            }
+            console.log("Status da resposta:", response.status);
+            const responseData = await response.json();
+            console.log("Resposta do servidor:", responseData);
 
-            const result = await response.json();
-            console.log(`${data.tipo === "professores" ? "Professor" : "Aluno"} cadastrado:`, result);
+            if (!response.ok) {
+                throw new Error(responseData.message || `Erro ao cadastrar: ${response.status}`);
+            }
 
             setSubmitSuccess(true);
             form.reset();
         } catch (error) {
-            console.error('Erro ao cadastrar:', error);
-            setSubmitError(error.message || 'Erro ao realizar cadastro');
+            console.error("Erro no cadastro:", error);
+            setSubmitError(error.message);
+            setSubmitSuccess(false);
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const renderFormByType = () => {
+        switch (tipo) {
+            case "disciplinas":
+                return <DisciplinaForm control={form.control} />;
+            case "professores":
+                return <ProfessorForm 
+                    control={form.control} 
+                    areas={areas} 
+                    turmas={turmas}
+                    isLoading={isLoading} 
+                    error={error} 
+                />;
+            case "alunos":
+                return <AlunoForm 
+                    control={form.control} 
+                    turmas={turmas} 
+                    isLoading={isLoadingTurmas} 
+                    error={errorTurmas} 
+                />;
+            case "turmas":
+                return <TurmaForm control={form.control} />;
+            case "concursos":
+                return (
+                    <>
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Nome do Concurso</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Nome do Concurso" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="link"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Link do Concurso</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="https://..." {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="tipo_concurso"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Categoria</FormLabel>
+                                    <Select
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selecione a categoria" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="militares">Militares</SelectItem>
+                                            <SelectItem value="federais">Federais</SelectItem>
+                                            <SelectItem value="estaduais">Estaduais</SelectItem>
+                                            <SelectItem value="municipais">Municipais</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="data"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Data do Concurso</FormLabel>
+                                    <FormControl>
+                                        <Input type="date" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="icone"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Ícone</FormLabel>
+                                    <FormControl>
+                                        <div className="space-y-4">
+                                            <div className="flex gap-2 flex-wrap">
+                                                {CONCURSOS_ICON_OPTIONS.map(opt => {
+                                                    const Icon = opt.icon;
+                                                    return (
+                                                        <button
+                                                            type="button"
+                                                            key={opt.value}
+                                                            onClick={() => field.onChange(opt.value)}
+                                                            className={`p-2 rounded-lg border transition-all duration-200 flex items-center justify-center ${field.value === opt.value ? 'bg-[#133D86] text-white border-[#133D86] scale-110 shadow-lg' : 'bg-white text-[#133D86] border-gray-200 hover:bg-[#e6eefc]'} `}
+                                                            title={opt.label}
+                                                            style={{
+                                                                backgroundColor: field.value === opt.value ? form.watch("color") : 'white',
+                                                                color: field.value === opt.value ? 'white' : form.watch("color"),
+                                                                borderColor: field.value === opt.value ? form.watch("color") : '#e5e7eb'
+                                                            }}
+                                                        >
+                                                            <Icon className="h-6 w-6" />
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            <FormField
+                                                control={form.control}
+                                                name="color"
+                                                render={({ field: colorField }) => (
+                                                    <div className="flex items-center gap-2">
+                                                        <label className="text-sm font-medium">
+                                                            Cor do Ícone:
+                                                        </label>
+                                                        <div className="relative">
+                                                            <input
+                                                                type="color"
+                                                                {...colorField}
+                                                                className="w-12 h-8 p-0 rounded border cursor-pointer"
+                                                                style={{
+                                                                    backgroundColor: 'transparent',
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <span className="text-sm text-muted-foreground">
+                                                            {colorField.value}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            />
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="descricao"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Descrição</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Descrição do concurso" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </>
+                );
+            case "vestibulares":
+                return (
+                    <>
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Nome do Vestibular</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Nome do Vestibular" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="link"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Link do Vestibular</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="https://..." {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="tipo_concurso"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Categoria</FormLabel>
+                                    <Select
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selecione a categoria" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="publico">Público</SelectItem>
+                                            <SelectItem value="privado">Privado</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="data"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Data do Vestibular</FormLabel>
+                                    <FormControl>
+                                        <Input type="date" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="icone"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Ícone</FormLabel>
+                                    <FormControl>
+                                        <div className="space-y-4">
+                                            <div className="flex gap-2 flex-wrap">
+                                                {VESTIBULARES_ICON_OPTIONS.map(opt => {
+                                                    const Icon = opt.icon;
+                                                    return (
+                                                        <button
+                                                            type="button"
+                                                            key={opt.value}
+                                                            onClick={() => field.onChange(opt.value)}
+                                                            className={`p-2 rounded-lg border transition-all duration-200 flex items-center justify-center ${field.value === opt.value ? 'bg-[#133D86] text-white border-[#133D86] scale-110 shadow-lg' : 'bg-white text-[#133D86] border-gray-200 hover:bg-[#e6eefc]'} `}
+                                                            title={opt.label}
+                                                            style={{
+                                                                backgroundColor: field.value === opt.value ? form.watch("color") : 'white',
+                                                                color: field.value === opt.value ? 'white' : form.watch("color"),
+                                                                borderColor: field.value === opt.value ? form.watch("color") : '#e5e7eb'
+                                                            }}
+                                                        >
+                                                            <Icon className="h-6 w-6" />
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            <FormField
+                                                control={form.control}
+                                                name="color"
+                                                render={({ field: colorField }) => (
+                                                    <div className="flex items-center gap-2">
+                                                        <label className="text-sm font-medium">
+                                                            Cor do Ícone:
+                                                        </label>
+                                                        <div className="relative">
+                                                            <input
+                                                                type="color"
+                                                                {...colorField}
+                                                                className="w-12 h-8 p-0 rounded border cursor-pointer"
+                                                                style={{
+                                                                    backgroundColor: 'transparent',
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <span className="text-sm text-muted-foreground">
+                                                            {colorField.value}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            />
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="descricao"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Descrição</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Descrição do vestibular" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </>
+                );
+            default:
+                return null;
         }
     };
 
@@ -191,220 +822,48 @@ function CadastroForm() {
                     <h1 className="mt-4 text-2xl font-bold tracking-tight">Cadastro</h1>
                 </div>
 
-                <Alert submitSuccess={submitSuccess} submitError={submitError} />
+                {submitSuccess && (
+                    <div className="mb-4 p-4 bg-green-100 text-green-700 rounded-md justify-center flex flex-row gap-3">
+                        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAACXBIWXMAAAsTAAALEwEAmpwYAAACD0lEQVR4nM1WP2sUURBfxUYtlLuZ29MIGtCIqI2iXpKZXVDyCQRLK0kl2CiWv9m9CKLoJzBWBr9AJCkULGy0sPZPpxwm2PgRZDZncuutm93jOBxYHvvezO838968mRcE/4sQZJGgzznR603MHfWRIc8IemssBAw1hn4ii+4QZJ0hv3z0fzb9zKbJqMB32eQNmfxgk/ftB8JFej7v665H0NduV5EgPkmQjVYSLTSWOlNVbBpLnSnXdztKo1O7GhDkkX+VPKpti3gfQ1IPPezqdDCChF2dzrYYkjrekAJDVtnkFSNu1wJO588y9PYOTtzewpHVIpIvBJmp5TqCvQR95yk+ON1M50575hWRfGgm0aU6HORpDH0bBMGewfkwkSuedTnl8PHCQTbtNdLoTFWCEPEJMvlZFL3jON4RXDywE4VpwpAXtaKArLPJ/X+ts8mKX+RBkp6H+Leib1+7O3t8CADzNxnysTCDclumvXwkJisF3i4y5Fsrjc5vG2O2lV066IWySLNIBktO2ZkQoht90Kjv0EuCPiwj+HMmjls5u5rQq2S6ydCnnurHnnT2l5JALzve0AKZfC2rOyHic2zyvZXItTKCDAsy486MdOMPIT68G0HpjZ9I7ZpMFZ5kP8l1RshGtc6om67PpveCUWSr5PR7vOla1uNN17Z7vO//OMRfJWy6nHutmC6P7bUyDvkNKEfqWvhHuk8AAAAASUVORK5CYII=" alt="approval--v1" />
+                        Cadastro realizado com sucesso!
+                    </div>
+                )}
+
+                {submitError && (
+                    <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md justify-center flex flex-row gap-3 items-center">
+                        <img src="/assets/alert_error_icon.png" alt="error--v1" />
+                        {submitError}
+                    </div>
+                )}
 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
+                        <SelectFormField
                             control={form.control}
                             name="tipo"
-                            render={({ field }) => (
-                                <FormItem className="mb-6">
-                                    <FormLabel>Tipo de Usuário</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        defaultValue={field.value}
-                                        disabled={isSubmitting}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Selecione o tipo de usuário" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="selecione">Selecione</SelectItem>
-                                            <SelectItem value="alunos">Alunos</SelectItem>
-                                            <SelectItem value="professores">Professores</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
+                            label="Tipo de Usuário"
+                            options={[
+                                { value: "selecione", label: "Selecione" },
+                                { value: "alunos", label: "Alunos" },
+                                { value: "professores", label: "Professores" },
+                                { value: "turmas", label: "Turmas" },
+                                { value: "disciplinas", label: "Disciplinas" },
+                                { value: "concursos", label: "Concursos" },
+                                { value: "vestibulares", label: "Vestibulares" }
+                            ]}
+                            placeholder="Selecione o tipo de usuário"
+                            disabled={isSubmitting}
                         />
 
-                        {tipo && tipo !== "selecione" && (
-                            <>
-                                {tipo === "alunos" && (
-                                    <>
-                                        <FormField
-                                            control={form.control}
-                                            name="nome"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Nome</FormLabel>
-                                                    <FormControl>
-                                                        <Input placeholder="Nome" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
+                        {tipo && tipo !== "selecione" && renderFormByType()}
 
-                                        <FormField
-                                            control={form.control}
-                                            name="email"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Email</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="email" placeholder="Email" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <FormField
-                                            control={form.control}
-                                            name="senha"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Senha</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="password" placeholder="Senha" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <FormField
-                                            control={form.control}
-                                            name="matricula"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Matrícula</FormLabel>
-                                                    <FormControl>
-                                                        <Input maxLength={8} placeholder="Matrícula" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <Button 
-                                            className="w-full" 
-                                            onClick={gerarMatriculaUnica}
-                                            disabled={isGeneratingMatricula}
-                                        >
-                                            {isGeneratingMatricula ? 'Gerando...' : 'Gerar Número de Matrícula'}
-                                        </Button>
-
-                                        <FormField
-                                            control={form.control}
-                                            name="curso"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Curso</FormLabel>
-                                                    <FormControl>
-                                                        <Input placeholder="Curso" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </>
-                                )}
-
-                                {tipo === "professores" && (
-                                    <>
-                                        <FormField
-                                            control={form.control}
-                                            name="nome"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Nome</FormLabel>
-                                                    <FormControl>
-                                                        <Input placeholder="Nome" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <FormField
-                                            control={form.control}
-                                            name="email"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Email</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="email" placeholder="Email" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <FormField
-                                            control={form.control}
-                                            name="senha"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Senha</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="password" placeholder="Senha" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <FormField
-                                            control={form.control}
-                                            name="formacao"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Formação</FormLabel>
-                                                    <FormControl>
-                                                        <Input placeholder="Formação" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <FormField
-                                            control={form.control}
-                                            name="area"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Área</FormLabel>
-                                                    <Select
-                                                        onValueChange={field.onChange}
-                                                        defaultValue={field.value}
-                                                        disabled={isLoading}
-                                                    >
-                                                        <FormControl>
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Selecione uma área" />
-                                                            </SelectTrigger>
-                                                        </FormControl>
-                                                        <SelectContent>
-                                                            {areas.map((area, index) => (
-                                                                <SelectItem key={`area-${index}`} value={area}>
-                                                                    {area}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                    {error && <p className="text-red-500 text-sm">{error}</p>}
-                                                    {isLoading && <p className="text-sm text-muted-foreground">Carregando áreas...</p>}
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </>
-                                )}
-
-                                <Button
-                                    type="submit"
-                                    className="w-full mt-6"
-                                    disabled={isSubmitting}
-                                >
-                                    {isSubmitting ? 'Cadastrando...' : 'Cadastrar'}
-                                </Button>
-                            </>
-                        )}
+                        <Button
+                            type="submit"
+                            className="w-full mt-6"
+                            disabled={isSubmitting || !tipo || tipo === "selecione"}
+                        >
+                            {isSubmitting ? 'Cadastrando...' : 'Cadastrar'}
+                        </Button>
                     </form>
                 </Form>
             </div>

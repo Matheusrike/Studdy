@@ -6,239 +6,16 @@ import Logo from "@/components/ui/logo";
 import { ExternalLink, GraduationCap, Calendar, BookOpen, School, Search, Star, StarOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
+import React from "react";
 
-const vestibulares = [
-  {
-    title: "ENEM",
-    description: "Exame Nacional do Ensino Médio",
-    link: "https://www.gov.br/inep/pt-br/assuntos/noticias/enem/enem-2024",
-    icon: GraduationCap,
-    color: "bg-blue-500",
-    date: "Novembro 2024",
-    type: "Público",
-    state: "Nacional"
-  },
-  {
-    title: "FUVEST",
-    description: "Fundação Universitária para o Vestibular",
-    link: "https://www.fuvest.br/",
-    icon: BookOpen,
-    color: "bg-red-500",
-    date: "Janeiro 2025",
-    type: "Público",
-    state: "SP"
-  },
-  {
-    title: "UNICAMP",
-    description: "Universidade Estadual de Campinas",
-    link: "https://www.comvest.unicamp.br/",
-    icon: GraduationCap,
-    color: "bg-green-500",
-    date: "Janeiro 2025",
-    type: "Público",
-    state: "SP"
-  },
-  {
-    title: "UNESP",
-    description: "Universidade Estadual Paulista",
-    link: "https://www.vunesp.com.br/",
-    icon: BookOpen,
-    color: "bg-yellow-500",
-    date: "Janeiro 2025",
-    type: "Público",
-    state: "SP"
-  },
-  {
-    title: "UNIFESP",
-    description: "Universidade Federal de São Paulo",
-    link: "https://www.unifesp.br/",
-    icon: GraduationCap,
-    color: "bg-purple-500",
-    date: "Janeiro 2025",
-    type: "Público",
-    state: "SP"
-  },
-  {
-    title: "USP",
-    description: "Universidade de São Paulo - Vestibular",
-    link: "https://www.usp.br/",
-    icon: School,
-    color: "bg-red-600",
-    date: "Janeiro 2025",
-    type: "Público",
-    state: "SP"
-  },
-  {
-    title: "UNB",
-    description: "Universidade de Brasília",
-    link: "https://www.unb.br/",
-    icon: School,
-    color: "bg-green-600",
-    date: "Julho 2024",
-    type: "Público",
-    state: "DF"
-  },
-  {
-    title: "UFMG",
-    description: "Universidade Federal de Minas Gerais",
-    link: "https://www.ufmg.br/",
-    icon: School,
-    color: "bg-yellow-600",
-    date: "Novembro 2024",
-    type: "Público",
-    state: "MG"
-  },
-  {
-    title: "UFRJ",
-    description: "Universidade Federal do Rio de Janeiro",
-    link: "https://www.ufrj.br/",
-    icon: School,
-    color: "bg-blue-700",
-    date: "Janeiro 2025",
-    type: "Público",
-    state: "RJ"
-  },
-  {
-    title: "UFRGS",
-    description: "Universidade Federal do Rio Grande do Sul",
-    link: "https://www.ufrgs.br/",
-    icon: School,
-    color: "bg-red-700",
-    date: "Janeiro 2025",
-    type: "Público",
-    state: "RS"
-  },
-  {
-    title: "UFSC",
-    description: "Universidade Federal de Santa Catarina",
-    link: "https://www.ufsc.br/",
-    icon: School,
-    color: "bg-green-700",
-    date: "Dezembro 2024",
-    type: "Público",
-    state: "SC"
-  },
-  {
-    title: "UFBA",
-    description: "Universidade Federal da Bahia",
-    link: "https://www.ufba.br/",
-    icon: School,
-    color: "bg-blue-800",
-    date: "Dezembro 2024",
-    type: "Público",
-    state: "BA"
-  },
-  {
-    title: "UFPE",
-    description: "Universidade Federal de Pernambuco",
-    link: "https://www.ufpe.br/",
-    icon: School,
-    color: "bg-red-800",
-    date: "Dezembro 2024",
-    type: "Público",
-    state: "PE"
-  },
-  {
-    title: "UFRN",
-    description: "Universidade Federal do Rio Grande do Norte",
-    link: "https://www.ufrn.br/",
-    icon: School,
-    color: "bg-green-800",
-    date: "Novembro 2024",
-    type: "Público",
-    state: "RN"
-  },
-  {
-    title: "PUC-SP",
-    description: "Pontifícia Universidade Católica de São Paulo",
-    link: "https://www.pucsp.br/",
-    icon: School,
-    color: "bg-purple-800",
-    date: "Dezembro 2024",
-    type: "Privado",
-    state: "SP"
-  },
-  {
-    title: "PUC-Rio",
-    description: "Pontifícia Universidade Católica do Rio de Janeiro",
-    link: "https://www.puc-rio.br/",
-    icon: School,
-    color: "bg-blue-900",
-    date: "Dezembro 2024",
-    type: "Privado",
-    state: "RJ"
-  },
-  {
-    title: "PUC-MG",
-    description: "Pontifícia Universidade Católica de Minas Gerais",
-    link: "https://www.pucminas.br/",
-    icon: School,
-    color: "bg-red-900",
-    date: "Dezembro 2024",
-    type: "Privado",
-    state: "MG"
-  },
-  {
-    title: "PUC-RS",
-    description: "Pontifícia Universidade Católica do Rio Grande do Sul",
-    link: "https://www.pucrs.br/",
-    icon: School,
-    color: "bg-green-900",
-    date: "Dezembro 2024",
-    type: "Privado",
-    state: "RS"
-  },
-  {
-    title: "PUC-Campinas",
-    description: "Pontifícia Universidade Católica de Campinas",
-    link: "https://www.puc-campinas.edu.br/",
-    icon: School,
-    color: "bg-yellow-900",
-    date: "Dezembro 2024",
-    type: "Privado",
-    state: "SP"
-  },
-  {
-    title: "Mackenzie",
-    description: "Universidade Presbiteriana Mackenzie",
-    link: "https://www.mackenzie.br/",
-    icon: School,
-    color: "bg-blue-950",
-    date: "Dezembro 2024",
-    type: "Privado",
-    state: "SP"
-  },
-  {
-    title: "Insper",
-    description: "Instituto de Ensino e Pesquisa",
-    link: "https://www.insper.edu.br/",
-    icon: School,
-    color: "bg-red-950",
-    date: "Dezembro 2024",
-    type: "Privado",
-    state: "SP"
-  },
-  {
-    title: "FGV",
-    description: "Fundação Getúlio Vargas",
-    link: "https://www.fgv.br/",
-    icon: School,
-    color: "bg-green-950",
-    date: "Dezembro 2024",
-    type: "Privado",
-    state: "SP"
-  },
-  {
-    title: "ESPM",
-    description: "Escola Superior de Propaganda e Marketing",
-    link: "https://www.espm.br/",
-    icon: School,
-    color: "bg-yellow-950",
-    date: "Dezembro 2024",
-    type: "Privado",
-    state: "SP"
-  }
-];
+const vestibulares = require("@/dados/vestibulares.json");
+
+const iconMap = {
+    GraduationCap: GraduationCap,
+    BookOpen: BookOpen,
+    School: School,
+    Calendar: Calendar
+};
 
 export default function VestibularesPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -262,8 +39,8 @@ export default function VestibularesPage() {
 
   const types = [
     { id: 'todos', label: 'Todos' },
-    { id: 'Público', label: 'Públicos' },
-    { id: 'Privado', label: 'Privados' }
+    { id: 'publico', label: 'Públicos' },
+    { id: 'privado', label: 'Privados' }
   ];
 
   const filterItems = (items) => {
@@ -324,7 +101,7 @@ export default function VestibularesPage() {
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className={`p-3 rounded-lg ${vestibular.color} text-white`}>
-                      <vestibular.icon className="h-6 w-6" />
+                      {React.createElement(iconMap[vestibular.icon], { className: "h-6 w-6" })}
                     </div>
                     <div className="flex items-center gap-2">
                       <button
