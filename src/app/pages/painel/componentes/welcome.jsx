@@ -5,6 +5,11 @@ import {
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 
+const user = {
+    name: 'Gi Johnson',
+    avatar: '/img/avatars/avatar-1.jpg',
+}
+
 
 export default function Welcome() {
     return (
@@ -12,15 +17,15 @@ export default function Welcome() {
             <div className="flex items-center gap-6">
                 <div className="relative h-16 w-16 rounded-2xl overflow-hidden ring-4 ring-primary/10 shadow-lg">
                     <Image
-                        src="/img/avatars/avatar-1.jpg"
+                        src={user.avatar}
                         alt="Student Avatar"
                         fill
                         className="object-cover"
                     />
                 </div>
                 <div>
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Welcome back, Sarah!</h1>
-                    <p className="text-muted-foreground text-lg">Your mock exams are ready</p>
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Bem-vindo(a), {user.name}!</h1>
+                    <p className="text-muted-foreground text-lg">Bom dia! Que tal começar seus estudos hoje?</p>
                 </div>
             </div>
             <div className="relative hidden md:block">

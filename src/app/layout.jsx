@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { UserProvider } from "@/contexts/UserContext";
 import { usePathname } from "next/navigation";
+import { Toaster } from 'sonner';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -34,6 +35,7 @@ export default function RootLayout({ children }) {
 						)}
 					</SidebarProvider>
 				</UserProvider>
+				<Toaster richColors />
 			</body>
 		</html>
 	);
