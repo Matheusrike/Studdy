@@ -41,6 +41,24 @@ const VESTIBULARES_ICON_OPTIONS = [
     { label: 'Calendário', value: 'Calendar', icon: Calendar }
 ];
 
+const SHIFT_OPTIONS = [
+    { value: 'Morning', label: 'Manhã' },
+    { value: 'Afternoon', label: 'Tarde' },
+    { value: 'Evening', label: 'Noite' }
+];
+
+const CONCURSO_CATEGORIES = [
+    { value: 'militares', label: 'Militares' },
+    { value: 'federais', label: 'Federais' },
+    { value: 'estaduais', label: 'Estaduais' },
+    { value: 'municipais', label: 'Municipais' }
+];
+
+const VESTIBULAR_CATEGORIES = [
+    { value: 'publico', label: 'Público' },
+    { value: 'privado', label: 'Privado' }
+];
+
 const formSchema = z.object({
     tipo: z.string().min(1, "Selecione um tipo de usuário"),
     name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -60,6 +78,8 @@ const formSchema = z.object({
     tipo_concurso: z.string().optional().or(z.literal('')),
     link: z.string().optional().or(z.literal('')),
     category: z.string().optional().or(z.literal('')),
+    shift: z.string().min(1, "Turno é obrigatório").optional().or(z.literal('')),
+    course: z.string().min(1, "Curso é obrigatório").optional().or(z.literal('')),
 });
 
 // Componentes de Formulário
@@ -104,6 +124,68 @@ const SelectFormField = ({ control, name, label, options, placeholder, disabled 
                         ))}
                     </SelectContent>
                 </Select>
+                <FormMessage />
+            </FormItem>
+        )}
+    />
+);
+
+const IconSelector = ({ control, name, label, options, form }) => (
+    <FormField
+        control={control}
+        name={name}
+        render={({ field }) => (
+            <FormItem>
+                <FormLabel>{label}</FormLabel>
+                <FormControl>
+                    <div className="space-y-4">
+                        <div className="flex gap-2 flex-wrap">
+                            {options.map(opt => {
+                                const Icon = opt.icon;
+                                return (
+                                    <button
+                                        type="button"
+                                        key={opt.value}
+                                        onClick={() => field.onChange(opt.value)}
+                                        className={`p-2 rounded-lg border transition-all duration-200 flex items-center justify-center ${field.value === opt.value ? 'bg-[#133D86] text-white border-[#133D86] scale-110 shadow-lg' : 'bg-white text-[#133D86] border-gray-200 hover:bg-[#e6eefc]'} `}
+                                        title={opt.label}
+                                        style={{
+                                            backgroundColor: field.value === opt.value ? form.watch("color") : 'white',
+                                            color: field.value === opt.value ? 'white' : form.watch("color"),
+                                            borderColor: field.value === opt.value ? form.watch("color") : '#e5e7eb'
+                                        }}
+                                    >
+                                        <Icon className="h-6 w-6" />
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <FormField
+                            control={control}
+                            name="color"
+                            render={({ field: colorField }) => (
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm font-medium">
+                                        Cor do Ícone:
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type="color"
+                                            {...colorField}
+                                            className="w-12 h-8 p-0 rounded border cursor-pointer"
+                                            style={{
+                                                backgroundColor: 'transparent',
+                                            }}
+                                        />
+                                    </div>
+                                    <span className="text-sm text-muted-foreground">
+                                        {colorField.value}
+                                    </span>
+                                </div>
+                            )}
+                        />
+                    </div>
+                </FormControl>
                 <FormMessage />
             </FormItem>
         )}
@@ -155,7 +237,6 @@ const ProfessorForm = ({ control, areas, isLoading, error }) => (
             type="date"
             placeholder="Data de Nascimento"
         />
-    
         <SelectFormField
             control={control}
             name="area"
@@ -167,7 +248,6 @@ const ProfessorForm = ({ control, areas, isLoading, error }) => (
             placeholder="Selecione uma disciplina"
             disabled={isLoading}
         />
-
         <SelectFormField
             control={control}
             name="area2"
@@ -223,11 +303,11 @@ const AlunoForm = ({ control, turmas, isLoading, error }) => (
             control={control}
             name="class"
             label="Turma"
-            placeholder="Selecione uma turma"
             options={turmas.map(turma => ({ 
                 value: turma.id.toString(), 
                 label: `${turma.name} - ${turma.shift} (${turma.course})` 
             }))}
+            placeholder="Selecione uma turma"
             disabled={isLoading}
         />
         {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -243,17 +323,104 @@ const TurmaForm = ({ control }) => (
             label="Nome da Turma"
             placeholder="Nome da Turma"
         />
-        <BaseFormField
+        <SelectFormField
             control={control}
             name="shift"
             label="Turno"
-            placeholder="Turno da turma"
+            options={SHIFT_OPTIONS}
+            placeholder="Selecione o turno"
         />
         <BaseFormField
             control={control}
             name="course"
             label="Curso"
-            placeholder="Curso"
+            placeholder="Nome do Curso"
+        />
+    </>
+);
+
+const ConcursoForm = ({ control, form }) => (
+    <>
+        <BaseFormField
+            control={control}
+            name="name"
+            label="Nome do Concurso"
+            placeholder="Nome do Concurso"
+        />
+        <BaseFormField
+            control={control}
+            name="link"
+            label="Link do Concurso"
+            placeholder="https://..."
+        />
+        <SelectFormField
+            control={control}
+            name="tipo_concurso"
+            label="Categoria"
+            options={CONCURSO_CATEGORIES}
+            placeholder="Selecione a categoria"
+        />
+        <BaseFormField
+            control={control}
+            name="data"
+            label="Data do Concurso"
+            type="date"
+        />
+        <IconSelector
+            control={control}
+            name="icone"
+            label="Ícone"
+            options={CONCURSOS_ICON_OPTIONS}
+            form={form}
+        />
+        <BaseFormField
+            control={control}
+            name="descricao"
+            label="Descrição"
+            placeholder="Descrição do concurso"
+        />
+    </>
+);
+
+const VestibularForm = ({ control, form }) => (
+    <>
+        <BaseFormField
+            control={control}
+            name="name"
+            label="Nome do Vestibular"
+            placeholder="Nome do Vestibular"
+        />
+        <BaseFormField
+            control={control}
+            name="link"
+            label="Link do Vestibular"
+            placeholder="https://..."
+        />
+        <SelectFormField
+            control={control}
+            name="tipo_concurso"
+            label="Categoria"
+            options={VESTIBULAR_CATEGORIES}
+            placeholder="Selecione a categoria"
+        />
+        <BaseFormField
+            control={control}
+            name="data"
+            label="Data do Vestibular"
+            type="date"
+        />
+        <IconSelector
+            control={control}
+            name="icone"
+            label="Ícone"
+            options={VESTIBULARES_ICON_OPTIONS}
+            form={form}
+        />
+        <BaseFormField
+            control={control}
+            name="descricao"
+            label="Descrição"
+            placeholder="Descrição do vestibular"
         />
     </>
 );
@@ -278,11 +445,12 @@ function CadastroForm() {
             password: "",
             cpf: "",
             birth_date: "",
-            curso: "",
             formacao: "",
             area: "",
             descricao: "",
             horario: "",
+            shift: "",
+            course: "",
             data: "",
             icone: "",
             color: "#133D86",
@@ -414,16 +582,6 @@ function CadastroForm() {
             const endpoint = getEndpoint(data.tipo);
             if (!endpoint) throw new Error("Tipo de cadastro inválido");
 
-            // Formata a data para o padrão correto (DD/MM/YYYY)
-            const formatDate = (dateString) => {
-                if (!dateString) return null;
-                const date = new Date(dateString);
-                const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
-                return `${day}/${month}/${year}`;
-            };
-
             // Limpa os dados antes de enviar
             const cleanData = {
                 disciplinas: {
@@ -439,7 +597,7 @@ function CadastroForm() {
                         role: "Teacher"
                     },
                     teacher: {
-                        subjects: [parseInt(data.area || '1'),parseInt(data.area2 || '2')].filter(id => !isNaN(id)) // Remove valores inválidos
+                        subjects: [parseInt(data.area || '1'),parseInt(data.area2 || '2')].filter(id => !isNaN(id))
                     }
                 },
                 alunos: {
@@ -478,8 +636,20 @@ function CadastroForm() {
             });
 
             console.log("Status da resposta:", response.status);
-            const responseData = await response.json();
-            console.log("Resposta do servidor:", responseData);
+            
+            // Verifica se a resposta tem conteúdo antes de tentar fazer o parse
+            const responseText = await response.text();
+            console.log("Resposta bruta do servidor:", responseText);
+            
+            let responseData;
+            try {
+                responseData = responseText ? JSON.parse(responseText) : {};
+            } catch (e) {
+                console.error("Erro ao fazer parse da resposta:", e);
+                responseData = { message: "Erro ao processar resposta do servidor" };
+            }
+            
+            console.log("Resposta processada:", responseData);
 
             if (!response.ok) {
                 throw new Error(responseData.message || `Erro ao cadastrar: ${response.status}`);
@@ -518,297 +688,9 @@ function CadastroForm() {
             case "turmas":
                 return <TurmaForm control={form.control} />;
             case "concursos":
-                return (
-                    <>
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Nome do Concurso</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Nome do Concurso" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="link"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Link do Concurso</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="https://..." {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="tipo_concurso"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Categoria</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        defaultValue={field.value}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Selecione a categoria" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="militares">Militares</SelectItem>
-                                            <SelectItem value="federais">Federais</SelectItem>
-                                            <SelectItem value="estaduais">Estaduais</SelectItem>
-                                            <SelectItem value="municipais">Municipais</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="data"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Data do Concurso</FormLabel>
-                                    <FormControl>
-                                        <Input type="date" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="icone"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Ícone</FormLabel>
-                                    <FormControl>
-                                        <div className="space-y-4">
-                                            <div className="flex gap-2 flex-wrap">
-                                                {CONCURSOS_ICON_OPTIONS.map(opt => {
-                                                    const Icon = opt.icon;
-                                                    return (
-                                                        <button
-                                                            type="button"
-                                                            key={opt.value}
-                                                            onClick={() => field.onChange(opt.value)}
-                                                            className={`p-2 rounded-lg border transition-all duration-200 flex items-center justify-center ${field.value === opt.value ? 'bg-[#133D86] text-white border-[#133D86] scale-110 shadow-lg' : 'bg-white text-[#133D86] border-gray-200 hover:bg-[#e6eefc]'} `}
-                                                            title={opt.label}
-                                                            style={{
-                                                                backgroundColor: field.value === opt.value ? form.watch("color") : 'white',
-                                                                color: field.value === opt.value ? 'white' : form.watch("color"),
-                                                                borderColor: field.value === opt.value ? form.watch("color") : '#e5e7eb'
-                                                            }}
-                                                        >
-                                                            <Icon className="h-6 w-6" />
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                            <FormField
-                                                control={form.control}
-                                                name="color"
-                                                render={({ field: colorField }) => (
-                                                    <div className="flex items-center gap-2">
-                                                        <label className="text-sm font-medium">
-                                                            Cor do Ícone:
-                                                        </label>
-                                                        <div className="relative">
-                                                            <input
-                                                                type="color"
-                                                                {...colorField}
-                                                                className="w-12 h-8 p-0 rounded border cursor-pointer"
-                                                                style={{
-                                                                    backgroundColor: 'transparent',
-                                                                }}
-                                                            />
-                                                        </div>
-                                                        <span className="text-sm text-muted-foreground">
-                                                            {colorField.value}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            />
-                                        </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="descricao"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Descrição</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Descrição do concurso" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </>
-                );
+                return <ConcursoForm control={form.control} form={form} />;
             case "vestibulares":
-                return (
-                    <>
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Nome do Vestibular</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Nome do Vestibular" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="link"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Link do Vestibular</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="https://..." {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="tipo_concurso"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Categoria</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        defaultValue={field.value}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Selecione a categoria" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="publico">Público</SelectItem>
-                                            <SelectItem value="privado">Privado</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="data"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Data do Vestibular</FormLabel>
-                                    <FormControl>
-                                        <Input type="date" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="icone"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Ícone</FormLabel>
-                                    <FormControl>
-                                        <div className="space-y-4">
-                                            <div className="flex gap-2 flex-wrap">
-                                                {VESTIBULARES_ICON_OPTIONS.map(opt => {
-                                                    const Icon = opt.icon;
-                                                    return (
-                                                        <button
-                                                            type="button"
-                                                            key={opt.value}
-                                                            onClick={() => field.onChange(opt.value)}
-                                                            className={`p-2 rounded-lg border transition-all duration-200 flex items-center justify-center ${field.value === opt.value ? 'bg-[#133D86] text-white border-[#133D86] scale-110 shadow-lg' : 'bg-white text-[#133D86] border-gray-200 hover:bg-[#e6eefc]'} `}
-                                                            title={opt.label}
-                                                            style={{
-                                                                backgroundColor: field.value === opt.value ? form.watch("color") : 'white',
-                                                                color: field.value === opt.value ? 'white' : form.watch("color"),
-                                                                borderColor: field.value === opt.value ? form.watch("color") : '#e5e7eb'
-                                                            }}
-                                                        >
-                                                            <Icon className="h-6 w-6" />
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                            <FormField
-                                                control={form.control}
-                                                name="color"
-                                                render={({ field: colorField }) => (
-                                                    <div className="flex items-center gap-2">
-                                                        <label className="text-sm font-medium">
-                                                            Cor do Ícone:
-                                                        </label>
-                                                        <div className="relative">
-                                                            <input
-                                                                type="color"
-                                                                {...colorField}
-                                                                className="w-12 h-8 p-0 rounded border cursor-pointer"
-                                                                style={{
-                                                                    backgroundColor: 'transparent',
-                                                                }}
-                                                            />
-                                                        </div>
-                                                        <span className="text-sm text-muted-foreground">
-                                                            {colorField.value}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            />
-                                        </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="descricao"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Descrição</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Descrição do vestibular" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </>
-                );
+                return <VestibularForm control={form.control} form={form} />;
             default:
                 return null;
         }
