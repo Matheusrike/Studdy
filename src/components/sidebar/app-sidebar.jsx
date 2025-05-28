@@ -67,8 +67,7 @@ const dataAluno = {
         { title: "Materiais", url: "/pages/material" },
         { title: "Videoaulas", url: "/pages/material/videoaulas" },
         { title: "Apostilas", url: "/pages/material/apostilas" },
-        { title: "Resumos", url: "/pages/material/resumos" },
-        { title: "Exercícios", url: "/pages/material/exercicios" }
+        { title: "Resumos", url: "/pages/material/resumos" }
       ],
     }
   ],

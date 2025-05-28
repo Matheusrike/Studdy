@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Video, FileText, BookOpen, PenTool } from 'lucide-react';
@@ -8,75 +8,39 @@ import Link from 'next/link';
 
 export default function MaterialPage() {
     const [activeTab, setActiveTab] = useState('videoaulas');
+    const [materiais, setMateriais] = useState({
+        videoaulas: [],
+        apostilas: [],
+        resumos: []
+    });
 
-    const materiais = {
-        videoaulas: [
-            {
-                id: 1,
-                titulo: "Introdução à Matemática",
-                professor: "Prof. Silva",
-                duracao: "45 min",
-                categoria: "Matemática",
-                thumbnail: "/thumbnails/math.jpg"
-            },
-            {
-                id: 2,
-                titulo: "Gramática Básica",
-                professor: "Prof. Santos",
-                duracao: "30 min",
-                categoria: "Português",
-                thumbnail: "/thumbnails/portugues.jpg"
-            }
-        ],
-        apostilas: [
-            {
-                id: 1,
-                titulo: "Apostila de Física",
-                professor: "Prof. Oliveira",
-                categoria: "Física",
-                tamanho: "2.5 MB"
-            },
-            {
-                id: 2,
-                titulo: "Apostila de Química",
-                professor: "Prof. Costa",
-                categoria: "Química",
-                tamanho: "1.8 MB"
-            }
-        ],
-        resumos: [
-            {
-                id: 1,
-                titulo: "Resumo de História",
-                professor: "Prof. Lima",
-                categoria: "História",
-                ultimaAtualizacao: "2024-03-15"
-            },
-            {
-                id: 2,
-                titulo: "Resumo de Geografia",
-                professor: "Prof. Souza",
-                categoria: "Geografia",
-                ultimaAtualizacao: "2024-03-14"
-            }
-        ],
-        exercicios: [
-            {
-                id: 1,
-                titulo: "Exercícios de Matemática",
-                professor: "Prof. Silva",
-                categoria: "Matemática",
-                quantidade: 50
-            },
-            {
-                id: 2,
-                titulo: "Exercícios de Português",
-                professor: "Prof. Santos",
-                categoria: "Português",
-                quantidade: 30
-            }
-        ]
-    };
+    // useEffect(() => {
+    //     const carregarMateriais = async () => {
+    //         try {
+    //             const [videoaulasRes, apostilasRes, resumosRes] = await Promise.all([
+    //                 fetch('http://localhost:3002/videoaulas'),
+    //                 fetch('http://localhost:3002/apostilas'),
+    //                 fetch('http://localhost:3002/resumos')
+    //             ]);
+
+    //             const [videoaulas, apostilas, resumos] = await Promise.all([
+    //                 videoaulasRes.json(),
+    //                 apostilasRes.json(),
+    //                 resumosRes.json()
+    //             ]);
+
+    //             setMateriais({
+    //                 videoaulas,
+    //                 apostilas,
+    //                 resumos
+    //             });
+    //         } catch (error) {
+    //             console.error('Erro ao carregar materiais:', error);
+    //         }
+    //     };
+
+    //     carregarMateriais();
+    // }, []);
 
     return (
         <div className="container mx-auto px-4 py-8">

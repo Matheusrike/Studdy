@@ -22,24 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { ExternalLink, GraduationCap, Calendar, BookOpen, School, Search, Star, StarOff, Shield, Briefcase, Building2, Landmark, Scale } from "lucide-react";
-import Alert from "@/components/ui/alerts";
-
-const CONCURSOS_ICON_OPTIONS = [
-    { label: 'Escudo', value: 'Shield', icon: Shield },
-    { label: 'Escola', value: 'School', icon: School },
-    { label: 'Pasta', value: 'Briefcase', icon: Briefcase },
-    { label: 'Prédio', value: 'Building2', icon: Building2 },
-    { label: 'Monumento', value: 'Landmark', icon: Landmark },
-    { label: 'Balança', value: 'Scale', icon: Scale }
-];
-
-const VESTIBULARES_ICON_OPTIONS = [
-    { label: 'Graduação', value: 'GraduationCap', icon: GraduationCap },
-    { label: 'Livro', value: 'BookOpen', icon: BookOpen },
-    { label: 'Escola', value: 'School', icon: School },
-    { label: 'Calendário', value: 'Calendar', icon: Calendar }
-];
+import { GraduationCap, Calendar, BookOpen, School, Shield, Briefcase, Building2, Landmark, Scale } from "lucide-react";
 
 const SHIFT_OPTIONS = [
     { value: 'Morning', label: 'Manhã' },
@@ -59,27 +42,111 @@ const VESTIBULAR_CATEGORIES = [
     { value: 'privado', label: 'Privado' }
 ];
 
+const ICON_OPTIONS = {
+    concursos: [
+        { label: 'Escudo', value: 'Shield', icon: Shield },
+        { label: 'Escola', value: 'School', icon: School },
+        { label: 'Pasta', value: 'Briefcase', icon: Briefcase },
+        { label: 'Prédio', value: 'Building2', icon: Building2 },
+        { label: 'Monumento', value: 'Landmark', icon: Landmark },
+        { label: 'Balança', value: 'Scale', icon: Scale }
+    ],
+    vestibulares: [
+        { label: 'Graduação', value: 'GraduationCap', icon: GraduationCap },
+        { label: 'Livro', value: 'BookOpen', icon: BookOpen },
+        { label: 'Escola', value: 'School', icon: School },
+        { label: 'Calendário', value: 'Calendar', icon: Calendar }
+    ]
+};
+
+const CATEGORIES = {
+    concurso: [
+        { value: 'militares', label: 'Militares' },
+        { value: 'federais', label: 'Federais' },
+        { value: 'estaduais', label: 'Estaduais' },
+        { value: 'municipais', label: 'Municipais' }
+    ],
+    vestibular: [
+        { value: 'publico', label: 'Público' },
+        { value: 'privado', label: 'Privado' }
+    ]
+};
+
+const ENDPOINTS = {
+    alunos: "http://localhost:3001/admin/students",
+    professores: "http://localhost:3001/admin/teachers",
+    turmas: "http://localhost:3001/admin/classes",
+    concursos: "http://localhost:3001/admin/contest",
+    vestibulares: "http://localhost:3001/admin/vestibular",
+    disciplinas: "http://localhost:3001/subject"
+};
+
+const shiftTurma = (shift) => {
+    const shiftOption = SHIFT_OPTIONS.find(option => option.value === shift);
+    return shiftOption ? shiftOption.label : shift;
+};
+
+const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('pt-BR') : null;
+
 const formSchema = z.object({
     tipo: z.string().min(1, "Selecione um tipo de usuário"),
-    name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+    name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").max(100, "Nome deve ter no máximo 100 caracteres"),
     email: z.string().email("Email inválido").optional().or(z.literal('')),
-    password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").optional().or(z.literal('')),
-    cpf: z.string().min(11, "CPF deve ter 11 dígitos").optional().or(z.literal('')),
-    birth_date: z.string().optional().or(z.literal('')),
+    password: z.string()
+        .min(6, "Senha deve ter pelo menos 6 caracteres")
+        .regex(/[A-Z]/, "Senha deve conter pelo menos uma letra maiúscula")
+        .regex(/[a-z]/, "Senha deve conter pelo menos uma letra minúscula")
+        .regex(/[0-9]/, "Senha deve conter pelo menos um número")
+        .optional()
+        .or(z.literal('')),
+    cpf: z.string()
+        .min(11, "CPF deve ter 11 dígitos")
+        .max(14, "CPF deve ter no máximo 14 dígitos")
+        .regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/, "CPF inválido")
+        .optional()
+        .or(z.literal('')),
+    birth_date: z.string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida")
+        .optional()
+        .or(z.literal('')),
     class: z.string().min(1, "Selecione uma turma").optional().or(z.literal('')),
-    curso: z.string().optional().or(z.literal('')),
-    formacao: z.string().optional().or(z.literal('')),
+    curso: z.string().max(100, "Curso deve ter no máximo 100 caracteres").optional().or(z.literal('')),
+    formacao: z.string().max(100, "Formação deve ter no máximo 100 caracteres").optional().or(z.literal('')),
     area: z.string().optional().or(z.literal('')),
-    descricao: z.string().optional().or(z.literal('')),
+    descricao: z.string().max(500, "Descrição deve ter no máximo 500 caracteres").optional().or(z.literal('')),
     horario: z.string().optional().or(z.literal('')),
-    data: z.string().optional().or(z.literal('')),
+    data: z.string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida")
+        .optional()
+        .or(z.literal('')),
     icone: z.string().optional().or(z.literal('')),
-    color: z.string().optional().or(z.literal('')),
+    color: z.string()
+        .regex(/^#[0-9A-Fa-f]{6}$/, "Cor inválida")
+        .optional()
+        .or(z.literal('')),
     tipo_concurso: z.string().optional().or(z.literal('')),
-    link: z.string().optional().or(z.literal('')),
+    link: z.string()
+        .url("Link inválido")
+        .optional()
+        .or(z.literal('')),
     category: z.string().optional().or(z.literal('')),
     shift: z.string().min(1, "Turno é obrigatório").optional().or(z.literal('')),
     course: z.string().min(1, "Curso é obrigatório").optional().or(z.literal('')),
+}).refine((data) => {
+    // Validações específicas por tipo
+    if (data.tipo === 'professores' || data.tipo === 'alunos') {
+        return data.email && data.password && data.cpf && data.birth_date;
+    }
+    if (data.tipo === 'turmas') {
+        return data.shift && data.course;
+    }
+    if (data.tipo === 'concursos' || data.tipo === 'vestibulares') {
+        return data.data && data.tipo_concurso;
+    }
+    return true;
+}, {
+    message: "Preencha todos os campos obrigatórios",
+    path: ["tipo"]
 });
 
 // Componentes de Formulário
@@ -241,9 +308,9 @@ const ProfessorForm = ({ control, areas, isLoading, error }) => (
             control={control}
             name="area"
             label="Disciplina 1"
-            options={areas.map((area, index) => ({ 
-                value: (index + 1).toString(), 
-                label: area 
+            options={areas.map((area, index) => ({
+                value: (index + 1).toString(),
+                label: area.charAt(0).toUpperCase() + area.slice(1)
             }))}
             placeholder="Selecione uma disciplina"
             disabled={isLoading}
@@ -252,10 +319,11 @@ const ProfessorForm = ({ control, areas, isLoading, error }) => (
             control={control}
             name="area2"
             label="Disciplina 2"
-            options={areas.map((area, index) => ({ 
-                value: (index + 1).toString(), 
-                label: area 
-            }))}
+            options={areas.map((area, index) => ({
+                value: (index + 1).toString(),
+                label: area.charAt(0).toUpperCase() + area.slice(1)
+            }))
+            }
             placeholder="Selecione uma disciplina"
             disabled={isLoading}
         />
@@ -299,19 +367,35 @@ const AlunoForm = ({ control, turmas, isLoading, error }) => (
             type="date"
             placeholder="Data de Nascimento"
         />
-        <SelectFormField
-            control={control}
-            name="class"
-            label="Turma"
-            options={turmas.map(turma => ({ 
-                value: turma.id.toString(), 
-                label: `${turma.name} - ${turma.shift} (${turma.course})` 
-            }))}
-            placeholder="Selecione uma turma"
-            disabled={isLoading}
-        />
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        {isLoading && <p className="text-sm text-muted-foreground">Carregando turmas...</p>}
+
+        <div className="space-y-2">
+            <FormLabel>Turma</FormLabel>
+            {isLoading ? (
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                    <span>Carregando turmas...</span>
+                </div>
+            ) : error ? (
+                <div className="text-sm text-red-500">
+                    {error}
+                </div>
+            ) : turmas.length === 0 ? (
+                <div className="text-sm text-muted-foreground">
+                    Nenhuma turma disponível
+                </div>
+            ) : (
+                <SelectFormField
+                    control={control}
+                    name="class"
+                    label=""
+                    options={turmas.map(turma => ({
+                        value: turma.id.toString(),
+                        label: `${turma.name} - ${shiftTurma(turma.shift)} (${turma.course})`
+                    }))}
+                    placeholder="Selecione uma turma"
+                />
+            )}
+        </div>
     </>
 );
 
@@ -370,7 +454,7 @@ const ConcursoForm = ({ control, form }) => (
             control={control}
             name="icone"
             label="Ícone"
-            options={CONCURSOS_ICON_OPTIONS}
+            options={ICON_OPTIONS.concursos}
             form={form}
         />
         <BaseFormField
@@ -413,7 +497,7 @@ const VestibularForm = ({ control, form }) => (
             control={control}
             name="icone"
             label="Ícone"
-            options={VESTIBULARES_ICON_OPTIONS}
+            options={ICON_OPTIONS.vestibulares}
             form={form}
         />
         <BaseFormField
@@ -426,15 +510,17 @@ const VestibularForm = ({ control, form }) => (
 );
 
 function CadastroForm() {
-    const [areas, setAreas] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitError, setSubmitError] = useState(null);
-    const [submitSuccess, setSubmitSuccess] = useState(false);
-    const [turmas, setTurmas] = useState([]);
-    const [isLoadingTurmas, setIsLoadingTurmas] = useState(true);
-    const [errorTurmas, setErrorTurmas] = useState(null);
+    const [state, setState] = useState({
+        areas: [],
+        turmas: [],
+        isLoading: false,
+        isLoadingTurmas: false,
+        error: null,
+        errorTurmas: null,
+        isSubmitting: false,
+        submitError: null,
+        submitSuccess: false
+    });
 
     const form = useForm({
         resolver: zodResolver(formSchema),
@@ -463,166 +549,124 @@ function CadastroForm() {
 
     const tipo = form.watch("tipo");
 
+    const fetchData = async (endpoint, setter, loadingKey) => {
+        try {
+            setState(prev => ({ ...prev, [loadingKey]: true }));
+            const response = await fetch(endpoint, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) throw new Error(`Erro ao buscar dados de ${endpoint}`);
+
+            const data = await response.json();
+            setter(data);
+        } catch (error) {
+            console.error(`Erro ao buscar dados:`, error);
+            setState(prev => ({
+                ...prev,
+                error: error.message,
+                [loadingKey]: false
+            }));
+        } finally {
+            setState(prev => ({ ...prev, [loadingKey]: false }));
+        }
+    };
+
+    // Carregar dados iniciais apenas uma vez
     useEffect(() => {
-        const fetchTurmas = async () => {
-            try {
-                setIsLoadingTurmas(true);
-                setErrorTurmas(null);
-                console.log('Iniciando busca de turmas...');
-
-                const response = await fetch('http://localhost:3001/class', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-
-                console.log('Resposta recebida:', response.status);
-
-                const data = await response.json();
-                console.log('Dados recebidos:', data);
-                
-                setTurmas(data);
-            } catch (error) {
-                console.error('Erro ao buscar turmas:', error);
-                setErrorTurmas(error.message || 'Não foi possível carregar as turmas');
-            } finally {
-                setIsLoadingTurmas(false);
-            }
+        const loadInitialData = async () => {
+            await fetchData(
+                ENDPOINTS.turmas,
+                data => setState(prev => ({ ...prev, turmas: data })),
+                'isLoadingTurmas'
+            );
+            await fetchData(
+                ENDPOINTS.disciplinas,
+                data => setState(prev => ({ ...prev, areas: data.map(item => item.name) })),
+                'isLoading'
+            );
         };
 
-        fetchTurmas();
+        loadInitialData();
     }, []);
 
+    // Recarregar turmas apenas quando o tipo mudar para alunos
     useEffect(() => {
-        const fetchAreas = async () => {
-            try {
-                setIsLoading(true);
-                setError(null);
-                
-                console.log("Iniciando busca de áreas...");
-                
-                const response = await fetch('http://localhost:3001/subject', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
+        if (tipo === 'alunos' && state.turmas.length === 0) {
+            fetchData(
+                ENDPOINTS.turmas,
+                data => setState(prev => ({ ...prev, turmas: data })),
+                'isLoadingTurmas'
+            );
+        }
+    }, [tipo]);
 
-                console.log("Resposta recebida:", response.status);
-
-
-                const data = await response.json();
-                console.log("Dados recebidos:", data);
-
-                // Ajustando para a estrutura do Prisma
-                const areasList = data.map(item => item.name);
-                console.log("Lista de áreas processada:", areasList);
-                
-                setAreas(areasList);
-            } catch (error) {
-                console.error('Erro ao buscar áreas:', error);
-                setError(error.message || 'Não foi possível carregar as áreas');
-            } finally {
-                setIsLoading(false);
+    const formatPayload = (data, tipo) => {
+        const payloads = {
+            disciplinas: { name: data.name.trim() },
+            professores: {
+                user: {
+                    name: data.name.trim(),
+                    email: data.email.trim().toLowerCase(),
+                    password: data.password,
+                    cpf: data.cpf.replace(/\D/g, ''),
+                    birth_date: formatDate(data.birth_date),
+                    role: "Teacher"
+                },
+                teacher: {
+                    subjects: [parseInt(data.area || '1'), parseInt(data.area2 || '')].filter(id => !isNaN(id))
+                }
+            },
+            alunos: {
+                user: {
+                    name: data.name.trim(),
+                    email: data.email.trim().toLowerCase(),
+                    password: data.password,
+                    cpf: data.cpf.replace(/\D/g, ''),
+                    birth_date: formatDate(data.birth_date),
+                    role: "Student"
+                },
+                student: {
+                    class_id: data.class ? parseInt(data.class) : null
+                }
+            },
+            turmas: {
+                name: data.name.trim(),
+                shift: data.shift,
+                course: data.course.trim()
+            },
+            concursos: {
+                title: data.name.trim(),
+                description: data.descricao.trim(),
+                link: data.link.trim() || "#",
+                icon: data.icone || 'Star',
+                color: `bg-${data.color.replace('#', '')}`,
+                date: formatDate(data.data),
+                category: data.tipo_concurso || "geral"
+            },
+            vestibulares: {
+                title: data.name.trim(),
+                description: data.descricao.trim(),
+                link: data.link.trim() || "#",
+                icon: data.icone || 'GraduationCap',
+                color: data.color,
+                date: formatDate(data.data),
+                type: data.tipo_concurso || "publico"
             }
         };
-
-        fetchAreas();
-    }, []);
-
-    const getEndpoint = (tipo) => {
-        const endpoints = {
-            alunos: "http://localhost:3001/student",
-            professores: "http://localhost:3001/teacher",
-            turmas: "http://localhost:3001/class",
-            concursos: "http://localhost:3001/contest",
-            vestibulares: "http://localhost:3001/vestibular",
-            disciplinas: "http://localhost:3001/subject"
-        };
-        return endpoints[tipo] || null;
-    };
-
-    const formatDate = (dateString) => {
-        if (!dateString) return null;
-        const date = new Date(dateString);
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
-    };
-
-    const formatPayloadForConcursos = (data) => {
-        const selectedIcon = CONCURSOS_ICON_OPTIONS.find(opt => opt.value === data.icone);
-        const formattedDate = formatDate(data.data);
-
-        return {
-            title: data.name,
-            description: data.descricao,
-            link: data.link || "#",
-            icon: selectedIcon ? selectedIcon.value : 'Star',
-            color: `bg-${data.color.replace('#', '')}`,
-            date: formattedDate,
-            category: data.tipo_concurso || "geral"
-        };
-    };
-
-    const formatPayloadForMaterias = (data) => {
-        return {
-            name: data.name
-        };
+        return payloads[tipo];
     };
 
     const onSubmit = async (data) => {
         try {
-            setIsSubmitting(true);
-            setSubmitError(null);
-            setSubmitSuccess(false);
+            setState(prev => ({ ...prev, isSubmitting: true, submitError: null, submitSuccess: false }));
 
-            const endpoint = getEndpoint(data.tipo);
+            const endpoint = ENDPOINTS[data.tipo];
             if (!endpoint) throw new Error("Tipo de cadastro inválido");
 
-            // Limpa os dados antes de enviar
-            const cleanData = {
-                disciplinas: {
-                    name: data.name
-                },
-                professores: {
-                    user: {
-                        name: data.name,
-                        email: data.email,
-                        password: data.password,
-                        cpf: data.cpf.replace(/\D/g, ''),
-                        birth_date: formatDate(data.birth_date),
-                        role: "Teacher"
-                    },
-                    teacher: {
-                        subjects: [parseInt(data.area || '1'),parseInt(data.area2 || '2')].filter(id => !isNaN(id))
-                    }
-                },
-                alunos: {
-                    user: {
-                        name: data.name,
-                        email: data.email,
-                        password: data.password,
-                        cpf: data.cpf.replace(/\D/g, ''),
-                        birth_date: formatDate(data.birth_date),
-                        role: "Student"
-                    },
-                    student: {
-                        class_id: data.class ? parseInt(data.class) : null
-                    }
-                },
-                turmas: {
-                    name: data.name,
-                    shift: data.shift,
-                    course: data.course
-                }
-            }[data.tipo];
-
-            console.log("Dados do formulário:", data);
-            console.log("Payload a ser enviado:", JSON.stringify(cleanData, null, 2));
-            console.log("Endpoint:", endpoint);
+            const cleanData = formatPayload(data, data.tipo);
+            if (!cleanData) throw new Error("Formato de dados inválido para o tipo selecionado");
 
             const response = await fetch(endpoint, {
                 method: 'POST',
@@ -635,34 +679,20 @@ function CadastroForm() {
                 body: JSON.stringify(cleanData)
             });
 
-            console.log("Status da resposta:", response.status);
-            
-            // Verifica se a resposta tem conteúdo antes de tentar fazer o parse
             const responseText = await response.text();
-            console.log("Resposta bruta do servidor:", responseText);
-            
-            let responseData;
-            try {
-                responseData = responseText ? JSON.parse(responseText) : {};
-            } catch (e) {
-                console.error("Erro ao fazer parse da resposta:", e);
-                responseData = { message: "Erro ao processar resposta do servidor" };
-            }
-            
-            console.log("Resposta processada:", responseData);
+            const responseData = responseText ? JSON.parse(responseText) : {};
 
             if (!response.ok) {
                 throw new Error(responseData.message || `Erro ao cadastrar: ${response.status}`);
             }
 
-            setSubmitSuccess(true);
+            setState(prev => ({ ...prev, submitSuccess: true }));
             form.reset();
         } catch (error) {
             console.error("Erro no cadastro:", error);
-            setSubmitError(error.message);
-            setSubmitSuccess(false);
+            setState(prev => ({ ...prev, submitError: error.message }));
         } finally {
-            setIsSubmitting(false);
+            setState(prev => ({ ...prev, isSubmitting: false }));
         }
     };
 
@@ -671,19 +701,19 @@ function CadastroForm() {
             case "disciplinas":
                 return <DisciplinaForm control={form.control} />;
             case "professores":
-                return <ProfessorForm 
-                    control={form.control} 
-                    areas={areas} 
-                    turmas={turmas}
-                    isLoading={isLoading} 
-                    error={error} 
+                return <ProfessorForm
+                    control={form.control}
+                    areas={state.areas}
+                    turmas={state.turmas}
+                    isLoading={state.isLoading}
+                    error={state.error}
                 />;
             case "alunos":
-                return <AlunoForm 
-                    control={form.control} 
-                    turmas={turmas} 
-                    isLoading={isLoadingTurmas} 
-                    error={errorTurmas} 
+                return <AlunoForm
+                    control={form.control}
+                    turmas={state.turmas}
+                    isLoading={state.isLoadingTurmas}
+                    error={state.errorTurmas}
                 />;
             case "turmas":
                 return <TurmaForm control={form.control} />;
@@ -704,17 +734,17 @@ function CadastroForm() {
                     <h1 className="mt-4 text-2xl font-bold tracking-tight">Cadastro</h1>
                 </div>
 
-                {submitSuccess && (
+                {state.submitSuccess && (
                     <div className="mb-4 p-4 bg-green-100 text-green-700 rounded-md justify-center flex flex-row gap-3">
                         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAACXBIWXMAAAsTAAALEwEAmpwYAAACD0lEQVR4nM1WP2sUURBfxUYtlLuZ29MIGtCIqI2iXpKZXVDyCQRLK0kl2CiWv9m9CKLoJzBWBr9AJCkULGy0sPZPpxwm2PgRZDZncuutm93jOBxYHvvezO838968mRcE/4sQZJGgzznR603MHfWRIc8IemssBAw1hn4ii+4QZJ0hv3z0fzb9zKbJqMB32eQNmfxgk/ftB8JFej7v665H0NduV5EgPkmQjVYSLTSWOlNVbBpLnSnXdztKo1O7GhDkkX+VPKpti3gfQ1IPPezqdDCChF2dzrYYkjrekAJDVtnkFSNu1wJO588y9PYOTtzewpHVIpIvBJmp5TqCvQR95yk+ON1M50575hWRfGgm0aU6HORpDH0bBMGewfkwkSuedTnl8PHCQTbtNdLoTFWCEPEJMvlZFL3jON4RXDywE4VpwpAXtaKArLPJ/X+ts8mKX+RBkp6H+Leib1+7O3t8CADzNxnysTCDclumvXwkJisF3i4y5Fsrjc5vG2O2lV066IWySLNIBktO2ZkQoht90Kjv0EuCPiwj+HMmjls5u5rQq2S6ydCnnurHnnT2l5JALzve0AKZfC2rOyHic2zyvZXItTKCDAsy486MdOMPIT68G0HpjZ9I7ZpMFZ5kP8l1RshGtc6om67PpveCUWSr5PR7vOla1uNN17Z7vO//OMRfJWy6nHutmC6P7bUyDvkNKEfqWvhHuk8AAAAASUVORK5CYII=" alt="approval--v1" />
                         Cadastro realizado com sucesso!
                     </div>
                 )}
 
-                {submitError && (
+                {state.submitError && (
                     <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md justify-center flex flex-row gap-3 items-center">
                         <img src="/assets/alert_error_icon.png" alt="error--v1" />
-                        {submitError}
+                        {state.submitError}
                     </div>
                 )}
 
@@ -734,7 +764,7 @@ function CadastroForm() {
                                 { value: "vestibulares", label: "Vestibulares" }
                             ]}
                             placeholder="Selecione o tipo de usuário"
-                            disabled={isSubmitting}
+                            disabled={state.isSubmitting}
                         />
 
                         {tipo && tipo !== "selecione" && renderFormByType()}
@@ -742,9 +772,9 @@ function CadastroForm() {
                         <Button
                             type="submit"
                             className="w-full mt-6"
-                            disabled={isSubmitting || !tipo || tipo === "selecione"}
+                            disabled={state.isSubmitting || !tipo || tipo === "selecione"}
                         >
-                            {isSubmitting ? 'Cadastrando...' : 'Cadastrar'}
+                            {state.isSubmitting ? 'Cadastrando...' : 'Cadastrar'}
                         </Button>
                     </form>
                 </Form>

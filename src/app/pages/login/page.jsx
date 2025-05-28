@@ -13,27 +13,64 @@ import {
 import { Input } from '@/components/ui/input';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { handleApiError, handleFetchError, handleUnexpectedError } from '@/utils/errorHandler';
 
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 const formSchema = z.object({
 	email: z.string().email('E-mail inválido'),
-	password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres'),
+	password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
 });
 
-
 export default function LoginPage() {
+	const router = useRouter();
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState(null);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [submitError, setSubmitError] = useState(null);
+	const [submitSuccess, setSubmitSuccess] = useState(false);
+
 	const form = useForm({
+		resolver: zodResolver(formSchema),
 		defaultValues: {
 			email: '',
 			password: '',
 		},
-		resolver: zodResolver(formSchema),
 	});
 
-	const onSubmit = (data) => {
-		console.log(data);
+	const onSubmit = async (data) => {
+		setIsLoading(true);
+		setError(null);
+		setSubmitError(null);
+
+		try {
+			const response = await fetch('http://localhost:3001/login', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(data),
+			});
+
+			await handleApiError(response, 'fazer login');
+			const responseData = await response.json();
+
+			if (responseData.token) {
+				localStorage.setItem('token', responseData.token);
+				setSubmitSuccess(true);
+				router.push('/pages/dashboard');
+			} else {
+				setSubmitError('Credenciais inválidas');
+			}
+		} catch (error) {
+			handleFetchError(error, 'fazer login');
+			setSubmitError('Erro ao fazer login. Tente novamente.');
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	return (
@@ -107,7 +144,7 @@ export default function LoginPage() {
 						</Form>
 
 						<div className="mt-2 text-center">
-							<Link href="/passrecovery" className="text-sm underline text-muted-foreground hover:text-gray-900 transition-colors">
+							<Link href="/pages/recovery/passrecovery" className="text-sm underline text-muted-foreground hover:text-gray-900 transition-colors">
 								Esqueceu sua senha?
 							</Link>
 						</div>

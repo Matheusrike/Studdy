@@ -28,7 +28,7 @@ export default function Profile() {
 		location: 'New York, USA',
 		education: 'Bachelor of Science in Computer Science',
 		graduationYear: '2024',
-		avatar: '/img/avatars/avatar-1.jpg',
+		avatar: '',
 	});
 
 	const handleSave = () => {

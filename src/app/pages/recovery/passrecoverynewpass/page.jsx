@@ -42,7 +42,7 @@ const PassRecoveryNewPass = () => {
         const validToken = localStorage.getItem('validRecoveryToken');
         if (!validToken) {
             // Se não houver token válido, redireciona para a página 404
-            router.push('/passrecovery/not-found');
+            router.push('/not-found');
         }
     }, [router]);
 
@@ -76,25 +76,42 @@ const PassRecoveryNewPass = () => {
             setLoading(true);
             setMsg('');
             
-            // Aqui você pode adicionar a lógica para atualizar a senha no backend
-            // Por exemplo:
-            // await updatePassword(data.newpassword);
-            
-            setMsg('Senha atualizada com sucesso!');
-            // Remove o token após atualizar a senha
+            const token = localStorage.getItem('validRecoveryToken');
+            const email = localStorage.getItem('recoveryEmail');
+
+            const response = await fetch('http://localhost:3001/users', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: data.newpassword,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro ao atualizar senha');
+            }
+
+            // Limpa os dados de recuperação
             localStorage.removeItem('validRecoveryToken');
-            setTimeout(() => {
-                router.push('/login');
-            }, 2000);
+            localStorage.removeItem('recoveryEmail');
+            
+            // Redireciona para a página de login
+            router.push('/pages/login');
+            
         } catch (error) {
-            setMsg('Erro ao atualizar a senha. Tente novamente.');
+            console.error('Erro ao atualizar senha:', error);
+            setMsg('Erro ao atualizar senha. Tente novamente.');
         } finally {
             setLoading(false);
         }
     };
 
+
     return (
-        <div className="min-h-screen background flex items-center justify-center p-4">
+        <div className="min-h-screen background w-screen flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
                     <div className="flex flex-col items-center space-y-4">
