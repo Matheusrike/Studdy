@@ -153,7 +153,7 @@ export default function PassRecoveryPage() {
 	};
 
 	return !validado ? (
-		<div className="bg-slate-100 h-screen w-screen flex items-center justify-center">
+		<div className="background h-screen w-screen flex items-center justify-center">
 			<div className="w-full max-w-md p-8 space-y-6 shadow-lg rounded-xl bg-white">
 				<Logo className="h-9 w-9 mx-auto" variant="icon" />
 				<h1 className="text-2xl font-bold text-gray-900 text-center">

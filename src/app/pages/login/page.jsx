@@ -74,19 +74,20 @@ export default function LoginPage() {
 	};
 
 	return (
-		<div className="bg-white min-w-screen h-screen flex items-center justify-center">
+		<div className="background min-w-screen h-screen flex items-center justify-center">
 			<div className="w-full h-full flex flex-row">
 
-				<div className="hidden w-[65	%] lg:flex rounded-lg items-center justify-center">
+				{/* Hidden on mobile, shown on large screens */}
+				{/* <div className="hidden w-[60%] lg:flex rounded-lg items-center justify-center">
 					<img
 						className="w-full h-full object-cover"
-						src="/assets/students.webp"
+						src="https://media.istockphoto.com/id/1481866065/pt/foto/smartphone-with-blank-white-screen-laying-at-the-laptop-app-screen-mockup.jpg?s=612x612&w=0&k=20&c=bxOlEpEfPsobj_DjxRnnMd49EoSiDRO_5r3gq4IJ0vY="
 						alt="illustration"
 					/>
-				</div>
+				</div> */}
 
-				<div className="w-screen lg:w-[35%] h-full  flex items-center justify-center">
-					<div className="w-full max-w-md p-8 space-y-6 rounded-xl ">
+				<div className=" w-screen lg:w-[100%] h-full  flex items-center justify-center">
+					<div className="bg-white w-full max-w-md p-8 space-y-6 rounded-xl ">
 						<Logo className="h-9 w-9 mx-auto" variant="icon" />
 						<h1 className="text-2xl font-bold text-gray-900 text-center">
 							Entrar no Studdy

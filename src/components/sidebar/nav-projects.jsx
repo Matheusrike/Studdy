@@ -1,6 +1,7 @@
 "use client"
 
 import { Folder, Forward, MoreHorizontal, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import {
   DropdownMenu,
@@ -23,6 +24,15 @@ export function NavProjects({
   projects
 }) {
   const { isMobile } = useSidebar()
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  if (!isMounted) {
+    return null
+  }
 
   return (
     <SidebarGroup>
@@ -40,7 +50,7 @@ export function NavProjects({
               <DropdownMenuTrigger asChild>
                 <SidebarMenuAction showOnHover>
                   <MoreHorizontal />
-                  <span className="sr-only">More</span>
+                  <span className="sr-only">Mais opções</span>
                 </SidebarMenuAction>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -67,7 +77,7 @@ export function NavProjects({
         <SidebarMenuItem>
           <SidebarMenuButton className="text-sidebar-foreground/70">
             <MoreHorizontal className="text-sidebar-foreground/70" />
-            <span>More</span>
+            <span>Mais opções</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>

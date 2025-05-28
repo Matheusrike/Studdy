@@ -77,7 +77,7 @@ export default function CriarResumosPage() {
     const gerarResumo = async () => {
         try {
             setIsLoading(true);
-            setError(nutfll);
+            setError(null);
             setSuccess(false);
 
             console.log('Iniciando geração do resumo...');
