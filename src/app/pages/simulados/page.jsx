@@ -5,124 +5,125 @@ import { Button } from "@/components/ui/button";
 import Logo from "@/components/ui/logo";
 import { ExternalLink, Search, Calculator, Atom, Microscope, Globe, History, BookText, Brain, BookMarked, BookOpen, LineChart, TestTube, Dna, Landmark, BookOpenCheck, BookOpenText, BookOpenIcon, BookOpenCheckIcon, CircleCheck, CircleDashed, CircleOff, Ban } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
 
 const simulados = {
     exatas: [
         {
+            id: 1,
             title: "Matemática Básica",
             description: "Fundamentos de matemática com foco em álgebra e geometria",
-            link: "https://exemplo.com/matematica-basica",
             date: "Disponível",
             status: "pendente"
         },
         {
-            title: "Matemática Avançada",
+            id: 2,
+            title: "Matemática Avançada", 
             description: "Cálculo, trigonometria e geometria analítica",
-            link: "https://exemplo.com/matematica-avancada",
             date: "Disponível",
             status: "pendente"
         },
         {
+            id: 3,
             title: "Física Mecânica",
             description: "Mecânica clássica e termodinâmica",
-            link: "https://exemplo.com/fisica-mecanica",
             date: "Disponível",
             status: "concluido"
         },
         {
+            id: 4,
             title: "Física Moderna",
             description: "Relatividade e física quântica",
-            link: "https://exemplo.com/fisica-moderna",
             date: "Disponível",
             status: "pendente"
         },
         {
+            id: 5,
             title: "Química Geral",
             description: "Fundamentos e reações químicas",
-            link: "https://exemplo.com/quimica-geral",
             date: "Disponível",
             status: "pendente"
         },
         {
+            id: 6,
             title: "Química Orgânica",
             description: "Compostos orgânicos e reações",
-            link: "https://exemplo.com/quimica-organica",
             date: "Disponível",
             status: "pendente"
         }
     ],
     humanas: [
         {
+            id: 7,
             title: "História do Brasil",
             description: "Períodos coloniais e república",
-            link: "https://exemplo.com/historia-brasil",
             date: "Disponível",
             status: "pendente"
         },
         {
+            id: 8,
             title: "História Geral",
             description: "História antiga e contemporânea",
-            link: "https://exemplo.com/historia-geral",
             date: "Disponível",
             status: "pendente"
         },
         {
+            id: 9,
             title: "Geografia Física",
             description: "Relevo, clima e hidrografia",
-            link: "https://exemplo.com/geografia-fisica",
             date: "Disponível",
             status: "expirado"
         },
         {
+            id: 10,
             title: "Geografia Humana",
             description: "População, urbanização e economia",
-            link: "https://exemplo.com/geografia-humana",
             date: "Disponível",
             status: "pendente"
         }
     ],
     linguagens: [
         {
+            id: 11,
             title: "Português - Gramática",
             description: "Morfologia, sintaxe e semântica",
-            link: "https://exemplo.com/portugues-gramatica",
             date: "Disponível",
             status: "concluido"
         },
         {
+            id: 12,
             title: "Literatura Brasileira",
             description: "Principais obras e autores brasileiros",
-            link: "https://exemplo.com/literatura-brasileira",
             date: "Disponível",
             status: "expirado"
         },
         {
+            id: 13,
             title: "Literatura Portuguesa",
             description: "Autores e obras da literatura portuguesa",
-            link: "https://exemplo.com/literatura-portuguesa",
             date: "Disponível",
             status: "pendente"
         }
     ],
     biologicas: [
         {
+            id: 14,
             title: "Biologia Celular",
             description: "Células, tecidos e sistemas",
-            link: "https://exemplo.com/biologia-celular",
             date: "Disponível",
             status: "concluido"
         },
         {
+            id: 15,
             title: "Genética",
             description: "Hereditariedade e evolução",
-            link: "https://exemplo.com/genetica",
             date: "Disponível",
             status: "concluido"
         },
         {
+            id: 16,
             title: "Ecologia",
             description: "Ecossistemas e meio ambiente",
-            link: "https://exemplo.com/ecologia",
             date: "Disponível",
             status: "pendente"
         }
@@ -137,10 +138,15 @@ const statusFilters = [
 ];
 
 export default function SimuladosPage() {
+    const router = useRouter();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('todos');
     const [selectedStatus, setSelectedStatus] = useState('todos');
     const [favorites, setFavorites] = useState([]);
+
+    const handleDetails = (simuladoId) => {
+        router.push(`/pages/simulados/${simuladoId}`);
+    };
 
     useEffect(() => {
         const savedFavorites = localStorage.getItem('simulados_favorites');
@@ -151,7 +157,7 @@ export default function SimuladosPage() {
 
     const getSimuladoIcon = (title, section) => {
         const lowerTitle = title.toLowerCase();
-        
+
         if (section === 'exatas') {
             if (lowerTitle.includes('matemática')) {
                 return lowerTitle.includes('avançada') ? LineChart : Calculator;
@@ -163,7 +169,7 @@ export default function SimuladosPage() {
                 return lowerTitle.includes('orgânica') ? Microscope : TestTube;
             }
         }
-        
+
         if (section === 'humanas') {
             if (lowerTitle.includes('história')) {
                 return lowerTitle.includes('brasil') ? Landmark : History;
@@ -172,7 +178,7 @@ export default function SimuladosPage() {
                 return Globe;
             }
         }
-        
+
         if (section === 'linguagens') {
             if (lowerTitle.includes('português')) {
                 return BookText;
@@ -181,7 +187,7 @@ export default function SimuladosPage() {
                 return lowerTitle.includes('brasileira') ? BookMarked : BookOpenText;
             }
         }
-        
+
         if (section === 'biologicas') {
             if (lowerTitle.includes('celular')) {
                 return Brain;
@@ -193,7 +199,7 @@ export default function SimuladosPage() {
                 return Globe;
             }
         }
-        
+
         return BookOpen;
     };
 
@@ -287,11 +293,10 @@ export default function SimuladosPage() {
                                 <Button
                                     key={status.id}
                                     variant={selectedStatus === status.id ? "default" : "outline"}
-                                    className={`text-sm px-4 py-2 rounded-lg transition-all duration-300 ${
-                                        selectedStatus === status.id 
-                                        ? 'bg-[#133D86] text-white hover:bg-[#0e2a5c]' 
+                                    className={`text-sm px-4 py-2 rounded-lg transition-all duration-300 ${selectedStatus === status.id
+                                        ? 'bg-[#133D86] text-white hover:bg-[#0e2a5c]'
                                         : 'hover:bg-gray-100'
-                                    }`}
+                                        }`}
                                     onClick={() => setSelectedStatus(status.id)}
                                 >
                                     {status.label}
@@ -307,9 +312,9 @@ export default function SimuladosPage() {
                             <div key={section} className="mb-8">
                                 <h2 className="text-2xl font-semibold text-[#133D86] mb-4 capitalize">
                                     {section === 'exatas' ? 'Ciências Exatas' :
-                                     section === 'humanas' ? 'Ciências Humanas' :
-                                     section === 'linguagens' ? 'Linguagens e Códigos' :
-                                     'Ciências Biológicas'}
+                                        section === 'humanas' ? 'Ciências Humanas' :
+                                            section === 'linguagens' ? 'Linguagens e Códigos' :
+                                                'Ciências Biológicas'}
                                 </h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                     {filtered.map((simulado) => {
@@ -332,7 +337,7 @@ export default function SimuladosPage() {
                                                     <p className="text-gray-600 mb-4 h-[40px] line-clamp-2 text-sm">{simulado.description}</p>
                                                     <Button
                                                         className={`w-full ${getStatusColor(simulado.status)} transition-all duration-300 shadow-md hover:shadow-lg rounded-lg font-medium text-sm flex items-center justify-center gap-2`}
-                                                        onClick={() => window.open(simulado.link, '_blank')}
+                                                        onClick={() => handleDetails(simulado.id)}
                                                     >
                                                         {getStatusText(simulado.status)}
                                                         {(() => {
@@ -340,6 +345,7 @@ export default function SimuladosPage() {
                                                             return <StatusIcon className="h-4 w-4" />;
                                                         })()}
                                                     </Button>
+
                                                 </CardContent>
                                             </Card>
                                         );
@@ -348,7 +354,7 @@ export default function SimuladosPage() {
                             </div>
                         );
                     })}
-                    </div>
+                </div>
             </div>
         </div>
     );
