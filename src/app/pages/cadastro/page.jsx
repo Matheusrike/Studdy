@@ -1,83 +1,21 @@
 'use client';
 
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import {
     Form,
-    FormControl,
-    FormField,
-    FormItem,
     FormLabel,
-    FormMessage,
 } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import Logo from '@/components/ui/logo';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { GraduationCap, Calendar, BookOpen, School, Shield, Briefcase, Building2, Landmark, Scale } from "lucide-react";
-
-const SHIFT_OPTIONS = [
-    { value: 'Morning', label: 'Manhã' },
-    { value: 'Afternoon', label: 'Tarde' },
-    { value: 'Evening', label: 'Noite' }
-];
-
-const CONCURSO_CATEGORIES = [
-    { value: 'militares', label: 'Militares' },
-    { value: 'federais', label: 'Federais' },
-    { value: 'estaduais', label: 'Estaduais' },
-    { value: 'municipais', label: 'Municipais' }
-];
-
-const VESTIBULAR_CATEGORIES = [
-    { value: 'publico', label: 'Público' },
-    { value: 'privado', label: 'Privado' }
-];
-
-const ICON_OPTIONS = {
-    concursos: [
-        { label: 'Escudo', value: 'Shield', icon: Shield },
-        { label: 'Escola', value: 'School', icon: School },
-        { label: 'Pasta', value: 'Briefcase', icon: Briefcase },
-        { label: 'Prédio', value: 'Building2', icon: Building2 },
-        { label: 'Monumento', value: 'Landmark', icon: Landmark },
-        { label: 'Balança', value: 'Scale', icon: Scale }
-    ],
-    vestibulares: [
-        { label: 'Graduação', value: 'GraduationCap', icon: GraduationCap },
-        { label: 'Livro', value: 'BookOpen', icon: BookOpen },
-        { label: 'Escola', value: 'School', icon: School },
-        { label: 'Calendário', value: 'Calendar', icon: Calendar }
-    ]
-};
-
-const CATEGORIES = {
-    concurso: [
-        { value: 'militares', label: 'Militares' },
-        { value: 'federais', label: 'Federais' },
-        { value: 'estaduais', label: 'Estaduais' },
-        { value: 'municipais', label: 'Municipais' }
-    ],
-    vestibular: [
-        { value: 'publico', label: 'Público' },
-        { value: 'privado', label: 'Privado' }
-    ]
-};
+import { BaseFormField, SelectFormField } from "@/components/ui/formfield";
 
 const ENDPOINTS = {
     alunos: "http://localhost:3001/admin/students",
     professores: "http://localhost:3001/admin/teachers",
     turmas: "http://localhost:3001/admin/classes",
-    concursos: "http://localhost:3001/admin/contest",
-    vestibulares: "http://localhost:3001/admin/vestibular",
     disciplinas: "http://localhost:3001/subject"
 };
 
@@ -111,35 +49,22 @@ const formSchema = z.object({
         .or(z.literal('')),
     class: z.string().min(1, "Selecione uma turma").optional().or(z.literal('')),
     curso: z.string().max(100, "Curso deve ter no máximo 100 caracteres").optional().or(z.literal('')),
-    formacao: z.string().max(100, "Formação deve ter no máximo 100 caracteres").optional().or(z.literal('')),
     area: z.string().optional().or(z.literal('')),
     descricao: z.string().max(500, "Descrição deve ter no máximo 500 caracteres").optional().or(z.literal('')),
     horario: z.string().optional().or(z.literal('')),
     data: z.string()
         .regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida")
         .optional()
-        .or(z.literal('')),
-    icone: z.string().optional().or(z.literal('')),
-    color: z.string()
-        .regex(/^#[0-9A-Fa-f]{6}$/, "Cor inválida")
-        .optional()
-        .or(z.literal('')),
-    tipo_concurso: z.string().optional().or(z.literal('')),
-    link: z.string()
-        .url("Link inválido")
-        .optional()
-        .or(z.literal('')),
-    category: z.string().optional().or(z.literal('')),
-    shift: z.string().min(1, "Turno é obrigatório").optional().or(z.literal('')),
-    course: z.string().min(1, "Curso é obrigatório").optional().or(z.literal('')),
+        .or(z.literal(''))
+
+
+
 }).refine((data) => {
     // Validações específicas por tipo
     if (data.tipo === 'professores' || data.tipo === 'alunos') {
         return data.email && data.password && data.cpf && data.birth_date;
     }
-    if (data.tipo === 'turmas') {
-        return data.shift && data.course;
-    }
+
     if (data.tipo === 'concursos' || data.tipo === 'vestibulares') {
         return data.data && data.tipo_concurso;
     }
@@ -148,116 +73,6 @@ const formSchema = z.object({
     message: "Preencha todos os campos obrigatórios",
     path: ["tipo"]
 });
-
-// Componentes de Formulário
-const BaseFormField = ({ control, name, label, type = "text", placeholder, ...props }) => (
-    <FormField
-        control={control}
-        name={name}
-        render={({ field }) => (
-            <FormItem>
-                <FormLabel>{label}</FormLabel>
-                <FormControl>
-                    <Input type={type} placeholder={placeholder} {...field} {...props} />
-                </FormControl>
-                <FormMessage />
-            </FormItem>
-        )}
-    />
-);
-
-const SelectFormField = ({ control, name, label, options, placeholder, disabled }) => (
-    <FormField
-        control={control}
-        name={name}
-        render={({ field }) => (
-            <FormItem>
-                <FormLabel>{label}</FormLabel>
-                <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={disabled}
-                >
-                    <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder={placeholder} />
-                        </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                        {options.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <FormMessage />
-            </FormItem>
-        )}
-    />
-);
-
-const IconSelector = ({ control, name, label, options, form }) => (
-    <FormField
-        control={control}
-        name={name}
-        render={({ field }) => (
-            <FormItem>
-                <FormLabel>{label}</FormLabel>
-                <FormControl>
-                    <div className="space-y-4">
-                        <div className="flex gap-2 flex-wrap">
-                            {options.map(opt => {
-                                const Icon = opt.icon;
-                                return (
-                                    <button
-                                        type="button"
-                                        key={opt.value}
-                                        onClick={() => field.onChange(opt.value)}
-                                        className={`p-2 rounded-lg border transition-all duration-200 flex items-center justify-center ${field.value === opt.value ? 'bg-[#133D86] text-white border-[#133D86] scale-110 shadow-lg' : 'bg-white text-[#133D86] border-gray-200 hover:bg-[#e6eefc]'} `}
-                                        title={opt.label}
-                                        style={{
-                                            backgroundColor: field.value === opt.value ? form.watch("color") : 'white',
-                                            color: field.value === opt.value ? 'white' : form.watch("color"),
-                                            borderColor: field.value === opt.value ? form.watch("color") : '#e5e7eb'
-                                        }}
-                                    >
-                                        <Icon className="h-6 w-6" />
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        <FormField
-                            control={control}
-                            name="color"
-                            render={({ field: colorField }) => (
-                                <div className="flex items-center gap-2">
-                                    <label className="text-sm font-medium">
-                                        Cor do Ícone:
-                                    </label>
-                                    <div className="relative">
-                                        <input
-                                            type="color"
-                                            {...colorField}
-                                            className="w-12 h-8 p-0 rounded border cursor-pointer"
-                                            style={{
-                                                backgroundColor: 'transparent',
-                                            }}
-                                        />
-                                    </div>
-                                    <span className="text-sm text-muted-foreground">
-                                        {colorField.value}
-                                    </span>
-                                </div>
-                            )}
-                        />
-                    </div>
-                </FormControl>
-                <FormMessage />
-            </FormItem>
-        )}
-    />
-);
 
 // Formulários específicos
 const DisciplinaForm = ({ control }) => (
@@ -399,115 +214,7 @@ const AlunoForm = ({ control, turmas, isLoading, error }) => (
     </>
 );
 
-const TurmaForm = ({ control }) => (
-    <>
-        <BaseFormField
-            control={control}
-            name="name"
-            label="Nome da Turma"
-            placeholder="Nome da Turma"
-        />
-        <SelectFormField
-            control={control}
-            name="shift"
-            label="Turno"
-            options={SHIFT_OPTIONS}
-            placeholder="Selecione o turno"
-        />
-        <BaseFormField
-            control={control}
-            name="course"
-            label="Curso"
-            placeholder="Nome do Curso"
-        />
-    </>
-);
 
-const ConcursoForm = ({ control, form }) => (
-    <>
-        <BaseFormField
-            control={control}
-            name="name"
-            label="Nome do Concurso"
-            placeholder="Nome do Concurso"
-        />
-        <BaseFormField
-            control={control}
-            name="link"
-            label="Link do Concurso"
-            placeholder="https://..."
-        />
-        <SelectFormField
-            control={control}
-            name="tipo_concurso"
-            label="Categoria"
-            options={CONCURSO_CATEGORIES}
-            placeholder="Selecione a categoria"
-        />
-        <BaseFormField
-            control={control}
-            name="data"
-            label="Data do Concurso"
-            type="date"
-        />
-        <IconSelector
-            control={control}
-            name="icone"
-            label="Ícone"
-            options={ICON_OPTIONS.concursos}
-            form={form}
-        />
-        <BaseFormField
-            control={control}
-            name="descricao"
-            label="Descrição"
-            placeholder="Descrição do concurso"
-        />
-    </>
-);
-
-const VestibularForm = ({ control, form }) => (
-    <>
-        <BaseFormField
-            control={control}
-            name="name"
-            label="Nome do Vestibular"
-            placeholder="Nome do Vestibular"
-        />
-        <BaseFormField
-            control={control}
-            name="link"
-            label="Link do Vestibular"
-            placeholder="https://..."
-        />
-        <SelectFormField
-            control={control}
-            name="tipo_concurso"
-            label="Categoria"
-            options={VESTIBULAR_CATEGORIES}
-            placeholder="Selecione a categoria"
-        />
-        <BaseFormField
-            control={control}
-            name="data"
-            label="Data do Vestibular"
-            type="date"
-        />
-        <IconSelector
-            control={control}
-            name="icone"
-            label="Ícone"
-            options={ICON_OPTIONS.vestibulares}
-            form={form}
-        />
-        <BaseFormField
-            control={control}
-            name="descricao"
-            label="Descrição"
-            placeholder="Descrição do vestibular"
-        />
-    </>
-);
 
 function CadastroForm() {
     const [state, setState] = useState({
@@ -535,14 +242,10 @@ function CadastroForm() {
             area: "",
             descricao: "",
             horario: "",
-            shift: "",
-            course: "",
             data: "",
             icone: "",
             color: "#133D86",
             class: "",
-            tipo_concurso: "",
-            link: "",
             category: "",
         },
     });
@@ -630,29 +333,6 @@ function CadastroForm() {
                 student: {
                     class_id: data.class ? parseInt(data.class) : null
                 }
-            },
-            turmas: {
-                name: data.name.trim(),
-                shift: data.shift,
-                course: data.course.trim()
-            },
-            concursos: {
-                title: data.name.trim(),
-                description: data.descricao.trim(),
-                link: data.link.trim() || "#",
-                icon: data.icone || 'Star',
-                color: `bg-${data.color.replace('#', '')}`,
-                date: formatDate(data.data),
-                category: data.tipo_concurso || "geral"
-            },
-            vestibulares: {
-                title: data.name.trim(),
-                description: data.descricao.trim(),
-                link: data.link.trim() || "#",
-                icon: data.icone || 'GraduationCap',
-                color: data.color,
-                date: formatDate(data.data),
-                type: data.tipo_concurso || "publico"
             }
         };
         return payloads[tipo];
@@ -715,12 +395,6 @@ function CadastroForm() {
                     isLoading={state.isLoadingTurmas}
                     error={state.errorTurmas}
                 />;
-            case "turmas":
-                return <TurmaForm control={form.control} />;
-            case "concursos":
-                return <ConcursoForm control={form.control} form={form} />;
-            case "vestibulares":
-                return <VestibularForm control={form.control} form={form} />;
             default:
                 return null;
         }
@@ -758,10 +432,8 @@ function CadastroForm() {
                                 { value: "selecione", label: "Selecione" },
                                 { value: "alunos", label: "Alunos" },
                                 { value: "professores", label: "Professores" },
-                                { value: "turmas", label: "Turmas" },
-                                { value: "disciplinas", label: "Disciplinas" },
-                                { value: "concursos", label: "Concursos" },
-                                { value: "vestibulares", label: "Vestibulares" }
+                                { value: "disciplinas", label: "Disciplinas" }
+
                             ]}
                             placeholder="Selecione o tipo de usuário"
                             disabled={state.isSubmitting}

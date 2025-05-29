@@ -30,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -39,11 +40,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
+
 import { toast } from "sonner";
 import { useRouter } from 'next/navigation';
 import { handleApiError, handleFetchError, handleUnexpectedError } from "@/utils/errorHandler";
+
 
 const SHIFT_OPTIONS = [
   { value: 'Morning', label: 'Manhã' },
@@ -105,6 +106,8 @@ export default function TurmasPage() {
   const [selectedType, setSelectedType] = useState('todos');
   const [turmas, setTurmas] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [isAtributeTeacherClassOpen, setIsAtributeTeacherClassOpen] = useState(false);
   const [error, setError] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [alunos, setAlunos] = useState([
@@ -164,6 +167,12 @@ export default function TurmasPage() {
       shift: '',
     },
   });
+
+  const teachers = [
+    { id: 1, name: 'João Silva' },
+    { id: 2, name: 'Maria Santos' },
+    { id: 3, name: 'Pedro Oliveira' },
+  ];
 
   useEffect(() => {
     const fetchTurmas = async () => {
@@ -299,55 +308,150 @@ export default function TurmasPage() {
       setIsLoading(false);
     }
   };
-
   const CreateClassModal = () => {
     return (
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Nova Turma</DialogTitle>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <BaseFormField
-                control={form.control}
-                name="name"
-                label="Nome da Turma"
-                placeholder="Nome da Turma"
-              />
-              <SelectFormField
-                control={form.control}
-                name="shift"
-                label="Turno"
-                options={SHIFT_OPTIONS}
-                placeholder="Selecione o turno"
-              />
-              <BaseFormField
-                control={form.control}
-                name="course"
-                label="Curso"
-                placeholder="Nome do Curso"
-              />
+      <>
+        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Nova Turma</DialogTitle>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <BaseFormField
+                  control={form.control}
+                  name="name"
+                  label="Nome da Turma"
+                  placeholder="Nome da Turma"
+                />
+                <SelectFormField
+                  control={form.control}
+                  name="shift"
+                  label="Turno"
+                  options={SHIFT_OPTIONS}
+                  placeholder="Selecione o turno"
+                />
+                <BaseFormField
+                  control={form.control}
+                  name="course"
+                  label="Curso"
+                  placeholder="Nome do Curso"
+                />
+
+                {error && (
+                  <div className="text-red-500 text-sm">{error}</div>
+                )}
+
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setIsCreateModalOpen(false); // Fecha o modal de criação
+                      setTimeout(() => setIsAtributeTeacherClassOpen(true), 300); // Abre o próximo modal após animação
+                    }}
+                  >
+                    {isLoading ? 'Avançando...' : 'Avançar'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isAtributeTeacherClassOpen} onOpenChange={setIsAtributeTeacherClassOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Atribuir Professor à Turma</DialogTitle>
+              <DialogDescription>Selecione o professor que deseja atribuir à turma</DialogDescription>
+
+            </DialogHeader>
+
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <SelectFormField
+                  control={form.control}
+                  name="teacher"
+                  label="Professor 1"
+              options={[
+                { label: "João Silva", value: "joao" },
+                { label: "Maria Santos", value: "maria" },
+                { label: "Carlos Lima", value: "carlos" },
+              ]}
+                  placeholder="Selecione o professor"
+                />
+                 <SelectFormField
+                  control={form.control}
+                  name="teacher"
+                  label="Professor 2"
+              options={[
+                { label: "João Silva", value: "joao" },
+                { label: "Maria Santos", value: "maria" },
+                { label: "Carlos Lima", value: "carlos" },
+              ]}
+                  placeholder="Selecione o professor"
+                />
+                 <SelectFormField
+                  control={form.control}
+                  name="teacher"
+                  label="Professor 3"
+              options={[
+                { label: "João Silva", value: "joao" },
+                { label: "Maria Santos", value: "maria" },
+                { label: "Carlos Lima", value: "carlos" },
+              ]}
+                  placeholder="Selecione o professor"
+                />
+                 <SelectFormField
+                  control={form.control}
+                  name="teacher"
+                  label="Professor 4"
+              options={[
+                { label: "João Silva", value: "joao" },
+                { label: "Maria Santos", value: "maria" },
+                { label: "Carlos Lima", value: "carlos" },
+              ]}
+                  placeholder="Selecione o professor"
+                />
+                 <SelectFormField
+                  control={form.control}
+                  name="teacher"
+                  label="Professor 5"
+              options={[
+                { label: "João Silva", value: "joao" },
+                { label: "Maria Santos", value: "maria" },
+                { label: "Carlos Lima", value: "carlos" },
+              ]}
+                  placeholder="Selecione o professor"
+                />
+              </form>
+            </Form>
 
 
-              {error && (
-                <div className="text-red-500 text-sm">{error}</div>
-              )}
 
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Criando...' : 'Criar Turma'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsAtributeTeacherClassOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  // Finaliza o fluxo
+                  setIsAtributeTeacherClassOpen(false);
+                }}
+              >
+                {isLoading ? 'Atribuindo...' : 'Cadastrar Turma'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   };
+
 
   return (
     <div className="container mx-auto py-6">

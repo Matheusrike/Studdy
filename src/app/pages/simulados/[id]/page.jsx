@@ -4,10 +4,9 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Send } from "lucide-react";
 import Link from "next/link";
-import { handleApiError, handleFetchError, handleUnexpectedError } from "@/utils/errorHandler";
-import { Send } from "lucide-react";
+import { handleUnexpectedError } from "@/utils/errorHandler";
 import Image from "next/image";
 
 export default function SimuladoQuestoesPage() {
@@ -18,24 +17,41 @@ export default function SimuladoQuestoesPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Estado para indicar se o simulado já foi concluído
+    const [concluido, setConcluido] = useState(false);
+    const showAnswerStyles = simulado?.visibility !== "published";
+
+
     useEffect(() => {
         const fetchSimuladoDetalhes = async () => {
             try {
                 setIsLoading(true);
                 setError(null);
 
-                // Dados de teste para o simulado
+                // const response = await fetch(`http://localhost:3001/simulados/${params.id}`, {
+                //     method: 'GET',
+                //     headers: {
+                //         'Content-Type': 'application/json',
+                //     }
+                // });
+                // await handleApiError(response, 'buscar simulado');
+                // const simuladoData = await response.json();
+                // setSimulado(simuladoData);
+
+
+
+
+
                 const simuladoData = {
                     id: params.id,
                     title: "titulo do questionario",
                     teacher_subject_class_id: 1,
                     max_attempts: 1,
                     duration_minutes: 60,
-                    visibility: "published"
+                    visibility: "published" // Altere para testar "draft" ou outro para simular expirado
                 };
                 setSimulado(simuladoData);
 
-                // Dados de teste para as questões
                 const questoesData = [
                     {
                         id: 1,
@@ -76,6 +92,9 @@ export default function SimuladoQuestoesPage() {
                 ];
                 setQuestoes(questoesData);
 
+                // Simular que o simulado foi concluído? Ajuste conforme necessário
+                setConcluido(false);
+
             } catch (error) {
                 handleUnexpectedError(error, 'carregar página do simulado');
                 setError(error.message);
@@ -90,6 +109,7 @@ export default function SimuladoQuestoesPage() {
     }, [params.id]);
 
     const handleRespostaChange = (questaoId, alternativa) => {
+        if (concluido || simulado?.visibility !== "published") return; // Bloquear alteração se concluído ou expirado
         setRespostasUsuario(prev => ({
             ...prev,
             [questaoId]: alternativa
@@ -98,16 +118,16 @@ export default function SimuladoQuestoesPage() {
 
     if (isLoading) {
         return (
-            <div className="container mx-auto py-6">
-                <div className="text-center">Carregando...</div>
+            <div className="container mx-auto py-10 text-center">
+                <span className="text-gray-600">Carregando...</span>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="container mx-auto py-6">
-                <div className="text-center text-red-500">{error}</div>
+            <div className="container mx-auto py-10 text-center text-red-500">
+                {error}
             </div>
         );
     }
@@ -115,26 +135,29 @@ export default function SimuladoQuestoesPage() {
     const status = (() => {
         switch (simulado?.visibility) {
             case "draft":
-                return <span className="text-blue-600">Em Rascunho</span>;
+                return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">Concluído</span>;
             case "published":
-                return <span className="text-yellow-500">Em Andamento</span>;
+                return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Em Andamento</span>;
             default:
-                return <span className="text-red-600">Expirada</span>;
+                return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">Expirada</span>;
         }
     })();
+
     return (
-        <div className="max-w-4xl mx-auto py-6">
+        <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
             <div className="mb-6">
-                <Link href="/pages/simulados" className="flex items-center text-blue-600 hover:text-blue-800">
+                <Link href="/pages/simulados" className="flex items-center text-blue-600 hover:underline font-medium">
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Voltar para Simulados
                 </Link>
             </div>
 
-            <Card className="mb-6">
+            <Card className="mb-6 shadow-lg rounded-2xl border border-gray-200">
                 <CardHeader>
-                    <CardTitle className="text-2xl font-bold text-center">{simulado?.title.toUpperCase()}</CardTitle>
-                    <div className="text-sm text-black-500 font-bold flex justify-between">
+                    <CardTitle className="text-2xl font-bold text-center text-gray-800">
+                        {simulado?.title.toUpperCase()}
+                    </CardTitle>
+                    <div className="text-sm text-gray-700 font-semibold flex flex-col lg:flex-row md:flex-row md:justify-between lg:justify-between gap-2 align-center mt-4 ">
                         <p>Tentativas máximas: {simulado?.max_attempts}</p>
                         <p>Duração: {simulado?.duration_minutes} minutos</p>
                         <p>Status: {status}</p>
@@ -143,18 +166,16 @@ export default function SimuladoQuestoesPage() {
             </Card>
 
             {questoes.map((questao, index) => (
-                <Card key={questao.id} className="mb-6">
-                    <CardHeader className="mb-6">
-                        <CardTitle className="text-xl mb-4 font-bold flex justify-between items-center">
+                <Card key={questao.id} className="mb-6 shadow-md border border-gray-200 rounded-xl">
+                    <CardHeader className="mb-2">
+                        <CardTitle className="text-xl mb-4 font-bold flex justify-between items-center ">
                             Questão {index + 1}
-                            <div className="text-sm text-gray-500">
-                                <p>Pontos: {questao.points}</p>
-                            </div>
+                            <span className="text-sm text-gray-500">Pontos: {questao.points}</span>
                         </CardTitle>
-                        <span>{questao.statement}</span>
-                        
-                        {questao.image !== "" ? (
-                            <div className="relative w-full h-64 my-4">
+                        <p className="text-gray-800">{questao.statement}</p>
+
+                        {questao.image && (
+                            <div className="relative w-full h-64 my-4 rounded-lg overflow-hidden ">
                                 <Image
                                     src={questao.image}
                                     alt={`Imagem da questão ${index + 1}`}
@@ -163,45 +184,88 @@ export default function SimuladoQuestoesPage() {
                                     className="rounded-lg"
                                 />
                             </div>
-                        ) : (
-                            null
                         )}
-                        
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-4">
-                            {questao.alternatives.map((alternativa) => (
-                                <div key={alternativa.id} className="flex items-center space-x-2">
-                                    <input
-                                        type="radio"
-                                        id={`questao-${questao.id}-${alternativa.id}`}
-                                        name={`questao-${questao.id}`}
-                                        value={alternativa.id}
-                                        checked={respostasUsuario[questao.id] === alternativa.id}
-                                        onChange={() => handleRespostaChange(questao.id, alternativa.id)}
-                                        className="h-4 w-4 accent-blue-600"
-                                    />
-                                    <label htmlFor={`questao-${questao.id}-${alternativa.id}`}>
-                                        {alternativa.id.toUpperCase()}) {alternativa.response}
-                                    </label>
-                                </div>
-                            ))}
+                        <div className="space-y-3">
+                            {questao.alternatives.map((alternativa) => {
+                                // Define a classe para alternativas corretas e para a seleção do usuário
+                                const isSelected = respostasUsuario[questao.id] === alternativa.id;
+                                const isCorrect = alternativa.correct_alternative;
+
+                                // Se concluído ou expirado, mostrar corretas em verde e demais neutras
+                                const showAnswerStyles = (concluido || simulado?.visibility !== "published");
+
+                                let alternativeClass = 'flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition ';
+
+
+
+                                if (showAnswerStyles) {
+                                    if (isCorrect) {
+                                        alternativeClass += ' border-green-600 bg-green-100 cursor-default';
+
+                                    } else if (isSelected) {
+                                        alternativeClass += ' border-red-600 bg-red-100 cursor-default';
+
+                                    } else {
+                                        alternativeClass += ' border-gray-300 bg-white cursor-default';
+                                    }
+                                } else {
+                                    alternativeClass += isSelected
+                                        ? 'border-[#133d86] bg-blue-100'
+                                        : 'border-gray-300 hover:bg-gray-50';
+                                }
+
+                                return (
+                                    <div
+                                        key={alternativa.id}
+                                        className={alternativeClass}
+                                        onClick={() => handleRespostaChange(questao.id, alternativa.id)}
+                                    >
+                                        {simulado?.visibility === "published" ? (
+                                            <input
+                                                type="radio"
+                                                id={`questao-${questao.id}-${alternativa.id}`}
+                                                name={`questao-${questao.id}`}
+                                                value={alternativa.id}
+                                                checked={isSelected}
+                                                onChange={() => handleRespostaChange(questao.id, alternativa.id)}
+                                                className={`mt-1 h-4 w-4 accent-blue-600`}
+                                                disabled={showAnswerStyles} // desabilita alteração
+                                            />
+                                        ) : (
+                                            null
+                                        )}
+                                        <label htmlFor={`questao-${questao.id}-${alternativa.id}`} className="text-sm text-gray-800 leading-5 select-none">
+                                            <strong>{alternativa.id.toUpperCase()})</strong> {alternativa.response}
+                                        </label>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </CardContent>
                 </Card>
             ))}
 
-            <div className="flex justify-end mt-6">
-                <Button 
-                    variant="default" 
-                    size="lg"
-                    className="w-full"
-                    disabled={Object.keys(respostasUsuario).length !== questoes.length}
-                >
-                    <Send className="h-4 w-4 mr-2" />
-                    Finalizar Simulado
-                </Button>
-            </div>
+            {/* Botão Finalizar só aparece se simulado estiver publicado e não concluído */}
+            {(simulado?.visibility === "published" && !concluido) && (
+                <div className="flex justify-end mt-10">
+                    <Button
+                        variant="default"
+                        size="lg"
+                        className={`w-full py-6 text-base font-bold rounded-xl transition 
+                            ${Object.keys(respostasUsuario).length !== questoes.length
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-[#133d86] hover:bg-blue-600'}
+                        `}
+                        disabled={Object.keys(respostasUsuario).length !== questoes.length}
+                        onClick={() => setConcluido(true)} // Simular conclusão ao clicar
+                    >
+                        <Send className="h-5 w-5 mr-2" />
+                        Finalizar Simulado
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }
