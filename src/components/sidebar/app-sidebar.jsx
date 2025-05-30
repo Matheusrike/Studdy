@@ -29,7 +29,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar"
-import Logo from "@/components/ui/logo"
+import Logo from "@/components/ui/logo";
 
 // Dados do aluno
 const dataAluno = {
@@ -141,13 +141,8 @@ const dataAdmin = {
       isActive: true,
     },
     {
-      title: "Conteúdo",
-      url: "#",
-      icon: Bot,
-    },
-    {
       title: "Administração",
-      url: "#",
+      url: "/pages/administracao",
       icon: BookOpen,
     },
   ],

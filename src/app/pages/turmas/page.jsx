@@ -454,7 +454,7 @@ export default function TurmasPage() {
 
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container py-6 mx-auto">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">

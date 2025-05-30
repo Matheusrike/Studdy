@@ -25,6 +25,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { useUser } from "@/contexts/UserContext";
+import { PageLoader } from "@/components/ui/loader";
 
 
 const VESTIBULAR_CATEGORIES = [
@@ -52,11 +54,23 @@ const iconMap = {
 };
 
 export default function VestibularesPage() {
+  const { userRole } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('todos');
   const [isCreateVestibularModalOpen, setIsCreateVestibularModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [favorites, setFavorites] = useState([]);
+
+  useEffect(() => {
+    // Simulate loading user role
+    const timer = setTimeout(() => {
+      setIsAuthorized(true);
+      setIsLoading(false);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const savedFavorites = localStorage.getItem('vestibulares_favorites');
@@ -170,6 +184,10 @@ export default function VestibularesPage() {
   const uniqueTypes = [...new Set(vestibulares.map(v => v.type))];
   const uniqueStates = [...new Set(vestibulares.map(v => v.state))];
 
+  if (isLoading) {
+    return <PageLoader />;
+  }
+
   return (
     <>
     <div className="min-h-screen bg-gray-50">
@@ -180,10 +198,12 @@ export default function VestibularesPage() {
             <h1 className="mt-4 text-2xl font-bold tracking-tight">Vestibulares</h1>
             <p className="mt-2 text-center">Acompanhe os principais vestibulares do Brasil</p>
           </div>
-          <Button onClick={() => setIsCreateVestibularModalOpen(true)} className="mb-4">
-            <Plus className="h-4 w-4 mr-2 " />
-            Novo Vestibular
-          </Button>
+          {isAuthorized && userRole === "admin" && (
+            <Button onClick={() => setIsCreateVestibularModalOpen(true)} className="mb-4">
+              <Plus className="h-4 w-4 mr-2 " />
+              Novo Vestibular
+            </Button>
+          )}
           <div className="mb-6 space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />

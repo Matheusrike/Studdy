@@ -11,6 +11,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import Logo from '@/components/ui/logo';
 import { BaseFormField, SelectFormField } from "@/components/ui/formfield";
+import { useUser } from "@/contexts/UserContext";
+import { useRouter } from "next/navigation";
+import { PageLoader } from "@/components/ui/loader";
 
 const ENDPOINTS = {
     alunos: "http://localhost:3001/admin/students",
@@ -217,6 +220,8 @@ const AlunoForm = ({ control, turmas, isLoading, error }) => (
 
 
 function CadastroForm() {
+    const { userRole } = useUser();
+    const router = useRouter();
     const [state, setState] = useState({
         areas: [],
         turmas: [],
@@ -228,6 +233,8 @@ function CadastroForm() {
         submitError: null,
         submitSuccess: false
     });
+    const [isAuthorized, setIsAuthorized] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     const form = useForm({
         resolver: zodResolver(formSchema),
@@ -304,6 +311,28 @@ function CadastroForm() {
             );
         }
     }, [tipo]);
+
+    useEffect(() => {
+        // Simulate loading user role
+        const timer = setTimeout(() => {
+            if (userRole !== "admin") {
+                router.push("/not-found");
+            } else {
+                setIsAuthorized(true);
+            }
+            setIsLoading(false);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [userRole, router]);
+
+    if (isLoading) {
+        return <PageLoader />;
+    }
+
+    if (!isAuthorized) {
+        return null;
+    }
 
     const formatPayload = (data, tipo) => {
         const payloads = {
@@ -454,7 +483,6 @@ function CadastroForm() {
         </div>
     );
 }
-
 export default function Cadastro() {
     return <CadastroForm />;
 }

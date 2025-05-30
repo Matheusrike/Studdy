@@ -11,7 +11,8 @@ export default function MaterialPage() {
     const [materiais, setMateriais] = useState({
         videoaulas: [],
         apostilas: [],
-        resumos: []
+        resumos: [],
+        exercicios: []
     });
 
     // useEffect(() => {

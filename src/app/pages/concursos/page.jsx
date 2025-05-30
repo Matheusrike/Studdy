@@ -35,6 +35,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { useUser } from "@/contexts/UserContext";
+import { PageLoader } from "@/components/ui/loader";
 
 
 const CONCURSO_CATEGORIES = [
@@ -58,12 +60,13 @@ const ICON_OPTIONS = {
 const concursos = require("@/dados/concursos.json");
 
 export default function ConcursosPage() {
+  const { userRole } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('todos');
   const [favorites, setFavorites] = useState([]);
   const [isCreateConcursoModalOpen, setIsCreateConcursoModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   const iconMap = {
     Shield: Shield,
@@ -79,6 +82,16 @@ export default function ConcursosPage() {
     if (savedFavorites) {
       setFavorites(JSON.parse(savedFavorites));
     }
+  }, []);
+
+  useEffect(() => {
+    // Simulate loading user role
+    const timer = setTimeout(() => {
+      setIsAuthorized(true);
+      setIsLoading(false);
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const toggleFavorite = (title) => {
@@ -182,6 +195,10 @@ export default function ConcursosPage() {
     });
   };
 
+  if (isLoading) {
+    return <PageLoader />;
+  }
+
   return (
     <>
       <div className="min-h-screen bg-gray-50 ">
@@ -193,10 +210,12 @@ export default function ConcursosPage() {
               <p className="mt-2 text-center">Acompanhe as principais oportunidades de carreira pública</p>
 
             </div>
-            <Button onClick={() => setIsCreateConcursoModalOpen(true)} className="mb-4">
-              <Plus className="h-4 w-4 mr-2 " />
-              Novo Concurso
-            </Button>
+            {isAuthorized && userRole === "admin" && (
+              <Button onClick={() => setIsCreateConcursoModalOpen(true)} className="mb-4">
+                <Plus className="h-4 w-4 mr-2 " />
+                Novo Concurso
+              </Button>
+            )}
             <div className="mb-6 space-y-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />

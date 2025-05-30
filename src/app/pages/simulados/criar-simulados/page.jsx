@@ -65,11 +65,11 @@ import {
   ];
   
   
-export default function SimuladosPage() {
+export default function CriarSimuladosPage() {
     const [questoes, setQuestoes] = useState([1]);
     const [titulo, setTitulo] = useState("");
     const [icone, setIcone] = useState("Calculator");
-    const [resumo, setResumo] = useState("");
+    const [descricao, setdescricao] = useState("");
 
     const adicionarQuestao = () => {
         setQuestoes(prev => [...prev, prev.length + 1]);
@@ -81,7 +81,7 @@ export default function SimuladosPage() {
 
     const salvarSimulado = () => {
         // TODO: Implementar lógica para salvar o simulado
-        console.log({ titulo, icone, resumo });
+        console.log({ titulo, icone, descricao });
     };
 
     return (
@@ -127,13 +127,13 @@ export default function SimuladosPage() {
                             </div>
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label className="font-semibold text-[#133D86] text-base">Resumo</label>
+                            <label className="font-semibold text-[#133D86] text-base">Descrição</label>
                             <Input
                                 type="text"
                                 placeholder="Ex: Questões de álgebra, geometria e funções"
                                 className="text-base font-normal h-12 rounded-lg border-gray-200 focus:border-[#133D86] focus:ring-[#133D86] shadow-sm"
-                                value={resumo}
-                                onChange={e => setResumo(e.target.value)}
+                                value={descricao}
+                                onChange={e => setdescricao(e.target.value)}
                             />
                         </div>
                     </div>
