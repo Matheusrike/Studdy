@@ -23,6 +23,7 @@ const protectedRoutes = {
 		'/pages/concurso',
 		'/pages/vestibular',
 		'/pages/turmas',
+		'/pages/profile',
 	],
 	professor: [
 		'/pages/professor',
@@ -33,6 +34,7 @@ const protectedRoutes = {
 		'/pages/material/resumos/criar-resumos',
 		'/pages/material/apostilas/criar-apostilas',
 		'/pages/turmas',
+		'/pages/profile',
 	],
 	aluno: [
 		'/pages/aluno',
@@ -42,6 +44,7 @@ const protectedRoutes = {
 		'/pages/material/resumos',
 		'/pages/material/apostilas',
 		'/pages/turmas',
+		'/pages/profile',
 	],
 };
 
@@ -55,17 +58,6 @@ function RootLayoutContent({ children }) {
 	useEffect(() => {
 		// Simula um pequeno delay para carregar a role
 		const timer = setTimeout(() => {
-			// const isProtectedRoute = Object.values(protectedRoutes).some(routes =>
-			//   routes.some(route => pathname.startsWith(route))
-			// );
-
-			// if (isProtectedRoute) {
-			//   const allowedRoutes = protectedRoutes[userRole] || [];
-			//   const hasAccess = allowedRoutes.some(route => pathname.startsWith(route));
-			//   setIsAuthorized(hasAccess);
-			// } else {
-			//   setIsAuthorized(true);
-			// }
 			setIsAuthorized(true);
 			setIsLoading(false);
 		}, 500);
@@ -77,10 +69,38 @@ function RootLayoutContent({ children }) {
 		return <Loader />;
 	}
 
-	// if (!isAuthorized) {
-	//   window.location.href = '/not-found';
-	//   return null;
-	// }
+	// Se estiver na página de login ou recovery, não mostra a sidebar
+	if (pathname === '/pages/login' || pathname.startsWith('/pages/recovery')) {
+		return (
+			<div className="flex h-screen w-screen bg-slate-100 min-h-screen min-w-screen">
+				<main className="flex-1 overflow-y-auto">
+					{children}
+				</main>
+			</div>
+		);
+	}
+
+	// Verifica se a rota atual existe nas rotas protegidas
+	const allProtectedRoutes = [
+		...protectedRoutes.admin,
+		...protectedRoutes.professor,
+		...protectedRoutes.aluno,
+		'/pages/painel',
+		'/pages/login',
+		'/pages/recovery',
+		'/pages/not-found'
+	];
+
+	// Se a rota não existir nas rotas protegidas, não mostra a sidebar
+	if (!allProtectedRoutes.includes(pathname) && !pathname.startsWith('/pages/turmas/')) {
+		return (
+			<div className="flex h-screen w-screen bg-slate-100 min-h-screen min-w-screen">
+				<main className="flex-1 overflow-y-auto">
+					{children}
+				</main>
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex h-screen w-screen bg-slate-100 min-h-screen min-w-screen">

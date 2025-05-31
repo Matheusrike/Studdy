@@ -30,15 +30,15 @@ export default function AdministracaoPage() {
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
-    const [selectedType, setSelectedType] = useState('professores');
-    const [professores, setProfessores] = useState([]);
-    const [alunos, setAlunos] = useState([]);
+    const [selectedType, setSelectedType] = useState('teachers');
+    const [teachers, setTeachers] = useState([]);
+    const [students, setStudents] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
     const types = [
-        { id: 'professores', label: 'Professores' },
-        { id: 'alunos', label: 'Alunos' },
+        { id: 'teachers', label: 'Professores' },
+        { id: 'students', label: 'Alunos' },
     ];
 
     useEffect(() => {
@@ -48,38 +48,30 @@ export default function AdministracaoPage() {
                 setError(null);
                 console.log('Iniciando busca de professores...');
 
-                const response = await fetch('http://localhost:3001/admin/teachers ', {
+                const response = await fetch('http://localhost:3000/admin/teachers', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                     }
                 });
 
-                console.log('Resposta recebida:', response.status);
+                if (!response.ok) {
+                    throw new Error('Erro ao buscar professores');
+                }
 
-                const teachers = await response.json();
-                console.log('Dados recebidos:', teachers);
+                const teachersData = await response.json();
+                console.log('Dados recebidos:', teachersData);
 
-                // Buscar informações dos usuários para cada professor
-                const teachersWithUserInfo = await Promise.all(
-                    teachers.map(async (teacher) => {
-                        const userResponse = await fetch(`http://localhost:3001/users/${teacher.user_id}`, {
-                            method: 'GET',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            }
-                        });
-                        const userData = await userResponse.json();
-                        return {
-                            ...teacher,
-                            nome: userData.name,
-                            email: userData.email,
-                            telefone: userData.phone || 'Não informado'
-                        };
-                    })
-                );
+                const formattedTeachers = teachersData.map(teacher => ({
+                    id: teacher.id,
+                    nome: teacher.user.name,
+                    email: teacher.user.email,
+                    cpf: teacher.user.cpf,
+                    dataNascimento: teacher.user.birth_date ? new Date(teacher.user.birth_date).toLocaleDateString('pt-BR') : 'Não informado',
+                    materias: teacher.teacher_subjects.map(ts => ts.subject.name).join(', ')
+                }));
                 
-                setProfessores(teachersWithUserInfo);
+                setTeachers(formattedTeachers);
             } catch (error) {
                 console.error('Erro ao buscar professores:', error);
                 setError(error.message || 'Não foi possível carregar os professores');
@@ -88,7 +80,48 @@ export default function AdministracaoPage() {
             }
         };
 
+        const fetchStudents = async () => {
+            try {
+                setIsLoading(true);
+                setError(null);
+                console.log('Iniciando busca de alunos...');
+
+                const response = await fetch('http://localhost:3000/admin/students', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erro ao buscar alunos');
+                }
+
+                const studentsData = await response.json();
+                console.log('Dados recebidos:', studentsData);
+
+                const formattedStudents = studentsData.map(student => ({
+                    id: student.id,
+                    nome: student.user.name,
+                    email: student.user.email,
+                    cpf: student.user.cpf,
+                    dataNascimento: student.user.birth_date ? new Date(student.user.birth_date).toLocaleDateString('pt-BR') : 'Não informado',
+                    matricula: student.enrollment ,
+                    turma: student.class?.name || 'Não informado',
+                    curso: student.class?.course || 'Não informado'
+                }));
+                
+                setStudents(formattedStudents);
+            } catch (error) {
+                console.error('Erro ao buscar alunos:', error);
+                setError(error.message || 'Não foi possível carregar os alunos');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
         fetchTeachers();
+        fetchStudents();
     }, []);
 
     const filterItems = (items) => {
@@ -99,92 +132,114 @@ export default function AdministracaoPage() {
         );
     };
 
-    const currentItems = selectedType === 'professores' ? filterItems(professores) : filterItems(alunos);
+    const currentItems = selectedType === 'teachers' ? filterItems(teachers) : filterItems(students);
 
 
 
     const handleUpdate = async (id, data) => {
         try {
             setIsLoading(true);
-            const teacher = professores.find(t => t.id === id);
+            const item = selectedType === 'teachers' 
+                ? teachers.find(t => t.id === id)
+                : students.find(s => s.id === id);
             
-            // Atualizar o usuário
-            const userResponse = await fetch(`http://localhost:3001/users/${teacher.user_id}`, {
+            const endpoint = selectedType === 'teachers' 
+                ? `http://localhost:3000/admin/teachers/${id}`
+                : `http://localhost:3000/admin/students/${id}`;
+
+            const response = await fetch(endpoint, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    name: data.nome,
-                    email: data.email,
-                    phone: data.telefone
+                    user: {
+                        name: data.nome,
+                        email: data.email,
+                        cpf: data.cpf,
+                        birth_date: data.dataNascimento
+                    }
                 }),
             });
 
-            if (!userResponse.ok) {
-                throw new Error('Erro ao atualizar usuário');
+            if (!response.ok) {
+                throw new Error(`Erro ao atualizar ${selectedType === 'teachers' ? 'professor' : 'aluno'}`);
             }
 
-            const userData = await userResponse.json();
-            const updatedTeacher = {
-                ...teacher,
-                nome: userData.name,
-                email: userData.email,
-                telefone: userData.phone || 'Não informado'
-            };
+            const updatedData = await response.json();
+            
+            if (selectedType === 'teachers') {
+                const updatedTeacher = {
+                    ...item,
+                    nome: updatedData.user.name,
+                    email: updatedData.user.email,
+                    cpf: updatedData.user.cpf,
+                    dataNascimento: updatedData.user.birth_date ? new Date(updatedData.user.birth_date).toLocaleDateString('pt-BR') : 'Não informado',
+                    materias: updatedData.teacher_subjects.map(ts => ts.subject.name).join(', ')
+                };
+                setTeachers(prev => prev.map(t => t.id === id ? updatedTeacher : t));
+            } else {
+                const updatedStudent = {
+                    ...item,
+                    nome: updatedData.user.name,
+                    email: updatedData.user.email,
+                    cpf: updatedData.user.cpf,
+                    dataNascimento: updatedData.user.birth_date ? new Date(updatedData.user.birth_date).toLocaleDateString('pt-BR') : 'Não informado',
+                    matricula: updatedData.enrollment,
+                    turma: updatedData.class.name,
+                    curso: updatedData.class.course
+                };
+                setStudents(prev => prev.map(s => s.id === id ? updatedStudent : s));
+            }
 
-            setProfessores(prev => prev.map(t => 
-                t.id === id ? updatedTeacher : t
-            ));
             setIsEditModalOpen(false);
-            toast.success('Professor atualizado com sucesso!');
+            toast.success(`${selectedType === 'teachers' ? 'Professor' : 'Aluno'} atualizado com sucesso!`);
         } catch (error) {
-            console.error('Erro ao atualizar professor:', error);
-            toast.error('Erro ao atualizar professor');
+            console.error(`Erro ao atualizar ${selectedType === 'teachers' ? 'professor' : 'aluno'}:`, error);
+            toast.error(`Erro ao atualizar ${selectedType === 'teachers' ? 'professor' : 'aluno'}`);
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleDelete = async (id) => {
-        if (!confirm('Tem certeza que deseja excluir este professor?')) {
+        if (!confirm(`Tem certeza que deseja excluir este ${selectedType === 'teachers' ? 'professor' : 'aluno'}?`)) {
             return;
         }
 
         try {
             setIsLoading(true);
-            const teacher = professores.find(t => t.id === id);
+            const endpoint = selectedType === 'teachers' 
+                ? `http://localhost:3000/admin/teachers/${id}`
+                : `http://localhost:3000/admin/students/${id}`;
 
-            // Primeiro deletar o professor
-            const teacherResponse = await fetch(`http://localhost:3001/teacher/${id}`, {
+            const response = await fetch(endpoint, {
                 method: 'DELETE',
             });
 
-            if (!teacherResponse.ok) {
-                throw new Error('Erro ao excluir professor');
+            if (!response.ok) {
+                throw new Error(`Erro ao excluir ${selectedType === 'teachers' ? 'professor' : 'aluno'}`);
             }
 
-            // Depois deletar o usuário
-            const userResponse = await fetch(`http://localhost:3001/users/${teacher.user_id}`, {
-                method: 'DELETE',
-            });
-
-            if (!userResponse.ok) {
-                throw new Error('Erro ao excluir usuário');
+            if (selectedType === 'teachers') {
+                setTeachers(prev => prev.filter(t => t.id !== id));
+            } else {
+                setStudents(prev => prev.filter(s => s.id !== id));
             }
 
-            setProfessores(prev => prev.filter(t => t.id !== id));
-            toast.success('Professor excluído com sucesso!');
+            toast.success(`${selectedType === 'teachers' ? 'Professor' : 'Aluno'} excluído com sucesso!`);
         } catch (error) {
-            console.error('Erro ao excluir professor:', error);
-            toast.error('Erro ao excluir professor');
+            console.error(`Erro ao excluir ${selectedType === 'teachers' ? 'professor' : 'aluno'}:`, error);
+            toast.error(`Erro ao excluir ${selectedType === 'teachers' ? 'professor' : 'aluno'}`);
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleDetails = (id) => {
-        const item = professores.find(teacher => teacher.id === id);
+        const item = selectedType === 'teachers' 
+            ? teachers.find(teacher => teacher.id === id)
+            : students.find(student => student.id === id);
         setSelectedItem(item);
         setIsDetailsModalOpen(true);
     };
@@ -230,7 +285,11 @@ export default function AdministracaoPage() {
                                 <TableRow>
                                     <TableHead>Nome</TableHead>
                                     <TableHead>Email</TableHead>
-                                    <TableHead>Telefone</TableHead>
+                                    {selectedType === 'teachers' ? (
+                                        <TableHead>Matérias</TableHead>
+                                    ) : (
+                                        <TableHead>Turma</TableHead>
+                                    )}
                                     <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -239,7 +298,13 @@ export default function AdministracaoPage() {
                                     <TableRow key={item.id}>
                                         <TableCell>{item.nome}</TableCell>
                                         <TableCell>{item.email}</TableCell>
-                                        <TableCell>{item.telefone}</TableCell>
+                                        {selectedType === 'teachers' ? (
+                                            <TableCell>{item.materias?.split(', ').map(materia => 
+                                                materia.charAt(0).toUpperCase() + materia.slice(1)
+                                            ).join(', ')}</TableCell>
+                                        ) : (
+                                            <TableCell>{item.turma}</TableCell>
+                                        )}
                                         <TableCell className="text-right space-x-2">
                                             <Button
                                                 variant="ghost"
@@ -284,7 +349,7 @@ export default function AdministracaoPage() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>
-                            {isCreateModalOpen ? 'Adicionar' : 'Editar'} {selectedType === 'professores' ? 'Professor' : 'Aluno'}
+                            {isCreateModalOpen ? 'Adicionar' : 'Editar'} {selectedType === 'teachers' ? 'Professor' : 'Aluno'}
                         </DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -311,13 +376,27 @@ export default function AdministracaoPage() {
                             />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="telefone" className="text-right">
-                                Telefone
+                            <Label htmlFor="cpf" className="text-right">
+                                CPF
                             </Label>
                             <Input
-                                id="telefone"
-                                value={selectedItem?.telefone || ""}
-                                onChange={(e) => setSelectedItem(prev => ({ ...prev, telefone: e.target.value }))}
+                                id="cpf"
+                                value={selectedItem?.cpf || ""}
+                                onChange={(e) => setSelectedItem(prev => ({ ...prev, cpf: e.target.value }))}
+                                className="col-span-3"
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="dataNascimento" className="text-right">
+                                Data de Nascimento
+                            </Label>
+                            <Input
+                                id="dataNascimento"
+                                type="date"
+                                value={selectedItem?.dataNascimento && selectedItem.dataNascimento !== 'Não informado' 
+                                    ? new Date(selectedItem.dataNascimento.split('/').reverse().join('-')).toISOString().split('T')[0] 
+                                    : ""}
+                                onChange={(e) => setSelectedItem(prev => ({ ...prev, dataNascimento: e.target.value }))}
                                 className="col-span-3"
                             />
                         </div>
@@ -344,23 +423,57 @@ export default function AdministracaoPage() {
 
             {/* Modal de Detalhes */}
             <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
-                <DialogContent className="max-w-3xl w-full">
+                <DialogContent className="max-w-3xl w-full" aria-describedby="descricao-modal">
+                    <p id="descricao-modal" className="sr-only">
+                        Modal com detalhes completos do {selectedType === 'teachers' ? 'professor' : 'aluno'} selecionado.
+                    </p>
                     <DialogHeader>
-                        <DialogTitle>Detalhes</DialogTitle>
+                        <DialogTitle>Detalhes do {selectedType === 'teachers' ? 'Professor' : 'Aluno'}</DialogTitle>
                     </DialogHeader>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <Label>Nome Completo</Label>
-                            <p className="text-sm text-muted-foreground">{selectedItem?.nome}</p>
+                            <p className="text-sm text-muted-foreground">{selectedItem?.nome || 'Não informado'}</p>
                         </div>
                         <div>
                             <Label>Email</Label>
-                            <p className="text-sm text-muted-foreground">{selectedItem?.email}</p>
+                            <p className="text-sm text-muted-foreground">{selectedItem?.email || 'Não informado'}</p>
                         </div>
                         <div>
-                            <Label>Telefone</Label>
-                            <p className="text-sm text-muted-foreground">{selectedItem?.telefone}</p>
+                            <Label>CPF</Label>
+                            <p className="text-sm text-muted-foreground">{selectedItem?.cpf || 'Não informado'}</p>
                         </div>
+                        <div>
+                            <Label>Data de Nascimento</Label>
+                            <p className="text-sm text-muted-foreground">{selectedItem?.dataNascimento || 'Não informado'}</p>
+                        </div>
+                        {selectedType === 'teachers' ? (
+                            <div className="grid grid-cols-2 gap-4 col-span-2">
+                                <div>
+                                    <Label>Matérias</Label>
+                                    <p className="text-sm text-muted-foreground">{selectedItem?.materias?.charAt(0).toUpperCase() + selectedItem?.materias?.slice(1) || 'Não informado'}</p>
+                                </div>
+                                <div>
+                                    <Label>Turmas</Label>
+                                    <p className="text-sm text-muted-foreground">{selectedItem?.turmas?.charAt(0).toUpperCase() + selectedItem?.turmas?.slice(1) || 'Não informado'}</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <div>
+                                    <Label>Matrícula</Label>
+                                    <p className="text-sm text-muted-foreground">{selectedItem?.matricula}</p>
+                                </div>
+                                <div>
+                                    <Label>Turma</Label>
+                                    <p className="text-sm text-muted-foreground">{selectedItem?.turma || 'Não informado'}</p>
+                                </div>
+                                <div className="col-span-2">
+                                    <Label>Curso</Label>
+                                    <p className="text-sm text-muted-foreground">{selectedItem?.curso || 'Não informado'}</p>
+                                </div>
+                            </>
+                        )}
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDetailsModalOpen(false)}>

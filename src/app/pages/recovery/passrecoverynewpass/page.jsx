@@ -79,10 +79,17 @@ const PassRecoveryNewPass = () => {
             const token = localStorage.getItem('validRecoveryToken');
             const email = localStorage.getItem('recoveryEmail');
 
-            const response = await fetch('http://localhost:3001/users', {
+            console.log('Dados sendo enviados:', {
+                email,
+                token: token ? 'Token presente' : 'Token ausente',
+                passwordLength: data.newpassword.length
+            });
+
+            const response = await fetch('http://localhost:3000/login/new-password', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     email: email,
@@ -90,20 +97,27 @@ const PassRecoveryNewPass = () => {
                 }),
             });
 
+            const responseData = await response.json();
+            console.log('Resposta do servidor:', responseData);
+
             if (!response.ok) {
-                throw new Error('Erro ao atualizar senha');
+                throw new Error(responseData.message || 'Erro ao atualizar senha');
             }
 
             // Limpa os dados de recuperação
             localStorage.removeItem('validRecoveryToken');
             localStorage.removeItem('recoveryEmail');
             
-            // Redireciona para a página de login
-            router.push('/pages/login');
+            setMsg('Senha atualizada com sucesso!');
+            
+            // Redireciona para a página de login após 2 segundos
+            setTimeout(() => {
+                router.push('/pages/login');
+            }, 2000);
             
         } catch (error) {
-            console.error('Erro ao atualizar senha:', error);
-            setMsg('Erro ao atualizar senha. Tente novamente.');
+            console.error('Erro detalhado:', error);
+            setMsg(error.message || 'Erro ao atualizar senha. Tente novamente.');
         } finally {
             setLoading(false);
         }

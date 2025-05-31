@@ -22,90 +22,31 @@ export default function TurmaDetalhesPage() {
   const params = useParams();
   const [turma, setTurma] = useState(null);
   const [alunos, setAlunos] = useState([]);
+  const [professores, setProfessores] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
   useEffect(() => {
     const fetchTurmaDetalhes = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        // Dados de teste para a turma
-        const turmaData = {
-          id: params.id,
-          name: "2TD",
-          course: "Desenvolvimento de Sistemas",
-          shift: "Afternoon",
-          created_at: "2024-03-20T10:00:00.000Z",
-          modified_at: "2024-03-20T10:00:00.000Z"
-        };
-        setTurma(turmaData);
-
-        // Dados de teste para os alunos
-        const alunosData = [
-          {
-            id: 1,
-            name: "João Silva",
-            registration: "2024001",
-            email: "joao.silva@email.com",
-            active: true
-          },
-          {
-            id: 2,
-            name: "Maria Santos",
-            registration: "2024002",
-            email: "maria.santos@email.com",
-            active: true
-          },
-          {
-            id: 3,
-            name: "Pedro Oliveira",
-            registration: "2024003",
-            email: "pedro.oliveira@email.com",
-            active: false
-          },
-          {
-            id: 4,
-            name: "Ana Costa",
-            registration: "2024004",
-            email: "ana.costa@email.com",
-            active: true
+        const turmaResponse = await fetch(`http://localhost:3000/admin/classes/${params.id}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
           }
-        ];
-        setAlunos(alunosData);
+        });
+        console.log('Resposta da turma:', turmaResponse.json);
+        const turmaData = await turmaResponse.json();
+        console.log('Dados da turma:', turmaData);
 
-        /* Comentando temporariamente as chamadas à API
-        try {
-          // Buscar detalhes da turma
-          const turmaResponse = await fetch(`http://localhost:3001/admin/classes/${params.id}`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            }
-          });
-
-          await handleApiError(turmaResponse, 'buscar detalhes da turma');
-          const turmaData = await turmaResponse.json();
-          setTurma(turmaData);
-
-          // Buscar alunos da turma
-          const alunosResponse = await fetch(`http://localhost:3001/admin/classes/${params.id}/students`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            }
-          });
-
-          await handleApiError(alunosResponse, 'buscar alunos da turma');
-          const alunosData = await alunosResponse.json();
-          setAlunos(alunosData);
-
-        } catch (error) {
-          handleFetchError(error, 'buscar dados da turma');
-        }
-        */
+        await handleApiError(turmaResponse, 'buscar detalhes da turma');
+      
+        setTurma(turmaData);
+        setAlunos(turmaData.students || []);
+        setProfessores(turmaData.teachers || []);
 
       } catch (error) {
         handleUnexpectedError(error, 'carregar página de turma');
@@ -122,7 +63,7 @@ export default function TurmaDetalhesPage() {
 
   const filteredAlunos = alunos.filter((aluno) => {
     return aluno.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           aluno.registration.toLowerCase().includes(searchTerm.toLowerCase());
+      aluno.enrollment.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   if (isLoading) {
@@ -141,6 +82,17 @@ export default function TurmaDetalhesPage() {
     );
   }
 
+  const SHIFT_OPTIONS = [
+    { value: 'Morning', label: 'Manhã' },
+    { value: 'Afternoon', label: 'Tarde' },
+    { value: 'Evening', label: 'Noturno' },
+  ];
+
+  const getShiftLabel = (shiftValue) => {
+    const shift = SHIFT_OPTIONS.find(option => option.value === shiftValue);
+    return shift ? shift.label : shiftValue;
+  };
+
   return (
     <div className="container mx-auto py-6">
       <div className="mb-6">
@@ -155,9 +107,37 @@ export default function TurmaDetalhesPage() {
           <CardTitle className="text-2xl font-bold">{turma?.name}</CardTitle>
           <div className="text-sm text-gray-500">
             <p>Curso: {turma?.course}</p>
-            <p>Turno: {turma?.shift === 'Afternoon' ? 'Tarde' : 'Manhã'}</p>
+            <p>Turno: {getShiftLabel(turma?.shift)}</p>
           </div>
         </CardHeader>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl">Professores da Turma</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader> 
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Disciplina</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {professores.map((professor) => (
+                <TableRow key={professor.teacher_id}>
+                  <TableCell>{professor.teacher_name}</TableCell>
+                  <TableCell>{professor.teacher_email}</TableCell>
+                  <TableCell>{professor.subject.name}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
       </Card>
 
       <Card>
@@ -182,27 +162,15 @@ export default function TurmaDetalhesPage() {
                 <TableHead>Nome</TableHead>
                 <TableHead>Matrícula</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAlunos.map((aluno) => (
-                <TableRow key={aluno.id}>
+                <TableRow key={aluno.student_id}>
                   <TableCell>{aluno.name}</TableCell>
-                  <TableCell>{aluno.registration}</TableCell>
+                  <TableCell>{aluno.enrollment}</TableCell>
                   <TableCell>{aluno.email}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        aluno.active
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {aluno.active ? "Ativo" : "Inativo"}
-                    </span>
-                  </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="sm">
                       Ver Detalhes

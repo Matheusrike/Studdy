@@ -76,7 +76,7 @@ export default function PassRecoveryPage() {
 
 		try {
 			// Verifica se o email existe na API
-			const response = await fetch(`http://localhost:3001/login`, {
+			const response = await fetch(`http://localhost:3000/login/recovery`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',

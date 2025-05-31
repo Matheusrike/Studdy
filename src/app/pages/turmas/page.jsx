@@ -180,7 +180,7 @@ export default function TurmasPage() {
         setIsLoading(true);
         setError(null);
 
-        const response = await fetch('http://localhost:3001/admin/classes', {
+        const response = await fetch('http://localhost:3000/admin/classes', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -189,6 +189,7 @@ export default function TurmasPage() {
 
         await handleApiError(response, 'buscar turmas');
         const data = await response.json();
+        console.log('Dados das turmas recebidos:', data);
         setTurmas(data);
       } catch (error) {
         handleFetchError(error, 'buscar turmas');
@@ -491,9 +492,8 @@ export default function TurmasPage() {
                   <TableCell>{turma.name}</TableCell>
                   <TableCell>{turma.course}</TableCell>
                   <TableCell>{turma.shift === 'Afternoon' ? 'Tarde' : 'Manhã'}</TableCell>
-                  <TableCell>
-                    {new Date(turma.created_at).toLocaleDateString('pt-BR')}
-                  </TableCell>
+                  <TableCell>{turma.created_at}</TableCell>
+                
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"

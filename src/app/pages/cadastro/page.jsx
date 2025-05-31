@@ -16,11 +16,17 @@ import { useRouter } from "next/navigation";
 import { PageLoader } from "@/components/ui/loader";
 
 const ENDPOINTS = {
-    alunos: "http://localhost:3001/admin/students",
-    professores: "http://localhost:3001/admin/teachers",
-    turmas: "http://localhost:3001/admin/classes",
-    disciplinas: "http://localhost:3001/subject"
+    Student: "http://localhost:3000/admin/students",
+    Teacher: "http://localhost:3000/admin/teachers",
+    classes: "http://localhost:3000/admin/classes",
+    subjects: "http://localhost:3000/admin/subjects"
 };
+
+const SHIFT_OPTIONS = [
+    { value: "Morning", label: "Manhã" },
+    { value: "Afternoon", label: "Tarde" },
+    { value: "Evening", label: "Noite" }
+];
 
 const shiftTurma = (shift) => {
     const shiftOption = SHIFT_OPTIONS.find(option => option.value === shift);
@@ -30,7 +36,9 @@ const shiftTurma = (shift) => {
 const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('pt-BR') : null;
 
 const formSchema = z.object({
-    tipo: z.string().min(1, "Selecione um tipo de usuário"),
+    tipo: z.enum(["Student", "Teacher", "subjects"], {
+        errorMap: () => ({ message: "Selecione um tipo de usuário válido" })
+    }),
     name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").max(100, "Nome deve ter no máximo 100 caracteres"),
     email: z.string().email("Email inválido").optional().or(z.literal('')),
     password: z.string()
@@ -50,26 +58,14 @@ const formSchema = z.object({
         .regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida")
         .optional()
         .or(z.literal('')),
-    class: z.string().min(1, "Selecione uma turma").optional().or(z.literal('')),
+    class: z.string().min(1, "Selecione uma turma").optional().or(z.literal('')), 
     curso: z.string().max(100, "Curso deve ter no máximo 100 caracteres").optional().or(z.literal('')),
-    area: z.string().optional().or(z.literal('')),
-    descricao: z.string().max(500, "Descrição deve ter no máximo 500 caracteres").optional().or(z.literal('')),
-    horario: z.string().optional().or(z.literal('')),
-    data: z.string()
-        .regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida")
-        .optional()
-        .or(z.literal(''))
-
-
-
+    subject: z.string().optional().or(z.literal('')),
+    subject2: z.string().optional().or(z.literal('')),
 }).refine((data) => {
     // Validações específicas por tipo
-    if (data.tipo === 'professores' || data.tipo === 'alunos') {
+    if (data.tipo === 'Teacher' || data.tipo === 'Student') {
         return data.email && data.password && data.cpf && data.birth_date;
-    }
-
-    if (data.tipo === 'concursos' || data.tipo === 'vestibulares') {
-        return data.data && data.tipo_concurso;
     }
     return true;
 }, {
@@ -78,7 +74,7 @@ const formSchema = z.object({
 });
 
 // Formulários específicos
-const DisciplinaForm = ({ control }) => (
+const SubjectForm = ({ control }) => (
     <BaseFormField
         control={control}
         name="name"
@@ -87,7 +83,7 @@ const DisciplinaForm = ({ control }) => (
     />
 );
 
-const ProfessorForm = ({ control, areas, isLoading, error }) => (
+const ProfessorForm = ({ control, subjects, isLoading, error }) => (
     <>
         <BaseFormField
             control={control}
@@ -124,22 +120,22 @@ const ProfessorForm = ({ control, areas, isLoading, error }) => (
         />
         <SelectFormField
             control={control}
-            name="area"
+            name="subject"
             label="Disciplina 1"
-            options={areas.map((area, index) => ({
+            options={subjects.map((subject, index) => ({
                 value: (index + 1).toString(),
-                label: area.charAt(0).toUpperCase() + area.slice(1)
+                label: subject.charAt(0).toUpperCase() + subject.slice(1)
             }))}
             placeholder="Selecione uma disciplina"
             disabled={isLoading}
         />
         <SelectFormField
             control={control}
-            name="area2"
+            name="subject2"
             label="Disciplina 2"
-            options={areas.map((area, index) => ({
+            options={subjects.map((subject, index) => ({
                 value: (index + 1).toString(),
-                label: area.charAt(0).toUpperCase() + area.slice(1)
+                label: subject.charAt(0).toUpperCase() + subject.slice(1)
             }))
             }
             placeholder="Selecione uma disciplina"
@@ -150,7 +146,7 @@ const ProfessorForm = ({ control, areas, isLoading, error }) => (
     </>
 );
 
-const AlunoForm = ({ control, turmas, isLoading, error }) => (
+const AlunoForm = ({ control, classes, isLoading, error }) => (
     <>
         <BaseFormField
             control={control}
@@ -197,7 +193,7 @@ const AlunoForm = ({ control, turmas, isLoading, error }) => (
                 <div className="text-sm text-red-500">
                     {error}
                 </div>
-            ) : turmas.length === 0 ? (
+            ) : classes.length === 0 ? (
                 <div className="text-sm text-muted-foreground">
                     Nenhuma turma disponível
                 </div>
@@ -206,7 +202,7 @@ const AlunoForm = ({ control, turmas, isLoading, error }) => (
                     control={control}
                     name="class"
                     label=""
-                    options={turmas.map(turma => ({
+                    options={classes.map((turma) => ({
                         value: turma.id.toString(),
                         label: `${turma.name} - ${shiftTurma(turma.shift)} (${turma.course})`
                     }))}
@@ -217,18 +213,16 @@ const AlunoForm = ({ control, turmas, isLoading, error }) => (
     </>
 );
 
-
-
 function CadastroForm() {
     const { userRole } = useUser();
     const router = useRouter();
     const [state, setState] = useState({
-        areas: [],
-        turmas: [],
+        subjects: [],
+        classes: [],
         isLoading: false,
-        isLoadingTurmas: false,
+        isLoadingClasses: false,
         error: null,
-        errorTurmas: null,
+        errorClasses: null,
         isSubmitting: false,
         submitError: null,
         submitSuccess: false
@@ -239,21 +233,15 @@ function CadastroForm() {
     const form = useForm({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            tipo: "selecione",
+            tipo: "",
             name: "",
             email: "",
             password: "",
             cpf: "",
             birth_date: "",
-            formacao: "",
-            area: "",
-            descricao: "",
-            horario: "",
-            data: "",
-            icone: "",
-            color: "#133D86",
+            subject: "",
+            subject2: "",
             class: "",
-            category: "",
         },
     });
 
@@ -287,13 +275,13 @@ function CadastroForm() {
     useEffect(() => {
         const loadInitialData = async () => {
             await fetchData(
-                ENDPOINTS.turmas,
-                data => setState(prev => ({ ...prev, turmas: data })),
-                'isLoadingTurmas'
+                ENDPOINTS.classes,
+                data => setState(prev => ({ ...prev, classes: data })),
+                'isLoadingClasses'
             );
             await fetchData(
-                ENDPOINTS.disciplinas,
-                data => setState(prev => ({ ...prev, areas: data.map(item => item.name) })),
+                ENDPOINTS.subjects,
+                data => setState(prev => ({ ...prev, subjects: data.map(item => item.name) })),
                 'isLoading'
             );
         };
@@ -301,13 +289,13 @@ function CadastroForm() {
         loadInitialData();
     }, []);
 
-    // Recarregar turmas apenas quando o tipo mudar para alunos
+    // Recarregar turmas apenas quando o tipo mudar para students
     useEffect(() => {
-        if (tipo === 'alunos' && state.turmas.length === 0) {
+        if (tipo === 'students' && state.classes.length === 0) {
             fetchData(
-                ENDPOINTS.turmas,
-                data => setState(prev => ({ ...prev, turmas: data })),
-                'isLoadingTurmas'
+                ENDPOINTS.classes,
+                data => setState(prev => ({ ...prev, classes: data })),
+                'isLoadingClasses'
             );
         }
     }, [tipo]);
@@ -336,8 +324,8 @@ function CadastroForm() {
 
     const formatPayload = (data, tipo) => {
         const payloads = {
-            disciplinas: { name: data.name.trim() },
-            professores: {
+            subjects: { name: data.name.trim() },
+            Teacher: {
                 user: {
                     name: data.name.trim(),
                     email: data.email.trim().toLowerCase(),
@@ -347,10 +335,12 @@ function CadastroForm() {
                     role: "Teacher"
                 },
                 teacher: {
-                    subjects: [parseInt(data.area || '1'), parseInt(data.area2 || '')].filter(id => !isNaN(id))
+                    subjects: [parseInt(data.subject || '1'), parseInt(data.subject2 || '')]
+                        .filter(id => !isNaN(id))
+                        .map(id => ({ id }))
                 }
             },
-            alunos: {
+            Student: {
                 user: {
                     name: data.name.trim(),
                     email: data.email.trim().toLowerCase(),
@@ -374,9 +364,11 @@ function CadastroForm() {
             const endpoint = ENDPOINTS[data.tipo];
             if (!endpoint) throw new Error("Tipo de cadastro inválido");
 
+
+
             const cleanData = formatPayload(data, data.tipo);
             if (!cleanData) throw new Error("Formato de dados inválido para o tipo selecionado");
-
+            console.log('Dados enviados:', cleanData);
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
@@ -407,22 +399,22 @@ function CadastroForm() {
 
     const renderFormByType = () => {
         switch (tipo) {
-            case "disciplinas":
-                return <DisciplinaForm control={form.control} />;
-            case "professores":
+            case "subjects":
+                return <SubjectForm control={form.control} />;
+            case "Teacher":
                 return <ProfessorForm
                     control={form.control}
-                    areas={state.areas}
-                    turmas={state.turmas}
+                    subjects={state.subjects}
+                    classes={state.classes}
                     isLoading={state.isLoading}
                     error={state.error}
                 />;
-            case "alunos":
+            case "Student":
                 return <AlunoForm
                     control={form.control}
-                    turmas={state.turmas}
-                    isLoading={state.isLoadingTurmas}
-                    error={state.errorTurmas}
+                    classes={state.classes}
+                    isLoading={state.isLoadingClasses}
+                    error={state.errorClasses}
                 />;
             default:
                 return null;
@@ -456,24 +448,22 @@ function CadastroForm() {
                         <SelectFormField
                             control={form.control}
                             name="tipo"
-                            label="Tipo de Usuário"
+                         
                             options={[
-                                { value: "selecione", label: "Selecione" },
-                                { value: "alunos", label: "Alunos" },
-                                { value: "professores", label: "Professores" },
-                                { value: "disciplinas", label: "Disciplinas" }
-
+                                { value: "Student", label: "Alunos" },
+                                { value: "Teacher", label: "Professores" },
+                                { value: "subjects", label: "Disciplinas" }
                             ]}
-                            placeholder="Selecione o tipo de usuário"
+                            placeholder="Selecione"
                             disabled={state.isSubmitting}
                         />
 
-                        {tipo && tipo !== "selecione" && renderFormByType()}
+                        {tipo && renderFormByType()}
 
                         <Button
                             type="submit"
                             className="w-full mt-6"
-                            disabled={state.isSubmitting || !tipo || tipo === "selecione"}
+                            disabled={state.isSubmitting || !tipo}
                         >
                             {state.isSubmitting ? 'Cadastrando...' : 'Cadastrar'}
                         </Button>

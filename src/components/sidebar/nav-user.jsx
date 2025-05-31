@@ -30,11 +30,60 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { useUser } from "@/contexts/UserContext"
+import { useRouter } from "next/navigation"
+import Cookies from 'js-cookie'
+import { useEffect, useState } from "react"
 
-export function NavUser({
-  user
-}) {
+export function NavUser() {
   const { isMobile } = useSidebar()
+  const { userRole, setUserRole } = useUser()
+  const router = useRouter()
+  const [userName, setUserName] = useState('')
+  const [userEmail, setUserEmail] = useState('')
+
+  useEffect(() => {
+    const storedRole = Cookies.get('userRole')
+    const storedName = Cookies.get('userName')
+    const storedEmail = Cookies.get('userEmail')
+
+    if (storedRole) {
+      setUserRole(storedRole)
+    }
+    if (storedName) {
+      setUserName(storedName)
+    }
+    if (storedEmail) {
+      setUserEmail(storedEmail)
+    }
+  }, [setUserRole])
+
+  const handleLogout = () => {
+    Cookies.remove('userRole')
+    Cookies.remove('userName')
+    Cookies.remove('userEmail')
+    setUserRole(null)
+    setUserName('')
+    setUserEmail('')
+    router.push('/pages/login')
+  }
+
+  const handleProfileClick = () => {
+    router.push('/pages/profile')
+  }
+
+  const getRoleLabel = (role) => {
+    switch (role?.toLowerCase()) {
+      case 'admin':
+        return 'Administrador'
+      case 'professor':
+        return 'Professor'
+      case 'student':
+        return 'Aluno'
+      default:
+        return 'Usuário'
+    }
+  }
 
   return (
     <SidebarMenu>
@@ -45,12 +94,12 @@ export function NavUser({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
               <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarImage src="/avatar.png" alt="Avatar" />
+                <AvatarFallback className="rounded-lg">{userName ? userName[0] : 'U'}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
+                <span className="truncate font-medium">{userName}</span>
+                <span className="truncate text-xs">{getRoleLabel(userRole)}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -64,18 +113,18 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarImage src="/avatar.png" alt="Avatar" />
+                  <AvatarFallback className="rounded-lg">{userName ? userName[0] : 'U'}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                  <span className="truncate font-medium">{userName}</span>
+                  <span className="truncate text-xs">{userEmail}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleProfileClick}>
                 <BadgeCheck className="mr-2 h-4 w-4" />
                 Perfil
               </DropdownMenuItem>
@@ -89,7 +138,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               Sair
             </DropdownMenuItem>
