@@ -65,12 +65,6 @@ export default function PassRecoveryPage() {
 	// Função para enviar token por e-mail usando emailjs
 	const enviarToken = async (data) => {
 		const emailValue = data.recoveryemail;
-
-		if (!validarEmail(emailValue)) {
-			setMsg('Informe um e-mail válido.');
-			return;
-		}
-
 		setLoading(true);
 		setMsg('');
 

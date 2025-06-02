@@ -21,8 +21,8 @@ import { Separator } from "@/components/ui/separator";
 import Alert from "@/components/ui/alerts";
 
 const formSchema = z.object({
-    pergunta: z.string().min(1, "Digite uma pergunta"),
-    respostaCorreta: z.string().min(1, "Digite a resposta correta"),
+    question: z.string().min(1, "Digite uma question"),
+    correctAnswer: z.string().min(1, "Digite a resposta correta"),
 });
 
 function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
@@ -38,8 +38,8 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
     const form = useForm({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            pergunta: "",
-            respostaCorreta: ""
+            question: "",
+            correctAnswer: ""
         },
     });
 
@@ -55,11 +55,11 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
             });
 
             const payload = {
-                pergunta: data.pergunta,
-                respostaCorreta: data.respostaCorreta
+                question: data.question,
+                correctAnswer: data.correctAnswer
             };
 
-            const response = await fetch(`https://api-studdy.onrender.com/api/gerar-alternativas`, {
+            const response = await fetch(`http://localhost:3000/teacher/generate-alternatives  `, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -77,11 +77,11 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
             const result = await response.json();
             console.log(`Alternativas geradas:`, result);
 
-            if (result.alternativasErradas && result.alternativasErradas.length >= 3) {
+            if (result.incorrectAnswers && result.incorrectAnswers.length >= 3) {
                 setAlternativas({
-                    alternativa1: result.alternativasErradas[0].trim(),
-                    alternativa2: result.alternativasErradas[1].trim(),
-                    alternativa3: result.alternativasErradas[2].trim()
+                    alternativa1: result.incorrectAnswers[0].trim(),
+                    alternativa2: result.incorrectAnswers[1].trim(),
+                    alternativa3: result.incorrectAnswers[2].trim()
                 });
             }
 
@@ -109,13 +109,13 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                     <FormField
                         control={form.control}
-                        name="pergunta"
+                        name="question"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Pergunta</FormLabel>
+                                <FormLabel>question</FormLabel>
                                 <FormControl>
                                     <Textarea
-                                        placeholder="Digite sua pergunta"
+                                        placeholder="Digite sua question"
                                         {...field}
                                         disabled={isSubmitting}
                                         className="min-h-[100px] resize-none focus-visible:border-[#1e40af] focus-visible:ring-[#1e40af] focus-visible:ring-[3px]"
@@ -128,7 +128,7 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
 
                     <FormField
                         control={form.control}
-                        name="respostaCorreta"
+                        name="correctAnswer"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="text-green-500">Resposta Correta</FormLabel>

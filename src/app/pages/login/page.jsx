@@ -34,11 +34,10 @@ export default function LoginPage() {
 
 	useEffect(() => {
 		const userRole = Cookies.get('userRole');
-		const userName = Cookies.get('userName');
-		const userEmail = Cookies.get('userEmail');
 		const userId = Cookies.get('userId');
+		const token = Cookies.get('token');
 
-		if (userRole && userName && userEmail && userId) {
+		if (userRole && userId && token) {
 			setUserRole(userRole);
 			router.push('/pages/painel');
 		}
@@ -56,6 +55,8 @@ export default function LoginPage() {
 		setIsLoading(true);
 
 		try {
+
+			console.log('Dados enviados:', data);
 			const response = await fetch('http://localhost:3000/login', {
 				method: 'POST',
 				headers: {
@@ -63,6 +64,9 @@ export default function LoginPage() {
 				},
 				body: JSON.stringify(data),
 			});
+
+			console.log('Dados recebidos:', response);
+	
 
 			if (!response.ok) {
 				throw new Error('Erro ao fazer login');
@@ -74,9 +78,8 @@ export default function LoginPage() {
 				// Define o tipo de usuário baseado na resposta da API
 				const userRole = responseData.user.role;
 				Cookies.set('userRole', userRole);
-				Cookies.set('userName', responseData.user.name);
-				Cookies.set('userEmail', responseData.user.email);
 				Cookies.set('userId', responseData.user.id);
+				Cookies.set('token', responseData.token);
 				setUserRole(userRole);
 				toast.success('Login realizado com sucesso!');
 				router.push('/pages/painel');

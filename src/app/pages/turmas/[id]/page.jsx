@@ -132,7 +132,14 @@ export default function TurmaDetalhesPage() {
                 <TableRow key={professor.teacher_id}>
                   <TableCell>{professor.teacher_name}</TableCell>
                   <TableCell>{professor.teacher_email}</TableCell>
-                  <TableCell>{professor.subject.name}</TableCell>
+                  <TableCell>
+                    {professor.subjects?.map((subject, index) => (
+                      <span key={subject.id}>
+                        {subject.name}
+                        {index < professor.subjects.length - 1 ? ', ' : ''}
+                      </span>
+                    ))}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
