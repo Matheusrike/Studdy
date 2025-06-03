@@ -1,6 +1,7 @@
 export const publicRoutes = [
     '/pages/login',
     '/pages/recovery/passrecovery',
+    '/pages/recovery/passrecoverynewpass',
 ];
 
 export const protectedRoutes = [
@@ -10,4 +11,4 @@ export const protectedRoutes = [
     '/pages/materias',
     '/pages/profile',
     '/pages/configuracoes',
-]; 
+];

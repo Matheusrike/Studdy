@@ -3,7 +3,7 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Form,
     FormControl,
@@ -26,7 +26,7 @@ const formSchema = z.object({
     correct_answer: z.string().min(1, "Digite a resposta correta"),
 });
 
-function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion, onAlternativesGenerated }) {
+function QuestionForm({ questionId, numeroQuestao, onAddQuestion, onDeleteQuestion, onAlternativesGenerated, existingQuestion }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState(null);
     const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -36,6 +36,36 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion, onAltern
         alternativa3: ''
     });
 
+    // Função para enviar dados atualizados para o componente pai
+    const updateParentData = (questionText, correctAnswer, alts) => {
+        if (questionText && correctAnswer && (alts.alternativa1 || alts.alternativa2 || alts.alternativa3)) {
+            onAlternativesGenerated({
+                questionId: questionId,
+                question: questionText,
+                correct_answer: correctAnswer,
+                alternativas: alts
+            });
+        }
+    };
+
+    // Atualizar dados quando alternativas mudarem
+    useEffect(() => {
+        const currentQuestion = form.getValues('question');
+        const currentCorrectAnswer = form.getValues('correct_answer');
+        if (currentQuestion && currentCorrectAnswer) {
+            updateParentData(currentQuestion, currentCorrectAnswer, alternativas);
+        }
+    }, [alternativas]);
+
+    // Atualizar dados quando pergunta ou resposta correta mudarem
+    const handleFormChange = () => {
+        const currentQuestion = form.getValues('question');
+        const currentCorrectAnswer = form.getValues('correct_answer');
+        if (currentQuestion && currentCorrectAnswer) {
+            updateParentData(currentQuestion, currentCorrectAnswer, alternativas);
+        }
+    };
+
     const form = useForm({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -43,6 +73,33 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion, onAltern
             correct_answer: ""
         },
     });
+
+    // Carregar dados existentes da questão no modo de edição
+    useEffect(() => {
+        if (existingQuestion) {
+            form.setValue('question', existingQuestion.statement || '');
+            
+            // Encontrar a alternativa correta
+            const correctAlternative = existingQuestion.alternatives?.find(alt => alt.isCorrect);
+            if (correctAlternative) {
+                form.setValue('correct_answer', correctAlternative.text || '');
+            }
+            
+            // Carregar alternativas incorretas
+            const incorrectAlternatives = existingQuestion.alternatives?.filter(alt => !alt.isCorrect) || [];
+            const newAlternativas = {
+                alternativa1: incorrectAlternatives[0]?.text || '',
+                alternativa2: incorrectAlternatives[1]?.text || '',
+                alternativa3: incorrectAlternatives[2]?.text || ''
+            };
+            setAlternativas(newAlternativas);
+            
+            // Atualizar dados no componente pai
+            if (existingQuestion.statement && correctAlternative) {
+                updateParentData(existingQuestion.statement, correctAlternative.text, newAlternativas);
+            }
+        }
+    }, [existingQuestion]);
 
     const onSubmit = async (data) => {
         try {
@@ -65,7 +122,7 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion, onAltern
                 correct_answer: data.correct_answer
             };
 
-            const response = await fetch(`http://localhost:3000/generate/wrong-alternatives`, {
+            const response = await fetch(`http://localhost:3000/generate/generate-alternatives`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -95,6 +152,7 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion, onAltern
                 
                 // Passa as alternativas geradas para o componente pai
                 onAlternativesGenerated({
+                    questionId: questionId,
                     question: data.question,
                     correct_answer: data.correct_answer,
                     alternativas: novasAlternativas
@@ -136,6 +194,10 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion, onAltern
                                         {...field}
                                         disabled={isSubmitting}
                                         className="min-h-[100px] resize-none focus-visible:border-[#1e40af] focus-visible:ring-[#1e40af] focus-visible:ring-[3px]"
+                                        onChange={(e) => {
+                                            field.onChange(e);
+                                            setTimeout(handleFormChange, 100);
+                                        }}
                                     />
                                 </FormControl>
                                 <FormMessage />
@@ -155,6 +217,10 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion, onAltern
                                         {...field}
                                         disabled={isSubmitting}
                                         className="focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px]"
+                                        onChange={(e) => {
+                                            field.onChange(e);
+                                            setTimeout(handleFormChange, 100);
+                                        }}
                                     />
                                 </FormControl>
                                 <FormMessage />
@@ -162,51 +228,61 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion, onAltern
                         )}
                     />
 
-                    {submitSuccess && (
-                        <div className="space-y-4">
-                            <FormItem>
-                                <FormLabel className="text-red-500">Alternativa Incorreta 1</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        value={alternativas.alternativa1}
-                                        onChange={(e) => setAlternativas(prev => ({
+                    <div className="space-y-4">
+                        <FormItem>
+                            <FormLabel className="text-red-500">Alternativa Incorreta 1</FormLabel>
+                            <FormControl>
+                                <Input
+                                    placeholder="Clique em 'Gerar Alternativas' para preencher automaticamente"
+                                    value={alternativas.alternativa1}
+                                    onChange={(e) => {
+                                        setAlternativas(prev => ({
                                             ...prev,
                                             alternativa1: e.target.value
-                                        }))}
-                                        className="focus-visible:border-red-500 focus-visible:ring-red-500/50 focus-visible:ring-[3px]"
-                                    />
-                                </FormControl>
-                            </FormItem>
+                                        }));
+                                        setTimeout(handleFormChange, 100);
+                                    }}
+                                    className="focus-visible:border-red-500 focus-visible:ring-red-500/50 focus-visible:ring-[3px]"
+                                />
+                            </FormControl>
+                        </FormItem>
 
-                            <FormItem>
-                                <FormLabel className="text-red-500">Alternativa Incorreta 2</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        value={alternativas.alternativa2}
-                                        onChange={(e) => setAlternativas(prev => ({
+                        <FormItem>
+                            <FormLabel className="text-red-500">Alternativa Incorreta 2</FormLabel>
+                            <FormControl>
+                                <Input
+                                    placeholder="Clique em 'Gerar Alternativas' para preencher automaticamente"
+                                    value={alternativas.alternativa2}
+                                    onChange={(e) => {
+                                        setAlternativas(prev => ({
                                             ...prev,
                                             alternativa2: e.target.value
-                                        }))}
-                                        className="focus-visible:border-red-500 focus-visible:ring-red-500/50 focus-visible:ring-[3px]"
-                                    />
-                                </FormControl>
-                            </FormItem>
+                                        }));
+                                        setTimeout(handleFormChange, 100);
+                                    }}
+                                    className="focus-visible:border-red-500 focus-visible:ring-red-500/50 focus-visible:ring-[3px]"
+                                />
+                            </FormControl>
+                        </FormItem>
 
-                            <FormItem>
-                                <FormLabel className="text-red-500">Alternativa Incorreta 3</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        value={alternativas.alternativa3}
-                                        onChange={(e) => setAlternativas(prev => ({
+                        <FormItem>
+                            <FormLabel className="text-red-500">Alternativa Incorreta 3</FormLabel>
+                            <FormControl>
+                                <Input
+                                    placeholder="Clique em 'Gerar Alternativas' para preencher automaticamente"
+                                    value={alternativas.alternativa3}
+                                    onChange={(e) => {
+                                        setAlternativas(prev => ({
                                             ...prev,
                                             alternativa3: e.target.value
-                                        }))}
-                                        className="focus-visible:border-red-500 focus-visible:ring-red-500/50 focus-visible:ring-[3px]"
-                                    />
-                                </FormControl>
-                            </FormItem>
-                        </div>
-                    )}
+                                        }));
+                                        setTimeout(handleFormChange, 100);
+                                    }}
+                                    className="focus-visible:border-red-500 focus-visible:ring-red-500/50 focus-visible:ring-[3px]"
+                                />
+                            </FormControl>
+                        </FormItem>
+                    </div>
 
                     <div className="flex gap-4">
                         <Button
@@ -234,8 +310,9 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion, onAltern
     );
 }
 
-export default function Question({ numeroQuestao, onAddQuestion, onDeleteQuestion, onAlternativesGenerated }) {
+export default function Question({ questionId, numeroQuestao, onAddQuestion, onDeleteQuestion, onAlternativesGenerated }) {
     return <QuestionForm 
+        questionId={questionId}
         numeroQuestao={numeroQuestao} 
         onAddQuestion={onAddQuestion} 
         onDeleteQuestion={onDeleteQuestion}

@@ -1,16 +1,20 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Send, Edit } from "lucide-react";
 import Link from "next/link";
 import { handleUnexpectedError } from "@/utils/errorHandler";
 import Image from "next/image";
+import { QuizVisibility } from "../enums/QuizVisibility";
+import { useUser } from "@/contexts/UserContext";
 
 export default function SimuladoQuestoesPage() {
     const params = useParams();
+    const router = useRouter();
+    const { userRole } = useUser();
     const [simulado, setSimulado] = useState(null);
     const [questoes, setQuestoes] = useState([]);
     const [respostasUsuario, setRespostasUsuario] = useState({});
@@ -19,7 +23,28 @@ export default function SimuladoQuestoesPage() {
 
     // Estado para indicar se o simulado já foi concluído
     const [concluido, setConcluido] = useState(false);
-    const showAnswerStyles = simulado?.visibility !== "published";
+    
+    // Determinar o modo de visualização baseado no status e tipo de usuário
+    const getViewMode = () => {
+        if (!simulado) return 'loading';
+        
+        switch (simulado.visibility) {
+            case QuizVisibility.DRAFT:
+                // Draft: sempre permite edição
+                return 'edit';
+            case QuizVisibility.PUBLIC:
+                // Published: student responde, teacher pode editar
+                return userRole === 'student' ? 'answer' : 'edit';
+            case QuizVisibility.ARCHIVED:
+                // Archived: apenas visualizar resultado
+                return 'result';
+            default:
+                return 'result';
+        }
+    };
+    
+    const viewMode = getViewMode();
+    const showAnswerStyles = viewMode === 'result' || concluido;
 
 
     useEffect(() => {
@@ -48,7 +73,7 @@ export default function SimuladoQuestoesPage() {
                     teacher_subject_class_id: 1,
                     max_attempts: 1,
                     duration_minutes: 60,
-                    visibility: "published" // Altere para testar "draft" ou outro para simular expirado
+                    visibility: QuizVisibility.DRAFT // Altere para testar QuizVisibility.DRAFT ou QuizVisibility.ARCHIVED
                 };
                 setSimulado(simuladoData);
 
@@ -109,11 +134,15 @@ export default function SimuladoQuestoesPage() {
     }, [params.id]);
 
     const handleRespostaChange = (questaoId, alternativa) => {
-        if (concluido || simulado?.visibility !== "published") return; // Bloquear alteração se concluído ou expirado
+        if (viewMode !== 'answer' || concluido) return; // Só permite alteração no modo resposta e não concluído
         setRespostasUsuario(prev => ({
             ...prev,
             [questaoId]: alternativa
         }));
+    };
+    
+    const handleEditSimulado = () => {
+        router.push(`/pages/simulados/criar-simulados?editId=${params.id}`);
     };
 
     if (isLoading) {
@@ -134,14 +163,29 @@ export default function SimuladoQuestoesPage() {
 
     const status = (() => {
         switch (simulado?.visibility) {
-            case "draft":
-                return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">Concluído</span>;
-            case "published":
-                return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Em Andamento</span>;
+            case QuizVisibility.DRAFT:
+                return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Rascunho</span>;
+            case QuizVisibility.PUBLIC:
+                return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">Publicado</span>;
+            case QuizVisibility.ARCHIVED:
+                return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">Arquivado</span>;
             default:
-                return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">Expirada</span>;
+                return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">Desconhecido</span>;
         }
     })();
+    
+    const getModeText = () => {
+        switch (viewMode) {
+            case 'edit':
+                return 'Modo: Edição';
+            case 'answer':
+                return 'Modo: Responder';
+            case 'result':
+                return 'Modo: Resultado';
+            default:
+                return '';
+        }
+    };
 
     return (
         <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
@@ -154,13 +198,27 @@ export default function SimuladoQuestoesPage() {
 
             <Card className="mb-6 shadow-lg rounded-2xl border border-gray-200">
                 <CardHeader>
-                    <CardTitle className="text-2xl font-bold text-center text-gray-800">
-                        {simulado?.title.toUpperCase()}
-                    </CardTitle>
+                    <div className="flex justify-between items-start">
+                        <CardTitle className="text-2xl font-bold text-gray-800 flex-1">
+                            {simulado?.title.toUpperCase()}
+                        </CardTitle>
+                        {viewMode === 'edit' && (
+                            <Button
+                                onClick={handleEditSimulado}
+                                variant="outline"
+                                size="sm"
+                                className="ml-4"
+                            >
+                                <Edit className="h-4 w-4 mr-2" />
+                                Editar
+                            </Button>
+                        )}
+                    </div>
                     <div className="text-sm text-gray-700 font-semibold flex flex-col lg:flex-row md:flex-row md:justify-between lg:justify-between gap-2 align-center mt-4 ">
                         <p>Tentativas máximas: {simulado?.max_attempts}</p>
                         <p>Duração: {simulado?.duration_minutes} minutos</p>
                         <p>Status: {status}</p>
+                        {getModeText() && <p className="text-blue-600">{getModeText()}</p>}
                     </div>
                 </CardHeader>
             </Card>
@@ -194,7 +252,7 @@ export default function SimuladoQuestoesPage() {
                                 const isCorrect = alternativa.correct_alternative;
 
                                 // Se concluído ou expirado, mostrar corretas em verde e demais neutras
-                                const showAnswerStyles = (concluido || simulado?.visibility !== "published");
+                                const showAnswerStyles = (concluido || simulado?.visibility !== QuizVisibility.PUBLIC);
 
                                 let alternativeClass = 'flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition ';
 
@@ -222,7 +280,7 @@ export default function SimuladoQuestoesPage() {
                                         className={alternativeClass}
                                         onClick={() => handleRespostaChange(questao.id, alternativa.id)}
                                     >
-                                        {simulado?.visibility === "published" ? (
+                                        {viewMode === 'answer' ? (
                                             <input
                                                 type="radio"
                                                 id={`questao-${questao.id}-${alternativa.id}`}
@@ -231,11 +289,20 @@ export default function SimuladoQuestoesPage() {
                                                 checked={isSelected}
                                                 onChange={() => handleRespostaChange(questao.id, alternativa.id)}
                                                 className={`mt-1 h-4 w-4 accent-blue-600`}
-                                                disabled={showAnswerStyles} // desabilita alteração
+                                                disabled={concluido}
                                             />
-                                        ) : (
-                                            null
-                                        )}
+                                        ) : viewMode === 'result' ? (
+                                            <div className={`mt-1 h-4 w-4 rounded-full border-2 flex items-center justify-center ${
+                                                isCorrect ? 'border-green-600 bg-green-100' : 
+                                                isSelected ? 'border-red-600 bg-red-100' : 'border-gray-300'
+                                            }`}>
+                                                {(isCorrect || isSelected) && (
+                                                    <div className={`h-2 w-2 rounded-full ${
+                                                        isCorrect ? 'bg-green-600' : 'bg-red-600'
+                                                    }`} />
+                                                )}
+                                            </div>
+                                        ) : null}
                                         <label htmlFor={`questao-${questao.id}-${alternativa.id}`} className="text-sm text-gray-800 leading-5 select-none">
                                             <strong>{alternativa.id.toUpperCase()})</strong> {alternativa.response}
                                         </label>
@@ -247,8 +314,8 @@ export default function SimuladoQuestoesPage() {
                 </Card>
             ))}
 
-            {/* Botão Finalizar só aparece se simulado estiver publicado e não concluído */}
-            {(simulado?.visibility === "published" && !concluido) && (
+            {/* Botão Finalizar só aparece no modo resposta e não concluído */}
+            {(viewMode === 'answer' && !concluido) && (
                 <div className="flex justify-end mt-10">
                     <Button
                         variant="default"
@@ -264,6 +331,24 @@ export default function SimuladoQuestoesPage() {
                         <Send className="h-5 w-5 mr-2" />
                         Finalizar Simulado
                     </Button>
+                </div>
+            )}
+            
+            {/* Mensagem informativa para modo de edição */}
+            {viewMode === 'edit' && (
+                <div className="text-center mt-10 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-blue-700 font-medium">
+                        Este simulado está em modo de edição. Clique no botão "Editar" acima para modificar as questões.
+                    </p>
+                </div>
+            )}
+            
+            {/* Mensagem informativa para modo resultado */}
+            {viewMode === 'result' && (
+                <div className="text-center mt-10 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <p className="text-gray-700 font-medium">
+                        Este simulado está arquivado. Você está visualizando apenas o resultado.
+                    </p>
                 </div>
             )}
         </div>
