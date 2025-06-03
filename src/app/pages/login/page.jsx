@@ -13,9 +13,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { handleApiError, handleFetchError, handleUnexpectedError } from '@/utils/errorHandler';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -31,17 +30,6 @@ export default function LoginPage() {
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
 	const { setUserRole } = useUser();
-
-	useEffect(() => {
-		const userRole = Cookies.get('userRole');
-		const userId = Cookies.get('userId');
-		const token = Cookies.get('token');
-
-		if (userRole && userId && token) {
-			setUserRole(userRole);
-			router.push('/pages/painel');
-		}
-	}, [router, setUserRole]);
 
 	const form = useForm({
 		resolver: zodResolver(formSchema),
@@ -75,7 +63,6 @@ export default function LoginPage() {
 			const responseData = await response.json();
 
 			if (responseData.user) {
-				// Define o tipo de usuário baseado na resposta da API
 				const userRole = responseData.user.role;
 				Cookies.set('userRole', userRole);
 				Cookies.set('userId', responseData.user.id);

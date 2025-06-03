@@ -11,6 +11,7 @@ import { useUser } from "@/contexts/UserContext";
 import { PageLoader } from "@/components/ui/loader";
 import { useState, useEffect } from "react";
 import { Loader } from "@/components/ui/loader";
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -123,9 +124,11 @@ export default function RootLayout({ children }) {
 			</head>
 			<body className={inter.className}>
 				<UserProvider>
-					<SidebarProvider>
-						<RootLayoutContent>{children}</RootLayoutContent>
-					</SidebarProvider>
+					<ProtectedRoute>
+						<SidebarProvider>
+							<RootLayoutContent>{children}</RootLayoutContent>
+						</SidebarProvider>
+					</ProtectedRoute>
 				</UserProvider>
 				<Toaster richColors />
 			</body>

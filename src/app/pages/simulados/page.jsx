@@ -10,136 +10,7 @@ import { useUser } from "@/contexts/UserContext";
 import { PageLoader } from "@/components/ui/loader";
 
 const quiz = {
-    exatas: [
-        {
-            id: 1,
-            title: "Matemática Básica",
-            max_points: "Fundamentos de matemática com foco em álgebra e geometria",
-            date: "Disponível",
-            visibility: "pendente",
-            teacher_subject_class_id: 1,
-        },
-        {
-            id: 2,
-            title: "Matemática Avançada",
-            max_points: "Cálculo, trigonometria e geometria analítica",
-            date: "Disponível",
-            visibility: "pendente",
-            teacher_subject_class_id: 1,
-        },
-        {
-            id: 3,
-            title: "Física Mecânica",
-            max_points: "Mecânica clássica e termodinâmica",
-            date: "Disponível",
-            visibility: "concluido"
-        },
-        {
-            id: 4,
-            title: "Física Moderna",
-            max_points: "Relatividade e física quântica",
-            date: "Disponível",
-            visibility: "pendente",
-            teacher_subject_class_id: 1,
-        },
-        {
-            id: 5,
-            title: "Química Geral",
-            max_points: "Fundamentos e reações químicas",
-            date: "Disponível",
-            visibility: "pendente",
-            teacher_subject_class_id: 1,
-        },
-        {
-            id: 6,
-            title: "Química Orgânica",
-            max_points: "Compostos orgânicos e reações",
-            date: "Disponível",
-            visibility: "pendente",
-            teacher_subject_class_id: 1,
-        }
-    ],
-    humanas: [
-        {
-            id: 7,
-            title: "História do Brasil",
-            max_points: "Períodos coloniais e república",
-            date: "Disponível",
-            visibility: "pendente",
-            teacher_subject_class_id: 1,
-        },
-        {
-            id: 8,
-            title: "História Geral",
-            max_points: "História antiga e contemporânea",
-            date: "Disponível",
-            visibility: "pendente",
-            teacher_subject_class_id: 1,
-        },
-        {
-            id: 9,
-            title: "Geografia Física",
-            max_points: "Relevo, clima e hidrografia",
-            date: "Disponível",
-            visibility: "expirado"
-        },
-        {
-            id: 10,
-            title: "Geografia Humana",
-            max_points: "População, urbanização e economia",
-            date: "Disponível",
-            visibility: "pendente",
-            teacher_subject_class_id: 1,
-        }
-    ],
-    linguagens: [
-        {
-            id: 11,
-            title: "Português - Gramática",
-            max_points: "Morfologia, sintaxe e semântica",
-            date: "Disponível",
-            visibility: "concluido"
-        },
-        {
-            id: 12,
-            title: "Literatura Brasileira",
-            max_points: "Principais obras e autores brasileiros",
-            date: "Disponível",
-            visibility: "expirado"
-        },
-        {
-            id: 13,
-            title: "Literatura Portuguesa",
-            max_points: "Autores e obras da literatura portuguesa",
-            date: "Disponível",
-            visibility: "pendente",
-            teacher_subject_class_id: 1,
-        }
-    ],
-    biologicas: [
-        {
-            id: 14,
-            title: "Biologia Celular",
-            max_points: "Células, tecidos e sistemas",
-            date: "Disponível",
-            visibility: "concluido"
-        },
-        {
-            id: 15,
-            title: "Genética",
-            max_points: "Hereditariedade e evolução",
-            date: "Disponível",
-            visibility: "concluido"
-        },
-        {
-            id: 16,
-            title: "Ecologia",
-            max_points: "Ecossistemas e meio ambiente",
-            date: "Disponível",
-            visibility: "pendente",
-            teacher_subject_class_id: 1,
-        }
-    ]
+
 };
 
 const statusVisibility = [
@@ -156,6 +27,7 @@ export default function SimuladosPage() {
     const [selectedCategory, setSelectedCategory] = useState('todos');
     const [selectedVisibility, setSelectedVisibility] = useState('todos');
     const [favorites, setFavorites] = useState([]);
+    const [quiz, setQuiz] = useState([]);
 
     const handleDetails = (simuladoId) => {
         router.push(`/pages/simulados/${simuladoId}`);
@@ -167,6 +39,49 @@ export default function SimuladosPage() {
             setFavorites(JSON.parse(savedFavorites));
         }
     }, []);
+
+   // Carregar disciplinas quando uma classe for selecionada
+	useEffect(() => {
+		if (quiz.length === 0) {
+			const fetchSimulados = async () => {
+				try {
+					const token = Cookies.get('token');
+					if (!token) {
+						toast.error('Token não encontrado');
+						return;
+					}
+
+					const response = await fetch(`http://localhost:3000/teachers/classes/${selectedClass}/subjects/${selectedSubject}/quizzes`, {
+						headers: {
+							'Authorization': `Bearer ${token}`
+						}
+					});
+
+					if (!response.ok) {
+						throw new Error('Erro ao carregar simulados');
+					}
+
+					const data = await response.json();
+					console.log('Disciplinas recebidas:', data);
+
+					if (!Array.isArray(data)) {
+						console.error('Dados inválidos recebidos:', data);
+						toast.error('Formato de dados inválido');
+						return;
+					}
+
+					setQuiz(data);
+				} catch (error) {
+					toast.error('Erro ao carregar simulados');
+					console.error(error);
+				}
+			};
+
+			fetchSimulados();
+		} else {
+			    setQuiz([]);
+		}
+	}, [quiz]);
 
     const getSimuladoIcon = (name, section) => {
         const lowerName = (name || '').toLowerCase();

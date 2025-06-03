@@ -17,15 +17,16 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { MinusCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import Cookies from 'js-cookie';
 
 import Alert from "@/components/ui/alerts";
 
 const formSchema = z.object({
     question: z.string().min(1, "Digite uma question"),
-    correctAnswer: z.string().min(1, "Digite a resposta correta"),
+    correct_answer: z.string().min(1, "Digite a resposta correta"),
 });
 
-function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
+function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion, onAlternativesGenerated }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState(null);
     const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -39,7 +40,7 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
         resolver: zodResolver(formSchema),
         defaultValues: {
             question: "",
-            correctAnswer: ""
+            correct_answer: ""
         },
     });
 
@@ -54,16 +55,22 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
                 alternativa3: ''
             });
 
+            const token = Cookies.get('token');
+            if (!token) {
+                throw new Error('Token não encontrado');
+            }
+
             const payload = {
                 question: data.question,
-                correctAnswer: data.correctAnswer
+                correct_answer: data.correct_answer
             };
 
-            const response = await fetch(`http://localhost:3000/teacher/generate-alternatives  `, {
+            const response = await fetch(`http://localhost:3000/generate/wrong-alternatives`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(payload)
             });
@@ -78,14 +85,24 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
             console.log(`Alternativas geradas:`, result);
 
             if (result.incorrectAnswers && result.incorrectAnswers.length >= 3) {
-                setAlternativas({
+                const novasAlternativas = {
                     alternativa1: result.incorrectAnswers[0].trim(),
                     alternativa2: result.incorrectAnswers[1].trim(),
                     alternativa3: result.incorrectAnswers[2].trim()
+                };
+                setAlternativas(novasAlternativas);
+                setSubmitSuccess(true);
+                
+                // Passa as alternativas geradas para o componente pai
+                onAlternativesGenerated({
+                    question: data.question,
+                    correct_answer: data.correct_answer,
+                    alternativas: novasAlternativas
                 });
+            } else {
+                throw new Error('Não foi possível gerar as alternativas corretamente');
             }
 
-            setSubmitSuccess(true);
         } catch (error) {
             console.error(error);
             setSubmitError(error.message || 'Erro ao gerar alternativas');
@@ -106,13 +123,13 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
             />
 
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="space-y-4">
                     <FormField
                         control={form.control}
                         name="question"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>question</FormLabel>
+                                <FormLabel>Pergunta</FormLabel>
                                 <FormControl>
                                     <Textarea
                                         placeholder="Digite sua question"
@@ -128,7 +145,7 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
 
                     <FormField
                         control={form.control}
-                        name="correctAnswer"
+                        name="correct_answer"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="text-green-500">Resposta Correta</FormLabel>
@@ -193,9 +210,10 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
 
                     <div className="flex gap-4">
                         <Button
-                            type="submit"
+                            type="button"
                             className="flex-1"
                             disabled={isSubmitting}
+                            onClick={form.handleSubmit(onSubmit)}
                         >
                             {isSubmitting ? 'Gerando...' : 'Gerar Alternativas'}
                         </Button>
@@ -209,17 +227,18 @@ function QuestionForm({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
                             Excluir Questão 
                         </Button>
                     </div>
-                </form>
+                </div>
             </Form>
             <Separator className="my-10" />
         </div>
     );
 }
 
-export default function Question({ numeroQuestao, onAddQuestion, onDeleteQuestion }) {
+export default function Question({ numeroQuestao, onAddQuestion, onDeleteQuestion, onAlternativesGenerated }) {
     return <QuestionForm 
         numeroQuestao={numeroQuestao} 
         onAddQuestion={onAddQuestion} 
         onDeleteQuestion={onDeleteQuestion}
+        onAlternativesGenerated={onAlternativesGenerated}
     />;
-}   
+}

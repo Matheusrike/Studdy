@@ -1,9 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select';
+import { toast } from 'sonner';
 import Question from '@/components/ui/question';
 import Logo from '@/components/ui/logo';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
 	Calculator,
@@ -35,6 +44,7 @@ import {
 	PlusCircle,
 	Save,
 } from 'lucide-react';
+import Cookies from 'js-cookie';
 
 const ICON_OPTIONS = [
 	// Matemática
@@ -74,11 +84,17 @@ const ICON_OPTIONS = [
 	{ label: 'Português - Caneta', value: 'Pen', icon: Pen },
 	{ label: 'Português - Ferramenta de Escrita', value: 'PenTool', icon: PenTool },
 ];
-export default function CriarSimuladosPage() {
+
+export default function CriarSimulados() {
+	const router = useRouter();
+	const [classes, setClasses] = useState([]);
+	const [subjects, setSubjects] = useState([]);
+	const [selectedClass, setSelectedClass] = useState('');
+	const [selectedSubject, setSelectedSubject] = useState('');
+	const [isLoading, setIsLoading] = useState(false);
 	const [questoes, setQuestoes] = useState([1]);
 	const [titulo, setTitulo] = useState('');
 	const [icone, setIcone] = useState('Calculator');
-	const [turma_professor_id, setTurmaProfessorId] = useState('');
 	const [tentativas_maximas, setTentativasMaximas] = useState(3);
 	const [duracao_minutos, setDuracaoMinutos] = useState(60);
 	const [visibilidade, setVisibilidade] = useState('public');
@@ -88,6 +104,91 @@ export default function CriarSimuladosPage() {
 		submitError: null,
 		submitSuccess: false,
 	});
+	const [questions, setQuestions] = useState([]);
+
+	// Carregar classes do professor
+	useEffect(() => {
+		const fetchClasses = async () => {
+			try {
+				const token = Cookies.get('token');
+				if (!token) {
+					toast.error('Token não encontrado');
+					return;
+				}
+
+				console.log('Buscando turmas...');
+				const response = await fetch('http://localhost:3000/teacher/classes', {
+					headers: {
+						'Authorization': `Bearer ${token}`
+					}
+				});
+
+				if (!response.ok) {
+					throw new Error('Erro ao carregar classes');
+				}
+
+				const data = await response.json();
+				console.log('Dados recebidos:', data);
+				
+				if (!Array.isArray(data)) {
+					console.error('Dados inválidos recebidos:', data);
+					toast.error('Formato de dados inválido');
+					return;
+				}
+
+				setClasses(data);
+				console.log('Turmas atualizadas:', data);
+			} catch (error) {
+				toast.error('Erro ao carregar classes');
+				console.error('Erro detalhado:', error);
+			}
+		};
+
+		fetchClasses();
+	}, []);
+
+	// Carregar disciplinas quando uma classe for selecionada
+	useEffect(() => {
+		if (selectedClass) {
+			const fetchSubjects = async () => {
+				try {
+					const token = Cookies.get('token');
+					if (!token) {
+						toast.error('Token não encontrado');
+						return;
+					}
+
+					const response = await fetch(`http://localhost:3000/teacher/classes/${selectedClass}/subjects`, {
+						headers: {
+							'Authorization': `Bearer ${token}`
+						}
+					});
+
+					if (!response.ok) {
+						throw new Error('Erro ao carregar disciplinas');
+					}
+
+					const data = await response.json();
+					console.log('Disciplinas recebidas:', data);
+
+					if (!Array.isArray(data)) {
+						console.error('Dados inválidos recebidos:', data);
+						toast.error('Formato de dados inválido');
+						return;
+					}
+
+					setSubjects(data);
+				} catch (error) {
+					toast.error('Erro ao carregar disciplinas');
+					console.error(error);
+				}
+			};
+
+			fetchSubjects();
+		} else {
+			setSubjects([]);
+		}
+	}, [selectedClass]);
 
 	const adicionarQuestao = () => {
 		setQuestoes((prev) => [...prev, prev.length + 1]);
@@ -100,64 +201,100 @@ export default function CriarSimuladosPage() {
 	const formatPayload = () => {
 		const payload = {
 			title: titulo,
-			icon: icone,
 			description: descricao,
-			teacher_subject_class_id: turma_professor_id,
+			icon: icone,
+			class_id: selectedClass,
+			subject_id: selectedSubject,
 			max_attempts: tentativas_maximas,
 			duration_minutes: duracao_minutos,
 			visibility: visibilidade,
-			questions: questoes.map(() => ({
-				statement: 'Enunciado da questão',
-				points: 1,
-				alternatives: [
-					{ response: 'Alternativa A', correct_alternative: false },
-					{ response: 'Alternativa B', correct_alternative: true },
-				],
-			})),
+			questions: questions.map((question) => {
+				return {
+					statement: question.statement,
+					points: question.points,
+					alternatives: question.alternatives.map((alternative) => {
+						return {
+							response: alternative.text,
+							correct_alternative: alternative.isCorrect
+						};
+					})
+				};
+			})
 		};
 		return payload;
 	};
 
-	const onSubmit = async () => {
+	const handleSubmit = async (e) => {
+		e.preventDefault();
+		setIsLoading(true);
+
 		try {
-			setState((prev) => ({
-				...prev,
-				isSubmitting: true,
-				submitError: null,
-				submitSuccess: false,
-			}));
+			const token = Cookies.get('token');
+			if (!token) {
+				toast.error('Token não encontrado');
+				return;
+			}
 
-			const endpoint = `http://localhost:3000/classes/${turma_professor_id}/subjects/${teacher_subject}/quiz`;
-			const cleanData = formatPayload();
+			console.log('Dados a serem enviados:', formatPayload());
 
-			console.log('Dados enviados:', cleanData);
-
-			const response = await fetch(endpoint, {
+			const payload = formatPayload();
+			const response = await fetch(`http://localhost:3000/teacher/classes/${selectedClass}/subjects/${selectedSubject}/quiz`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					Accept: 'application/json',
+					'Authorization': `Bearer ${token}`
 				},
-				mode: 'cors',
-				credentials: 'include',
-				body: JSON.stringify(cleanData),
+				body: JSON.stringify(payload)
 			});
 
-			const responseText = await response.text();
-			const responseData = responseText ? JSON.parse(responseText) : {};
+			console.log('Resposta do servidor:', response);
 
 			if (!response.ok) {
-				throw new Error(responseData.message || `Erro ao criar simulado: ${response.status}`);
+				throw new Error('Erro ao criar simulado');
 			}
 
-			setState((prev) => ({ ...prev, submitSuccess: true }));
+			toast.success('Simulado criado com sucesso!');
+			router.push('/pages/simulados');
 		} catch (error) {
-			console.error('Erro ao criar simulado:', error);
-			setState((prev) => ({ ...prev, submitError: error.message }));
+			toast.error('Erro ao criar simulado');
+			console.error(error);
 		} finally {
-			setState((prev) => ({ ...prev, isSubmitting: false }));
+			setIsLoading(false);
 		}
 	};
+
+	const handleAddQuestion = () => {
+		setQuestions([...questions, {
+			id: questions.length + 1,
+			statement: '',
+			points: 1,
+			alternatives: []
+		}]);
+	};
+
+	const handleDeleteQuestion = (questionId) => {
+		setQuestions(questions.filter(q => q.id !== questionId));
+	};
+
+	const handleAlternativesGenerated = (data) => {
+		const { question, correct_answer, alternativas } = data;
+		setQuestions(questions.map(q => {
+			if (q.id === questions.length) { // Atualiza a última questão adicionada
+				return {
+					...q,
+					statement: question,
+					alternatives: [
+						{ text: correct_answer, isCorrect: true },
+						{ text: alternativas.alternativa1, isCorrect: false },
+						{ text: alternativas.alternativa2, isCorrect: false },
+						{ text: alternativas.alternativa3, isCorrect: false }
+					]
+				};
+			}
+			return q;
+		}));
+	};
+
 	return (
 		<div className="bg-slate-100 min-h-screen p-4">
 			<div className="max-w-6xl mx-auto">
@@ -165,20 +302,90 @@ export default function CriarSimuladosPage() {
 					<Logo className="h-12 w-12" variant="icon" />
 					<h1 className="mt-4 text-3xl font-bold tracking-tight text-[#133D86]">Gerar Simulado</h1>
 				</div>
-				<div className="flex flex-col items-center mb-8 bg-white rounded-xl shadow-lg p-8 border border-gray-100 w-full max-w-6xl mx-auto">
-					<h2 className="text-xl font-semibold text-[#133D86] mb-6">Informações do Simulado</h2>
-					<div className="flex flex-col gap-6 w-full">
-						<div className="flex flex-col gap-2">
-							<label className="font-semibold text-[#133D86] text-base">Título do Simulado</label>
-							<Input
-								type="text"
-								placeholder="Ex: Matemática Básica ENEM"
-								className="text-base font-normal h-12 rounded-lg border-gray-200 focus:border-[#133D86] focus:ring-[#133D86] shadow-sm"
-								value={titulo}
-								onChange={(e) => setTitulo(e.target.value)}
-							/>
-						</div>
-						<div className="flex flex-col gap-2">
+
+				<form onSubmit={handleSubmit} className="space-y-6">
+					<div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
+						<h2 className="text-xl font-semibold text-[#133D86] mb-6">Informações do Simulado</h2>
+						
+						<div className="space-y-6">
+							<div>
+								<label className="block text-sm font-medium mb-2">Classe</label>
+								<Select
+									value={selectedClass}
+									onValueChange={setSelectedClass}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder="Selecione uma classe" />
+									</SelectTrigger>
+									<SelectContent>
+										{Array.isArray(classes) && classes.length > 0 ? (
+											classes.map((classItem) => (
+												<SelectItem 
+													key={classItem.class_id} 
+													value={classItem.class_id.toString()}
+												>
+													{classItem.class_name} - {classItem.class_course}
+												</SelectItem>
+											))
+										) : (
+											<SelectItem value="no-classes" disabled>
+												Nenhuma turma encontrada
+											</SelectItem>
+										)}
+									</SelectContent>
+								</Select>
+								{Array.isArray(classes) && classes.length === 0 && (
+									<p className="text-sm text-red-500 mt-1">
+										Nenhuma turma disponível
+									</p>
+								)}
+							</div>
+
+							<div>
+								<label className="block text-sm font-medium mb-2">Disciplina</label>
+								<Select
+									value={selectedSubject}
+									onValueChange={setSelectedSubject}
+									disabled={!selectedClass}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder="Selecione uma disciplina" />
+									</SelectTrigger>
+									<SelectContent>
+										{Array.isArray(subjects) && subjects.length > 0 ? (
+											subjects.map((subject) => (
+												<SelectItem 
+													key={subject.subject_id} 
+													value={subject.subject_id.toString()}
+												>
+													{subject.subject_name}
+												</SelectItem>
+											))
+										) : (
+											<SelectItem value="no-subjects" disabled>
+												Nenhuma disciplina encontrada
+											</SelectItem>
+										)}
+									</SelectContent>
+								</Select>
+								{Array.isArray(subjects) && subjects.length === 0 && selectedClass && (
+									<p className="text-sm text-red-500 mt-1">
+										Nenhuma disciplina disponível para esta turma
+									</p>
+								)}
+							</div>
+
+							<div className="flex flex-col gap-2">
+								<label className="font-semibold text-[#133D86] text-base">Título do Simulado</label>
+								<Input
+									type="text"
+									placeholder="Ex: Simulado de Programação Web"
+									className="text-base font-normal h-12 rounded-lg border-gray-200 focus:border-[#133D86] focus:ring-[#133D86] shadow-sm"
+									value={titulo}
+									onChange={(e) => setTitulo(e.target.value)}
+								/>
+							</div>
+							<div className="flex flex-col gap-2">
 							<label className="font-semibold text-[#133D86] text-base">Ícone do Simulado</label>
 							<div className="flex items-center gap-3 flex-wrap">
 								<div className="flex gap-2 flex-wrap">
@@ -199,56 +406,69 @@ export default function CriarSimuladosPage() {
 								</div>
 							</div>
 						</div>
-						<div className="flex flex-col gap-2">
-							<label className="font-semibold text-[#133D86] text-base">Descrição</label>
-							<Input
-								type="text"
-								placeholder="Ex: Questões de álgebra, geometria e funções"
-								className="text-base font-normal h-12 rounded-lg border-gray-200 focus:border-[#133D86] focus:ring-[#133D86] shadow-sm"
-								value={descricao}
-								onChange={(e) => setdescricao(e.target.value)}
+
+							<div className="flex flex-col gap-2">
+								<label className="font-semibold text-[#133D86] text-base">Descrição</label>
+								<Input
+									type="text"
+									placeholder="Ex: Questões sobre HTML, CSS e JavaScript"
+									className="text-base font-normal h-12 rounded-lg border-gray-200 focus:border-[#133D86] focus:ring-[#133D86] shadow-sm"
+									value={descricao}
+									onChange={(e) => setdescricao(e.target.value)}
+								/>
+							</div>
+
+							
+						</div>
+					</div>
+
+					<div className="bg-white rounded-lg shadow-lg">
+						{questions.map((question, index) => (
+							<Question
+								key={question.id}
+								numeroQuestao={index + 1}
+								onAddQuestion={handleAddQuestion}
+								onDeleteQuestion={handleDeleteQuestion}
+								onAlternativesGenerated={handleAlternativesGenerated}
 							/>
+						))}
+					</div>
+
+					<div className="mt-6 space-y-4">
+						<div className="flex items-center justify-between bg-white p-4 rounded-lg shadow-lg">
+							<div className="flex items-center gap-2">
+								<FileText className="h-5 w-5 text-slate-600" />
+								<span className="text-slate-600 font-medium">
+									{questions.length} {questions.length === 1 ? 'Questão' : 'Questões'}
+								</span>
+							</div>
+							<div className="flex gap-3 flex-col lg:flex-row">
+								<Button
+									variant="outline"
+									size="lg"
+									type="button"
+									className="border-slate-200 hover:bg-slate-50 hover:text-slate-900"
+									onClick={(e) => {
+										e.preventDefault();
+										handleAddQuestion();
+									}}
+								>
+									<PlusCircle className="h-5 w-5 mr-2" />
+									Nova Questão
+								</Button>
+								<Button 
+									size="lg" 
+									type="submit" 
+									className="text-white"
+									disabled={!selectedClass || !selectedSubject || !titulo || isLoading}
+								>
+									<Save className="h-5 w-5 mr-2" />
+									{isLoading ? 'Criando...' : 'Finalizar Simulado'}
+								</Button>
+							</div>
 						</div>
 					</div>
-                   
-				</div>
-
-				<div className="bg-white rounded-lg shadow-lg">
-					{questoes.map((_, index) => (
-						<Question
-							key={index}
-							numeroQuestao={index + 1}
-							onAddQuestion={adicionarQuestao}
-							onDeleteQuestion={() => excluirQuestao(questoes[index])}
-						/>
-					))}
-				</div>
-
-				<div className="mt-6 space-y-4">
-					<div className="flex items-center justify-between bg-white p-4 rounded-lg shadow-lg">
-						<div className="flex items-center gap-2">
-							<FileText className="h-5 w-5 text-slate-600" />
-							<span className="text-slate-600 font-medium">
-								{questoes.length} {questoes.length === 1 ? 'Questão' : 'Questões'}
-							</span>
-						</div>
-						<div className="flex gap-3 flex-col lg:flex-row">
-							<Button
-								variant="outline"
-								size="lg"
-								className="border-slate-200 hover:bg-slate-50 hover:text-slate-900"
-								onClick={adicionarQuestao}
-							>
-								<PlusCircle className="h-5 w-5 mr-2" />
-								Nova Questão
-							</Button>
-							<Button size="lg" type="button" className="text-white" onClick={onSubmit}>
-								<Save className="h-5 w-5 mr-2" />
-								Finalizar Simulado
-							</Button>
-						</div>
-					</div>
-				</div>
+				</form>
 			</div>
 		</div>
 	);
