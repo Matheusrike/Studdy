@@ -50,7 +50,7 @@ export default function SimuladosPage() {
                 }
 
                 console.log('Buscando simulados...');
-                const response = await fetch('http://localhost:3000/teacher/classes/1/subjects/1/quizzes', {
+                const response = await fetch('http://localhost:3000/quizzes', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }

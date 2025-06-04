@@ -16,8 +16,8 @@ export default function VideoaulasPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [videoaulas, setVideoaulas] = useState([]);
 
-  // Carregar videoaulas
-	useEffect(() => {
+    // Carregar videoaulas
+    useEffect(() => {
         const fetchVideoaulas = async () => {
             try {
                 const token = Cookies.get('token');
@@ -32,14 +32,11 @@ export default function VideoaulasPage() {
                     }
                 });
 
-                console.log('Dados recebidos:', response);
-
                 if (!response.ok) {
                     throw new Error('Erro ao carregar videoaulas');
                 }
 
                 const data = await response.json();
-                console.log('Videoaulas recebidas:', data);
 
                 if (!Array.isArray(data)) {
                     console.error('Dados inválidos recebidos:', data);
@@ -58,8 +55,8 @@ export default function VideoaulasPage() {
     }, []);
 
     const filteredVideos = videoaulas.filter(video =>
-        video.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        video.categoria.toLowerCase().includes(searchQuery.toLowerCase())
+        video.title_video.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        video.font.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const opts = {
@@ -86,7 +83,6 @@ export default function VideoaulasPage() {
                             className="pl-8"
                         />
                     </div>
-                   
                 </div>
             </div>
 
@@ -105,25 +101,23 @@ export default function VideoaulasPage() {
                                 <CardHeader className="p-4">
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
-                                            <CardTitle className="break-words text-base sm:text-sm md:text-base lg:text-lg xl:text-xl">{video.titulo}</CardTitle>
+                                            <CardTitle className="break-words text-base sm:text-sm md:text-base lg:text-lg xl:text-xl">
+                                                {video.title_video}
+                                            </CardTitle>
                                             <CardDescription className="mt-1 truncate">
-                                                {video.professor}
+                                                {video.name_channel}
                                             </CardDescription>
                                         </div>
-                                        {video.bloqueado ? (
-                                            <Lock className="h-5 w-5 text-gray-400 flex-shrink-0 ml-2" />
-                                        ) : (
-                                            <Clock className="h-5 w-5 text-gray-400 flex-shrink-0 ml-2" />
-                                        )}
+                                        <Clock className="h-5 w-5 text-gray-400 flex-shrink-0 ml-2" />
                                     </div>
                                 </CardHeader>
                                 <CardContent className="p-4 pt-0">
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-gray-500">
-                                            {video.duracao}
+                                            {video.duration_video}
                                         </span>
                                         <span className="text-xs px-2 py-1 rounded-full bg-red-300 text-red-800 dark:bg-red-900 dark:text-red-500">
-                                            {video.categoria}
+                                            {video.font}
                                         </span>
                                     </div>
                                 </CardContent>
@@ -146,14 +140,14 @@ export default function VideoaulasPage() {
                                 )}
                             </div>
                             <CardHeader>
-                                <CardTitle className="text-xl">{selectedVideo.titulo}</CardTitle>
+                                <CardTitle className="text-xl">{selectedVideo.title_video}</CardTitle>
                                 <CardDescription>
-                                    {selectedVideo.professor} • {selectedVideo.duracao}
+                                    {selectedVideo.name_channel} • {selectedVideo.duration_video}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-gray-600 dark:text-gray-400">
-                                    {selectedVideo.descricao}
+                                    {selectedVideo.description}
                                 </p>
                             </CardContent>
                         </Card>

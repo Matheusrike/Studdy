@@ -7,18 +7,42 @@ const UserContext = createContext();
 
 export function UserProvider({ children }) {
     const [userRole, setUserRole] = useState(() => {
-        // Tenta pegar a role do cookie, se não existir usa 'aluno' como padrão
-        // return Cookies.get('userRole') || 'aluno';
-        return 'admin';
+        // Verifica se estamos no cliente antes de acessar cookies
+        if (typeof window !== 'undefined') {
+            const cookieRole = Cookies.get('userRole');
+            return cookieRole || 'student';
+        }
+        // No servidor, retorna o valor padrão
+        return 'student';
     });
+
+    // Sincroniza com o cookie quando o componente monta no cliente
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const cookieRole = Cookies.get('userRole');
+            if (cookieRole && cookieRole !== userRole) {
+                setUserRole(cookieRole);
+            }
+        }
+    }, []);
 
     // Quando a role mudar, atualiza o cookie
     useEffect(() => {
-        // Cookies.set('userRole', userRole, { expires: 7 }); // Cookie expira em 7 dias
+        if (typeof window !== 'undefined') {
+            Cookies.set('userRole', userRole, { expires: 7 }); // Cookie expira em 7 dias
+        }
     }, [userRole]);
 
+    // Função para atualizar a role do usuário
+    const updateUserRole = (newRole) => {
+        setUserRole(newRole);
+        if (typeof window !== 'undefined') {
+            Cookies.set('userRole', newRole, { expires: 7 });
+        }
+    };
+
     return (
-        <UserContext.Provider value={{ userRole, setUserRole }}>
+        <UserContext.Provider value={{ userRole, setUserRole, updateUserRole }}>
             {children}
         </UserContext.Provider>
     );
@@ -30,4 +54,4 @@ export function useUser() {
         throw new Error('useUser must be used within a UserProvider');
     }
     return context;
-}   
+}
