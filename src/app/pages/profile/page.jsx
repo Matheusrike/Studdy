@@ -4,16 +4,15 @@ import { useState, useEffect } from 'react';
 import {
 	User,
 	Mail,
-	Phone,
-	MapPin,
-	GraduationCap,
 	Calendar,
 	Edit2,
 	Save,
 	X,
-	Upload,
+	Clock,
+	UserCheck,
+	IdCard,
+	Shield,
 } from 'lucide-react';
-import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,14 +27,12 @@ export default function Profile() {
 	const [profile, setProfile] = useState({
 		name: '',
 		email: '',
-		phone: '',
-		location: '',
-		education: '',
-		graduationYear: '',
-		avatar: '',
 		birthDate: '',
 		cpf: '',
-		role: ''
+		role: '',
+		createdAt: '',
+		modifiedAt: '',
+		id: ''
 	});
 
 	useEffect(() => {
@@ -48,7 +45,7 @@ export default function Profile() {
 					return;
 				}
 
-				const response = await fetch(`http://localhost:3000/admin/users/${userId}`, {
+				const response = await fetch(`http://localhost:3000/user/${userId}`, {
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
@@ -61,20 +58,20 @@ export default function Profile() {
 
 				const userData = await response.json();
 				
-				// Formata a data de nascimento para o formato brasileiro
+				// Formata as datas para o formato brasileiro
 				const birthDate = userData.birth_date ? new Date(userData.birth_date).toLocaleDateString('pt-BR') : '';
+				const createdAt = userData.created_at ? new Date(userData.created_at).toLocaleString('pt-BR') : '';
+				const modifiedAt = userData.modified_at ? new Date(userData.modified_at).toLocaleString('pt-BR') : '';
 				
 				setProfile({
 					name: userData.name || '',
 					email: userData.email || '',
-					phone: userData.phone || '',
-					location: userData.location || '',
-					education: userData.education || '',
-					graduationYear: userData.graduationYear || '',
-					avatar: userData.avatar || '/default-avatar.png',
 					birthDate: birthDate,
 					cpf: userData.cpf || '',
-					role: userData.role || ''
+					role: userData.role || '',
+					createdAt: createdAt,
+					modifiedAt: modifiedAt,
+					id: userData.id || ''
 				});
 			} catch (error) {
 				console.error('Erro ao buscar dados do usuário:', error);
@@ -91,18 +88,12 @@ export default function Profile() {
 		try {
 			const userId = Cookies.get('userId');
 			
-			// Cria uma cópia do perfil sem a imagem base64
-			const profileToSave = {
-				...profile,
-				avatar: profile.avatar.startsWith('data:image') ? '' : profile.avatar
-			};
-			
 			const response = await fetch(`http://localhost:3000/admin/users/${userId}`, {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',
 				},
-				body: JSON.stringify(profileToSave),
+				body: JSON.stringify(profile),
 			});
 
 			if (!response.ok) {
@@ -117,39 +108,7 @@ export default function Profile() {
 		}
 	};
 
-	const handleImageUpload = async (event) => {
-		const file = event.target.files[0];
-		if (!file) return;
 
-		// Verifica o tipo do arquivo
-		if (!file.type.startsWith('image/')) {
-			toast.error('Por favor, selecione apenas arquivos de imagem');
-			return;
-		}
-
-		// Verifica o tamanho do arquivo (máximo 5MB)
-		if (file.size > 5 * 1024 * 1024) {
-			toast.error('A imagem deve ter no máximo 5MB');
-			return;
-		}
-
-		try {
-			// Converte a imagem para base64
-			const reader = new FileReader();
-			reader.onload = (e) => {
-				const base64Image = e.target.result;
-				setProfile(prev => ({ ...prev, avatar: base64Image }));
-				toast.success('Foto de perfil atualizada com sucesso!');
-			};
-			reader.onerror = () => {
-				throw new Error('Erro ao ler a imagem');
-			};
-			reader.readAsDataURL(file);
-		} catch (error) {
-			console.error('Erro ao processar a imagem:', error);
-			toast.error('Erro ao atualizar foto de perfil');
-		}
-	};
 
 	if (isLoading) {
 		return (
@@ -191,36 +150,13 @@ export default function Profile() {
 
 				{/* Profile Content */}
 				<div className="grid gap-6">
-					{/* Avatar and Basic Info */}
-					<Card className="overflow-hidden">
-						<div className="relative h-48 bg-gradient-to-r from-primary/20 to-primary/10">
-							<div className="absolute -bottom-16 left-8">
-								<div className="relative h-32 w-32 rounded-2xl overflow-hidden ring-4 ring-white shadow-lg group">
-									<Image
-										src={profile.avatar || '/default-avatar.png'}
-										alt="Profile Avatar"
-										fill
-										className="object-cover"
-									/>
-									{isEditing && (
-										<label className="absolute inset-0 bg-black/50 flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
-											<input
-												type="file"
-												accept="image/*"
-												className="hidden"
-												onChange={handleImageUpload}
-											/>
-											<Upload className="h-8 w-8 text-white" />
-										</label>
-									)}
-								</div>
-							</div>
-						</div>
-						<CardContent className="pt-20">
-							<div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+					{/* Basic Info */}
+					<Card>
+						<CardContent className="pt-6">
+							<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 								<div>
-									<h2 className="text-2xl font-bold">{profile.name}</h2>
-									<p className="text-muted-foreground">
+									<h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">{profile.name}</h2>
+									<p className="text-lg text-muted-foreground mt-1">
 										{profile.role === 'admin' ? 'Administrador' : 
 										 profile.role === 'Teacher' ? 'Professor' : 
 										 profile.role === 'Student' ? 'Aluno' :
@@ -240,19 +176,36 @@ export default function Profile() {
 						</CardContent>
 					</Card>
 
-					{/* Contact Information */}
+					{/* Personal Information */}
 					<Card>
 						<CardContent className="pt-6">
 							<h3 className="text-xl font-semibold mb-4">Informações Pessoais</h3>
 							<div className="grid gap-4">
 								<div className="flex items-center gap-3">
+									<User className="h-5 w-5 text-primary" />
+									<Label className="min-w-[120px] font-medium">Nome Completo:</Label>
+									{isEditing ? (
+										<Input
+											type="text"
+											value={profile.name}
+											onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+											className="flex-1"
+											placeholder="Digite seu nome completo"
+										/>
+									) : (
+										<span className="text-muted-foreground">{profile.name}</span>
+									)}
+								</div>
+								<div className="flex items-center gap-3">
 									<Mail className="h-5 w-5 text-primary" />
+									<Label className="min-w-[120px] font-medium">E-mail:</Label>
 									{isEditing ? (
 										<Input
 											type="email"
 											value={profile.email}
 											onChange={(e) => setProfile({ ...profile, email: e.target.value })}
 											className="flex-1"
+											placeholder="Digite seu e-mail"
 										/>
 									) : (
 										<span className="text-muted-foreground">{profile.email}</span>
@@ -260,6 +213,7 @@ export default function Profile() {
 								</div>
 								<div className="flex items-center gap-3">
 									<Calendar className="h-5 w-5 text-primary" />
+									<Label className="min-w-[120px] font-medium">Data de Nascimento:</Label>
 									{isEditing ? (
 										<Input
 											type="date"
@@ -268,69 +222,59 @@ export default function Profile() {
 											className="flex-1"
 										/>
 									) : (
-										<span className="text-muted-foreground">Data de Nascimento: {profile.birthDate}</span>
+										<span className="text-muted-foreground">{profile.birthDate || 'Não informado'}</span>
 									)}
 								</div>
 								<div className="flex items-center gap-3">
-									<User className="h-5 w-5 text-primary" />
+									<IdCard className="h-5 w-5 text-primary" />
+									<Label className="min-w-[120px] font-medium">CPF:</Label>
 									{isEditing ? (
 										<Input
 											type="text"
 											value={profile.cpf}
 											onChange={(e) => setProfile({ ...profile, cpf: e.target.value })}
 											className="flex-1"
+											placeholder="Digite seu CPF"
 										/>
 									) : (
-										<span className="text-muted-foreground">CPF: {profile.cpf}</span>
+										<span className="text-muted-foreground font-mono">{profile.cpf || 'Não informado'}</span>
 									)}
 								</div>
 							</div>
 						</CardContent>
 					</Card>
 
-					{/* Additional Information */}
+
+
+					{/* Account Information */}
 					<Card>
 						<CardContent className="pt-6">
-							<h3 className="text-xl font-semibold mb-4">Informações Adicionais</h3>
+							<h3 className="text-xl font-semibold mb-4">Informações da Conta</h3>
 							<div className="grid gap-4">
 								<div className="flex items-center gap-3">
-									<Phone className="h-5 w-5 text-primary" />
-									{isEditing ? (
-										<Input
-											type="tel"
-											value={profile.phone}
-											onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-											className="flex-1"
-										/>
-									) : (
-										<span className="text-muted-foreground">{profile.phone || 'Não informado'}</span>
-									)}
+									<IdCard className="h-5 w-5 text-primary" />
+									<Label className="min-w-[120px] font-medium">ID do Usuário:</Label>
+									<span className="text-muted-foreground font-mono">{profile.id}</span>
 								</div>
 								<div className="flex items-center gap-3">
-									<MapPin className="h-5 w-5 text-primary" />
-									{isEditing ? (
-										<Input
-											type="text"
-											value={profile.location}
-											onChange={(e) => setProfile({ ...profile, location: e.target.value })}
-											className="flex-1"
-										/>
-									) : (
-										<span className="text-muted-foreground">{profile.location || 'Não informado'}</span>
-									)}
+									<Shield className="h-5 w-5 text-primary" />
+									<Label className="min-w-[120px] font-medium">Tipo de Conta:</Label>
+									<span className="text-muted-foreground">
+										{profile.role === 'admin' ? 'Administrador' : 
+										 profile.role === 'Teacher' ? 'Professor' : 
+										 profile.role === 'Student' ? 'Aluno' :
+										 profile.role}
+									</span>
 								</div>
 								<div className="flex items-center gap-3">
-									<GraduationCap className="h-5 w-5 text-primary" />
-									{isEditing ? (
-										<Input
-											type="text"
-											value={profile.education}
-											onChange={(e) => setProfile({ ...profile, education: e.target.value })}
-											className="flex-1"
-										/>
-									) : (
-										<span className="text-muted-foreground">{profile.education || 'Não informado'}</span>
-									)}
+									<UserCheck className="h-5 w-5 text-primary" />
+									<Label className="min-w-[120px] font-medium">Conta Criada:</Label>
+									<span className="text-muted-foreground">{profile.createdAt}</span>
+								</div>
+								<div className="flex items-center gap-3">
+									<Clock className="h-5 w-5 text-primary" />
+									<Label className="min-w-[120px] font-medium">Última Atualização:</Label>
+									<span className="text-muted-foreground">{profile.modifiedAt}</span>
 								</div>
 							</div>
 						</CardContent>
@@ -339,4 +283,4 @@ export default function Profile() {
 			</div>
 		</div>
 	);
-} 
+}

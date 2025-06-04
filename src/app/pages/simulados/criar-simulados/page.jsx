@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
 	Select,
@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import Question from '@/components/ui/question';
 import Logo from '@/components/ui/logo';
 import { Input } from '@/components/ui/input';
+import { QuizVisibility } from '../enums/QuizVisibility';
 import {
 	Calculator,
 	Pi,
@@ -43,6 +44,7 @@ import {
 	FileText,
 	PlusCircle,
 	Save,
+	Edit,
 } from 'lucide-react';
 import Cookies from 'js-cookie';
 
@@ -85,8 +87,12 @@ const ICON_OPTIONS = [
 	{ label: 'Português - Ferramenta de Escrita', value: 'PenTool', icon: PenTool },
 ];
 
-export default function CriarSimulados() {
+export default function CriarSimuladosPage() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	const editId = searchParams.get('edit');
+	const isEditMode = !!editId;
+	
 	const [classes, setClasses] = useState([]);
 	const [subjects, setSubjects] = useState([]);
 	const [selectedClass, setSelectedClass] = useState('');
@@ -97,7 +103,7 @@ export default function CriarSimulados() {
 	const [icone, setIcone] = useState('Calculator');
 	const [tentativas_maximas, setTentativasMaximas] = useState(3);
 	const [duracao_minutos, setDuracaoMinutos] = useState(60);
-	const [visibilidade, setVisibilidade] = useState('public');
+	const [visibilidade, setVisibilidade] = useState(QuizVisibility.PUBLIC);
 	const [descricao, setdescricao] = useState('');
 	const [state, setState] = useState({
 		isSubmitting: false,
@@ -105,6 +111,7 @@ export default function CriarSimulados() {
 		submitSuccess: false,
 	});
 	const [questions, setQuestions] = useState([]);
+	const [loadingSimulado, setLoadingSimulado] = useState(false);
 
 	// Carregar classes do professor
 	useEffect(() => {
@@ -190,6 +197,60 @@ export default function CriarSimulados() {
 		}
 	}, [selectedClass]);
 
+	// Carregar dados do simulado para edição
+	useEffect(() => {
+		if (isEditMode && editId) {
+			const loadSimuladoData = async () => {
+				setLoadingSimulado(true);
+				try {
+					const token = Cookies.get('token');
+					if (!token) {
+						toast.error('Token não encontrado');
+						return;
+					}
+
+					const response = await fetch(`http://localhost:3000/teacher/simulados/${editId}`, {
+						headers: {
+							'Authorization': `Bearer ${token}`
+						}
+					});
+
+					if (!response.ok) {
+						throw new Error('Erro ao carregar simulado');
+					}
+
+					const simulado = await response.json();
+					console.log('Simulado carregado:', simulado);
+
+					// Preencher os campos com os dados do simulado
+					setTitulo(simulado.title || '');
+					setdescricao(simulado.description || '');
+					setIcone(simulado.icon || 'Calculator');
+					setTentativasMaximas(simulado.max_attempts || 3);
+					setDuracaoMinutos(simulado.duration_minutes || 60);
+					setVisibilidade(simulado.visibility || QuizVisibility.DRAFT);
+					setSelectedClass(simulado.class_id || '');
+					setSelectedSubject(simulado.subject_id || '');
+
+					// Carregar questões se existirem
+					if (simulado.questions && simulado.questions.length > 0) {
+						setQuestions(simulado.questions);
+						setQuestoes(simulado.questions.map((_, index) => index + 1));
+					}
+
+				} catch (error) {
+					console.error('Erro ao carregar simulado:', error);
+					toast.error('Erro ao carregar dados do simulado');
+					router.push('/pages/simulados');
+				} finally {
+					setLoadingSimulado(false);
+				}
+			};
+
+			loadSimuladoData();
+		}
+	}, [isEditMode, editId, router]);
+
 	const adicionarQuestao = () => {
 		setQuestoes((prev) => [...prev, prev.length + 1]);
 	};
@@ -198,7 +259,7 @@ export default function CriarSimulados() {
 		setQuestoes((prev) => prev.filter((num) => num !== numeroQuestao));
 	};
 
-	const formatPayload = () => {
+	const formatPayload = (visibility) => {
 		const payload = {
 			title: titulo,
 			description: descricao,
@@ -207,7 +268,7 @@ export default function CriarSimulados() {
 			subject_id: selectedSubject,
 			max_attempts: tentativas_maximas,
 			duration_minutes: duracao_minutos,
-			visibility: visibilidade,
+			visibility: visibility,
 			questions: questions.map((question) => {
 				return {
 					statement: question.statement,
@@ -224,7 +285,7 @@ export default function CriarSimulados() {
 		return payload;
 	};
 
-	const handleSubmit = async (e) => {
+	const handleSubmit = async (e, visibility = QuizVisibility.PUBLIC) => {
 		e.preventDefault();
 		setIsLoading(true);
 
@@ -235,11 +296,19 @@ export default function CriarSimulados() {
 				return;
 			}
 
-			console.log('Dados a serem enviados:', formatPayload());
+			console.log('Dados a serem enviados:', formatPayload(visibility));
 
-			const payload = formatPayload();
-			const response = await fetch(`http://localhost:3000/teacher/classes/${selectedClass}/subjects/${selectedSubject}/quiz`, {
-				method: 'POST',
+			const payload = formatPayload(visibility);
+			
+			// Determinar URL e método baseado no modo de edição
+			const url = isEditMode 
+				? `http://localhost:3000/teacher/simulados/${editId}`
+				: `http://localhost:3000/teacher/classes/${selectedClass}/subjects/${selectedSubject}/quiz`;
+			
+			const method = isEditMode ? 'PUT' : 'POST';
+
+			const response = await fetch(url, {
+				method: method,
 				headers: {
 					'Content-Type': 'application/json',
 					'Authorization': `Bearer ${token}`
@@ -250,13 +319,21 @@ export default function CriarSimulados() {
 			console.log('Resposta do servidor:', response);
 
 			if (!response.ok) {
-				throw new Error('Erro ao criar simulado');
+				const action = isEditMode ? 'atualizar' : 'criar';
+				throw new Error(`Erro ao ${action} simulado`);
 			}
 
-			toast.success('Simulado criado com sucesso!');
+			const action = isEditMode ? 'atualizado' : (visibility === QuizVisibility.DRAFT ? 'salvo' : 'publicado');
+			const successMessage = isEditMode 
+				? `Simulado ${action} com sucesso!`
+				: (visibility === QuizVisibility.DRAFT ? 'Rascunho salvo com sucesso!' : 'Simulado publicado com sucesso!');
+			
+			toast.success(successMessage);
 			router.push('/pages/simulados');
 		} catch (error) {
-			toast.error('Erro ao criar simulado');
+			const action = isEditMode ? 'atualizar' : (visibility === QuizVisibility.DRAFT ? 'salvar rascunho' : 'publicar simulado');
+			const errorMessage = `Erro ao ${action}`;
+			toast.error(errorMessage);
 			console.error(error);
 		} finally {
 			setIsLoading(false);
@@ -277,9 +354,9 @@ export default function CriarSimulados() {
 	};
 
 	const handleAlternativesGenerated = (data) => {
-		const { question, correct_answer, alternativas } = data;
+		const { questionId, question, correct_answer, alternativas } = data;
 		setQuestions(questions.map(q => {
-			if (q.id === questions.length) { // Atualiza a última questão adicionada
+			if (q.id === questionId) {
 				return {
 					...q,
 					statement: question,
@@ -295,12 +372,31 @@ export default function CriarSimulados() {
 		}));
 	};
 
+	// Mostrar loading enquanto carrega dados do simulado
+	if (loadingSimulado) {
+		return (
+			<div className="bg-slate-100 min-h-screen p-4 flex items-center justify-center">
+				<div className="text-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#133D86] mx-auto mb-4"></div>
+					<p className="text-gray-600">Carregando dados do simulado...</p>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="bg-slate-100 min-h-screen p-4">
 			<div className="max-w-6xl mx-auto">
 				<div className="flex flex-col items-center mb-8 bg-white rounded-xl shadow-lg p-6 border border-gray-100">
 					<Logo className="h-12 w-12" variant="icon" />
-					<h1 className="mt-4 text-3xl font-bold tracking-tight text-[#133D86]">Gerar Simulado</h1>
+					<h1 className="mt-4 text-3xl font-bold tracking-tight text-[#133D86]">
+						{isEditMode ? 'Editar Simulado' : 'Gerar Simulado'}
+					</h1>
+					{isEditMode && (
+						<p className="mt-2 text-sm text-gray-600">
+							Editando simulado • Você pode salvar como rascunho ou publicar
+						</p>
+					)}
 				</div>
 
 				<form onSubmit={handleSubmit} className="space-y-6">
@@ -426,10 +522,12 @@ export default function CriarSimulados() {
 						{questions.map((question, index) => (
 							<Question
 								key={question.id}
+								questionId={question.id}
 								numeroQuestao={index + 1}
 								onAddQuestion={handleAddQuestion}
-								onDeleteQuestion={handleDeleteQuestion}
+								onDeleteQuestion={() => handleDeleteQuestion(question.id)}
 								onAlternativesGenerated={handleAlternativesGenerated}
+								existingQuestion={question}
 							/>
 						))}
 					</div>
@@ -458,12 +556,30 @@ export default function CriarSimulados() {
 								</Button>
 								<Button 
 									size="lg" 
-									type="submit" 
-									className="text-white"
+									type="button"
+									variant="outline"
+									className="border-[#133D86] text-[#133D86] hover:bg-[#133D86] hover:text-white"
 									disabled={!selectedClass || !selectedSubject || !titulo || isLoading}
+									onClick={(e) => {
+										e.preventDefault();
+										handleSubmit(e, QuizVisibility.DRAFT);
+									}}
+								>
+									<Edit className="h-5 w-5 mr-2" />
+									{isLoading ? 'Salvando...' : (isEditMode ? 'Salvar como Rascunho' : 'Salvar Rascunho')}
+								</Button>
+								<Button 
+									size="lg" 
+									type="submit" 
+									className="bg-[#133D86] hover:bg-[#0e2a5c] text-white"
+									disabled={!selectedClass || !selectedSubject || !titulo || isLoading}
+									onClick={(e) => {
+										e.preventDefault();
+										handleSubmit(e, QuizVisibility.PUBLIC);
+									}}
 								>
 									<Save className="h-5 w-5 mr-2" />
-									{isLoading ? 'Criando...' : 'Finalizar Simulado'}
+									{isLoading ? (isEditMode ? 'Atualizando...' : 'Publicando...') : (isEditMode ? 'Atualizar e Publicar' : 'Publicar Simulado')}
 								</Button>
 							</div>
 						</div>

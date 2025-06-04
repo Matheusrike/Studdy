@@ -3,21 +3,20 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/ui/logo";
-import { ExternalLink, Search, Calculator, Atom, Microscope, Globe, History, BookText, Brain, BookMarked, BookOpen, LineChart, TestTube, Dna, Landmark, BookOpenCheck, BookOpenText, BookOpenIcon, BookOpenCheckIcon, CircleCheck, CircleDashed, CircleOff, Ban } from "lucide-react";
+import { ExternalLink, Search, Calculator, Atom, Microscope, Globe, History, BookText, Brain, BookMarked, BookOpen, LineChart, TestTube, Dna, Landmark, BookOpenCheck, BookOpenText, BookOpenIcon, BookOpenCheckIcon, CircleCheck, CircleDashed, CircleOff, Ban, Eye, Edit, Archive, HelpCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
 import { PageLoader } from "@/components/ui/loader";
-
-const quiz = {
-
-};
+import Cookies from 'js-cookie';
+import { toast } from 'sonner';
+import { QuizVisibility, getVisibilityText, getVisibilityColor, getVisibilityIcon } from './enums/QuizVisibility';
 
 const statusVisibility = [
     { id: 'todos', label: 'Todos' },
-    { id: 'pendente', label: 'Pendentes' },
-    { id: 'concluido', label: 'Concluídos' },
-    { id: 'expirado', label: 'Expirados' }
+    { id: QuizVisibility.DRAFT, label: 'Rascunho' },
+    { id: QuizVisibility.PUBLIC, label: 'Público' },
+    { id: QuizVisibility.ARCHIVED, label: 'Arquivado' }
 ];
 
 export default function SimuladosPage() {
@@ -40,48 +39,83 @@ export default function SimuladosPage() {
         }
     }, []);
 
-   // Carregar disciplinas quando uma classe for selecionada
-	useEffect(() => {
-		if (quiz.length === 0) {
-			const fetchSimulados = async () => {
-				try {
-					const token = Cookies.get('token');
-					if (!token) {
-						toast.error('Token não encontrado');
-						return;
-					}
+    // Carregar simulados
+    useEffect(() => {
+        const fetchSimulados = async () => {
+            try {
+                const token = Cookies.get('token');
+                if (!token) {
+                    toast.error('Token não encontrado');
+                    return;
+                }
 
-					const response = await fetch(`http://localhost:3000/teachers/classes/${selectedClass}/subjects/${selectedSubject}/quizzes`, {
-						headers: {
-							'Authorization': `Bearer ${token}`
-						}
-					});
+                console.log('Buscando simulados...');
+                const response = await fetch('http://localhost:3000/teacher/classes/1/subjects/1/quizzes', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
 
-					if (!response.ok) {
-						throw new Error('Erro ao carregar simulados');
-					}
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar simulados');
+                }
 
-					const data = await response.json();
-					console.log('Disciplinas recebidas:', data);
+                const data = await response.json();
+                console.log('Dados recebidos:', data);
 
-					if (!Array.isArray(data)) {
-						console.error('Dados inválidos recebidos:', data);
-						toast.error('Formato de dados inválido');
-						return;
-					}
+                if (!Array.isArray(data)) {
+                    console.error('Dados inválidos recebidos:', data);
+                    toast.error('Formato de dados inválido');
+                    return;
+                }
 
-					setQuiz(data);
-				} catch (error) {
-					toast.error('Erro ao carregar simulados');
-					console.error(error);
-				}
-			};
+                // Organizar simulados por categoria
+                const organizedQuiz = {
+                    exatas: [],
+                    humanas: [],
+                    linguagens: [],
+                    biologicas: []
+                };
 
-			fetchSimulados();
-		} else {
-			    setQuiz([]);
-		}
-	}, [quiz]);
+                // Distribuir simulados nas categorias (você pode ajustar a lógica conforme necessário)
+                data.forEach(simulado => {
+                    // Adicionar propriedade visibility se não existir
+                    if (!simulado.visibility) {
+                        simulado.visibility = QuizVisibility.DRAFT;
+                    }
+
+                    // Filtrar simulados baseado no papel do usuário
+                    // Estudantes só podem ver simulados publicados
+                    if (userRole === 'student' && simulado.visibility !== QuizVisibility.PUBLIC) {
+                        return; // Pular este simulado
+                    }
+
+                    // Categorizar baseado no título ou adicionar a uma categoria padrão
+                    const title = (simulado.title || '').toLowerCase();
+                    if (title.includes('matemática') || title.includes('física') || title.includes('química')) {
+                        organizedQuiz.exatas.push(simulado);
+                    } else if (title.includes('história') || title.includes('geografia') || title.includes('filosofia')) {
+                        organizedQuiz.humanas.push(simulado);
+                    } else if (title.includes('português') || title.includes('literatura') || title.includes('inglês')) {
+                        organizedQuiz.linguagens.push(simulado);
+                    } else if (title.includes('biologia') || title.includes('genética') || title.includes('ecologia')) {
+                        organizedQuiz.biologicas.push(simulado);
+                    } else {
+                        // Categoria padrão
+                        organizedQuiz.exatas.push(simulado);
+                    }
+                });
+
+                setQuiz(organizedQuiz);
+                console.log('Simulados organizados:', organizedQuiz);
+            } catch (error) {
+                toast.error('Erro ao carregar simulados');
+                console.error('Erro detalhado:', error);
+            }
+        };
+
+        fetchSimulados();
+    }, []);
 
     const getSimuladoIcon = (name, section) => {
         const lowerName = (name || '').toLowerCase();
@@ -147,41 +181,25 @@ export default function SimuladosPage() {
     };
 
     const getStatusColor = (visibility) => {
-        switch (visibility) {
-            case 'pendente':
-                return 'bg-[#133D86] hover:bg-[#0e2a5c]';
-            case 'concluido':
-                return 'bg-green-700 hover:bg-green-600';
-            case 'expirado':
-                return 'bg-red-700 hover:bg-red-600';
-            default:
-                return 'bg-[#133D86] hover:bg-[#0e2a5c]';
-        }
+        return getVisibilityColor(visibility);
     };
 
     const getStatusText = (visibility) => {
-        switch (visibility) {
-            case 'pendente':
-                return 'Pendentes';
-            case 'concluido':
-                return 'Concluído';
-            case 'expirado':
-                return 'Expirado';
-            default:
-                return 'Ver Simulado';
-        }
+        return getVisibilityText(visibility);
     };
 
     const getStatusIcon = (visibility) => {
-        switch (visibility) {
-            case 'pendente':
-                return CircleDashed;
-            case 'concluido':
-                return CircleCheck;
-            case 'expirado':
-                return Ban;
+        const iconName = getVisibilityIcon(visibility);
+        switch (iconName) {
+            case 'Eye':
+                return Eye;
+            case 'Edit':
+                return Edit;
+            case 'Archive':
+                return Archive;
+            case 'HelpCircle':
             default:
-                return CircleDashed;
+                return HelpCircle;
         }
     };
 
@@ -216,21 +234,24 @@ export default function SimuladosPage() {
                             />
                         </div>
 
-                        <div className="flex flex-wrap gap-2">
-                            {statusVisibility.map((visibility) => (
-                                <Button
-                                    key={visibility.id}
-                                    variant={selectedVisibility === visibility.id ? "default" : "outline"}
-                                    className={`text-sm px-4 py-2 rounded-lg transition-all duration-300 ${selectedVisibility === visibility.id
-                                        ? 'bg-[#133D86] text-white hover:bg-[#0e2a5c]'
-                                        : 'hover:bg-gray-100'
-                                        }`}
-                                    onClick={() => setSelectedVisibility(visibility.id)}
-                                >
-                                    {visibility.label}
-                                </Button>
-                            ))}
-                        </div>
+                        {/* Filtros de visibilidade apenas para professores */}
+                        {userRole === 'teacher' && (
+                            <div className="flex flex-wrap gap-2">
+                                {statusVisibility.map((visibility) => (
+                                    <Button
+                                        key={visibility.id}
+                                        variant={selectedVisibility === visibility.id ? "default" : "outline"}
+                                        className={`text-sm px-4 py-2 rounded-lg transition-all duration-300 ${selectedVisibility === visibility.id
+                                            ? 'bg-[#133D86] text-white hover:bg-[#0e2a5c]'
+                                            : 'hover:bg-gray-100'
+                                            }`}
+                                        onClick={() => setSelectedVisibility(visibility.id)}
+                                    >
+                                        {visibility.label}
+                                    </Button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {Object.entries(quiz).map(([section, items]) => {
@@ -251,29 +272,55 @@ export default function SimuladosPage() {
                                         return (
                                             <Card
                                                 key={simulado.title}
-                                                className="hover:shadow-xl transition-all duration-300 border border-gray-100 bg-white h-[280px] w-full group overflow-hidden"
+                                                className="hover:shadow-xl transition-all duration-300 border border-gray-100 bg-white h-[320px] w-full group overflow-hidden rounded-xl"
                                             >
-                                                <CardHeader className="pb-2">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className={`p-2.5 rounded-xl ${color} text-white group-hover:scale-110 transition-transform duration-300 shadow-md`}>
-                                                            <Icon className="h-5 w-5" />
+                                                <CardHeader className="pb-4">
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <div className={`p-3 rounded-xl ${color} text-white group-hover:scale-110 transition-transform duration-300 shadow-md`}>
+                                                            <Icon className="h-6 w-6" />
                                                         </div>
                                                     </div>
-                                                    <CardTitle className="text-lg mt-3 h-[28px] line-clamp-1 group-hover:text-[#133D86] transition-colors duration-300 font-semibold">{simulado.title}</CardTitle>
+                                                    <CardTitle className="text-xl font-bold text-gray-800 mb-2 line-clamp-1 group-hover:text-[#133D86] transition-colors duration-300">
+                                                        {simulado.title}
+                                                    </CardTitle>
+                                                    <p className="text-sm text-gray-600 line-clamp-2 h-[48px] mb-3">
+                                                        {simulado.description}
+                                                    </p>
                                                 </CardHeader>
-                                                <CardContent>
-                                                    <p className="text-gray-600 mb-4 h-[40px] line-clamp-2 text-sm">{simulado.max_points}</p>
-                                                    <Button
-                                                        className={`w-full ${getStatusColor(simulado.visibility)} transition-all duration-300 shadow-md hover:shadow-lg rounded-lg font-medium text-sm flex items-center justify-center gap-2`}
-                                                        onClick={() => handleDetails(simulado.id)}
-                                                    >
-                                                        {getStatusText(simulado.visibility)}
-                                                        {(() => {
-                                                            const StatusIcon = getStatusIcon(simulado.visibility);
-                                                            return <StatusIcon className="h-4 w-4" />;
-                                                        })()}
-                                                    </Button>
-
+                                                <CardContent className="pt-0">
+                                                    <div className="space-y-4">
+                                                        {/* Botão de editar para rascunhos (apenas professores) */}
+                                                        {userRole === 'teacher' && simulado.visibility === QuizVisibility.DRAFT ? (
+                                                            <div className="space-y-2">
+                                                                <Button
+                                                                    className="w-full bg-orange-500 hover:bg-orange-600 text-white transition-all duration-300 shadow-md hover:shadow-lg rounded-lg font-medium text-sm flex items-center justify-center gap-3 py-4"
+                                                                    onClick={() => window.location.href = `/pages/simulados/criar-simulados?edit=${simulado.id}`}
+                                                                >
+                                                                    Editar Rascunho
+                                                                    <Edit className="h-5 w-5" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    className="w-full border-gray-300 text-gray-600 hover:bg-gray-50 transition-all duration-300 rounded-lg font-medium text-sm flex items-center justify-center gap-3 py-3"
+                                                                    onClick={() => handleDetails(simulado.id)}
+                                                                >
+                                                                    Visualizar
+                                                                    <Eye className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        ) : (
+                                                            <Button
+                                                                className={`w-full ${getStatusColor(simulado.visibility)} transition-all duration-300 shadow-md hover:shadow-lg rounded-lg font-medium text-sm flex items-center justify-center gap-3 py-4`}
+                                                                onClick={() => handleDetails(simulado.id)}
+                                                            >
+                                                                {getStatusText(simulado.visibility)}
+                                                                {(() => {
+                                                                    const StatusIcon = getStatusIcon(simulado.visibility);
+                                                                    return <StatusIcon className="h-5 w-5" />;
+                                                                })()}
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </CardContent>
                                             </Card>
                                         );
@@ -286,4 +333,6 @@ export default function SimuladosPage() {
             </div>
         </div>
     );
+
+
 }
