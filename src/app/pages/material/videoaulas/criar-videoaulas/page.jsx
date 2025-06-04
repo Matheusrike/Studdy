@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Link, Video, Clock, User } from 'lucide-react';
 import YouTube from 'react-youtube';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Cookies from 'js-cookie';
 
 export default function CriarVideoaulasPage() {
-    const [youtubeUrl, setYoutubeUrl] = useState("");
+    const [videoUrl, setvideoUrl] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
@@ -52,7 +53,7 @@ export default function CriarVideoaulasPage() {
     };
 
     const handlePreviewVideo = async () => {
-        const videoId = extractVideoId(youtubeUrl);
+        const videoId = extractVideoId(videoUrl);
         if (!videoId) {
             setError('URL do YouTube inválida');
             return;
@@ -74,24 +75,27 @@ export default function CriarVideoaulasPage() {
             setError(null);
             setSuccess(false);
 
-            if (!videoPreview) {
-                setError('Por favor, visualize o vídeo antes de salvar');
+            const token = Cookies.get('token');
+
+            if (!videoUrl) {
+                setError('Por favor, insira uma URL do YouTube');
                 return;
             }
 
-            const response = await fetch('http://localhost:3002/api/videoaulas', {
+            const response = await fetch('http://localhost:3000/teacher/videos', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(videoPreview)
+                body: JSON.stringify({ videoUrl })
             });
 
             const data = await response.json();
 
             if (response.ok) {
                 setSuccess(true);
-                setYoutubeUrl("");
+                setvideoUrl("");
                 setVideoPreview(null);
             } else {
                 setError(data.message || 'Erro ao salvar videoaula');
@@ -147,8 +151,8 @@ export default function CriarVideoaulasPage() {
                                         type="text"
                                         placeholder="Cole o link do YouTube aqui..."
                                         className="text-base font-normal h-12 rounded-lg border-gray-200 focus:border-[#133D86] focus:ring-[#133D86] shadow-sm pl-8"
-                                        value={youtubeUrl}
-                                        onChange={e => setYoutubeUrl(e.target.value)}
+                                        value={videoUrl}
+                                        onChange={e => setvideoUrl(e.target.value)}
                                     />
                                 </div>
                             </div>
@@ -156,7 +160,7 @@ export default function CriarVideoaulasPage() {
                             <div className="flex flex-col gap-10">
                                 <Button
                                     onClick={handlePreviewVideo}
-                                    disabled={isLoading || !youtubeUrl}
+                                    disabled={isLoading || !videoUrl}
                                     className="w-full"
                                 >
                                     {isLoading ? 'Carregando...' : 'Visualizar'}

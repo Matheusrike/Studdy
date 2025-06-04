@@ -5,66 +5,57 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Video, Search, Clock, Play, Lock, Link } from 'lucide-react';
+import { useEffect } from 'react';
+import Cookies from 'js-cookie';
+import { toast } from 'react-toastify';
 import YouTube from 'react-youtube';
 
 export default function VideoaulasPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedVideo, setSelectedVideo] = useState(null);
-    const [youtubeUrl, setYoutubeUrl] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [videoaulas, setVideoaulas] = useState([]);
 
-    const extractVideoId = (url) => {
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : null;
-    };
+  // Carregar videoaulas
+	useEffect(() => {
+        const fetchVideoaulas = async () => {
+            try {
+                const token = Cookies.get('token');
+                if (!token) {
+                    toast.error('Token não encontrado');
+                    return;
+                }
 
-    const infoVideo = async (videoId) => {
-        try {
-            setIsLoading(true);
-            const response = await fetch(`https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet,contentDetails&key=${process.env.NEXT_PUBLIC_YOUTUBE_API_KEY}`);
-            const data = await response.json();
+                const response = await fetch(`http://localhost:3000/teacher/videos`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
 
-            if (data.items && data.items.length > 0) {
-                const videoInfo = data.items[0];
-                const duration = videoInfo.contentDetails.duration;
-                const minutes = Math.floor(parseInt(duration.match(/PT(\d+)M/)?.[1] || 0));
-                const seconds = parseInt(duration.match(/PT(?:\d+M)?(\d+)S/)?.[1] || 0);
+                console.log('Dados recebidos:', response);
 
-                return {
-                    id: videoId,
-                    titulo: videoInfo.snippet.title,
-                    professor: videoInfo.snippet.channelTitle,
-                    duracao: `${minutes}:${seconds.toString().padStart(2, '0')}`,
-                    categoria: "YouTube",
-                    descricao: videoInfo.snippet.description,
-                    thumbnail: videoInfo.snippet.thumbnails.high.url,
-                    videoId: videoId
-                };
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar videoaulas');
+                }
+
+                const data = await response.json();
+                console.log('Videoaulas recebidas:', data);
+
+                if (!Array.isArray(data)) {
+                    console.error('Dados inválidos recebidos:', data);
+                    toast.error('Formato de dados inválido');
+                    return;
+                }
+
+                setVideoaulas(data);
+            } catch (error) {
+                toast.error('Erro ao carregar videoaulas');
+                console.error(error);
             }
-            return null;
-        } catch (error) {
-            print('Erro ao buscar informações do vídeo:', error);
-            return null;
-        } finally {
-            setIsLoading(false);
-        }
-    };
+        };
 
-    const handleAddVideo = async () => {
-        const videoId = extractVideoId(youtubeUrl);
-        if (!videoId) {
-            alert('URL do YouTube inválida');
-            return;
-        }
-
-        const videoInfo = await infoVideo(videoId);
-        if (videoInfo) {
-            setVideoaulas(prev => [...prev, videoInfo]);
-            setYoutubeUrl('');
-        }
-    };
+        fetchVideoaulas();
+    }, []);
 
     const filteredVideos = videoaulas.filter(video =>
         video.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -95,24 +86,7 @@ export default function VideoaulasPage() {
                             className="pl-8"
                         />
                     </div>
-                    <div className="flex flex-col lg:flex-row gap-2 w-full lg:w-auto">
-                        <div className="relative w-full lg:w-96">
-                            <Link className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
-                            <Input
-                                placeholder="Cole o link do YouTube aqui..."
-                                value={youtubeUrl}
-                                onChange={(e) => setYoutubeUrl(e.target.value)}
-                                className="pl-8"
-                            />
-                        </div>
-                        <Button
-                            onClick={handleAddVideo}
-                            disabled={isLoading}
-                            className="w-full lg:w-auto"
-                        >
-                            {isLoading ? 'Carregando...' : 'Adicionar'}
-                        </Button>
-                    </div>
+                   
                 </div>
             </div>
 
@@ -148,7 +122,7 @@ export default function VideoaulasPage() {
                                         <span className="text-sm text-gray-500">
                                             {video.duracao}
                                         </span>
-                                        <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                        <span className="text-xs px-2 py-1 rounded-full bg-red-300 text-red-800 dark:bg-red-900 dark:text-red-500">
                                             {video.categoria}
                                         </span>
                                     </div>
