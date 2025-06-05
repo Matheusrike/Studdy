@@ -25,6 +25,8 @@ export default function SimuladoQuestoesPage() {
     const [error, setError] = useState(null);
     const [resultado, setResultado] = useState(null);
     const [mostrarResultado, setMostrarResultado] = useState(false);
+    const [attempt, setAttempt] = useState(null);
+    const [hasAttemptId, setHasAttemptId] = useState(false);
 
     // Estado para indicar se o simulado já foi concluído
     const [concluido, setConcluido] = useState(false);
@@ -56,7 +58,7 @@ export default function SimuladoQuestoesPage() {
     
     // Determinar o modo de visualização baseado no status e papel do usuário
     const getViewMode = () => {
-        if (!simulado) return 'loading';
+        if (!simulado) return 'start'; // Modo inicial para iniciar simulado
         
         // Se for professor, permite edição independente do status
         if (isTeacher) {
@@ -82,57 +84,128 @@ export default function SimuladoQuestoesPage() {
     const showAnswerStyles = viewMode === 'result' || concluido;
 
 
-    useEffect(() => {
-        const fetchSimuladoDetalhes = async () => {
-            try {
-                setIsLoading(true);
-                setError(null);
+    // Função para iniciar um novo simulado
+    const iniciarSimulado = async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
 
-                // Requisitar dados do quiz da API
-                const response = await fetch(`http://localhost:3000/quiz/${params.id}`, {
+            const token = Cookies.get('token');
+            if (!token) {
+                throw new Error('Token não encontrado');
+            }
+
+            // Buscar informações básicas do quiz primeiro para obter o subject_id
+            let subjectId;
+            if (simulado?.subject?.id) {
+                subjectId = simulado.subject.id;
+            } else {
+                // Se não temos o simulado carregado, precisamos buscar o subject_id
+                const quizInfoResponse = await fetch(`http://localhost:3000/quiz/${params.id}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${Cookies.get('token')}`
+                        'Authorization': `Bearer ${token}`
                     }
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`Erro ao buscar simulado: ${response.status}`);
+                if (!quizInfoResponse.ok) {
+                    throw new Error('Erro ao buscar informações do quiz');
                 }
                 
-                const quizData = await response.json();
+                const quizInfo = await quizInfoResponse.json();
+                subjectId = quizInfo.subject?.id;
                 
-                // Adaptar os dados recebidos para o formato esperado pelo componente
-                const simuladoData = {
-                    id: quizData.id,
-                    title: quizData.title,
-                    description: quizData.description,
-                    max_attempts: 1, // Valor padrão se não vier da API
-                    duration_minutes: quizData.duration_minutes,
-                    visibility: quizData.visibility || QuizVisibility.PUBLIC
-                };
-                
-                setSimulado(simuladoData);
-                // Embaralha questões e alternativas antes de definir no estado
-                const shuffledQuestions = shuffleQuestionsAndAlternatives(quizData.questions);
-                setQuestoes(shuffledQuestions);
+                if (!subjectId) {
+                    toast.error('Erro: ID do assunto não encontrado');
+                    return;
+                }
+            }
 
-                // Inicialmente não concluído
-                setConcluido(false);
+            // Iniciar attempt
+            const response = await fetch(`http://localhost:3000/student/subjects/${subjectId}/quizzes/${params.id}/start`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
 
-            } catch (error) {
-                handleUnexpectedError(error, 'carregar página do simulado');
-                setError(error.message);
-            } finally {
-                setIsLoading(false);
+            await handleApiError(response, 'iniciar simulado');
+            const data = await response.json();
+            
+            // Atualizar dados do simulado com as informações completas da API
+            const simuladoCompleto = {
+                id: data.id,
+                title: data.title,
+                description: data.description,
+                duration_minutes: data.duration_minutes,
+                max_points: data.max_points,
+                max_attempts: data.max_attempt || simulado?.max_attempts || 1,
+                visibility: simulado?.visibility || QuizVisibility.PUBLIC,
+                subject: simulado?.subject || { id: subjectId },
+                questions: data.questions || []
+            };
+            
+            setSimulado(simuladoCompleto);
+            
+            // Salvar dados do attempt - o attempt_id vem diretamente na resposta
+            setAttempt({ id: data.attempt_id });
+            setHasAttemptId(true);
+            
+            // Usar as questões que vêm da resposta da API
+            const questoesParaEmbaralhar = data.questions || [];
+            
+            // Embaralhar questões e suas alternativas
+            const questoesEmbaralhadas = shuffleQuestionsAndAlternatives(questoesParaEmbaralhar);
+            
+            setQuestoes(questoesEmbaralhadas);
+            toast.success('Simulado iniciado com sucesso!');
+            
+        } catch (error) {
+            handleFetchError(error, 'iniciar simulado');
+            setError('Erro ao carregar questões do simulado. Tente novamente.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        // Inicializar estado básico - os dados completos vêm do endpoint /start
+        setIsLoading(false);
+        setHasAttemptId(false);
+        setConcluido(false);
+    }, [params.id]);
+
+    // Effect para detectar fechamento da aba e enviar status de abandono
+    useEffect(() => {
+        const handleBeforeUnload = async () => {
+            // Só envia se o simulado não foi concluído, existe um attempt e tem attemptId
+            if (!concluido && hasAttemptId && attempt?.id) {
+                try {
+                    const token = Cookies.get('token');
+                    await fetch(`http://localhost:3000/student/attempt/${attempt.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            status: 'abandoned'
+                        })
+                    });
+                } catch (error) {
+                    console.error('Erro ao enviar status de abandono:', error);
+                }
             }
         };
 
-        if (params.id) {
-            fetchSimuladoDetalhes();
-        }
-    }, [params.id]);
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [concluido, hasAttemptId, attempt?.id]);
 
     const handleRespostaChange = (questaoId, alternativa) => {
         if (viewMode !== 'answer' || concluido) return; // Só permite alteração no modo resposta e não concluído
@@ -203,6 +276,8 @@ export default function SimuladoQuestoesPage() {
                 throw new Error('Token não encontrado');
             }
 
+       
+
             // Transformar o objeto respostasUsuario no formato esperado
             const responses = Object.entries(respostasUsuario).map(([questionId, markedAlternativeId]) => ({
                 questionId: parseInt(questionId),
@@ -214,9 +289,10 @@ export default function SimuladoQuestoesPage() {
             };
 
             console.log('Enviando dados das respostas:', dataToSend);
+            console.log('Attempt ID:', attempt.id);
 
             // Enviar as respostas
-            const submitResponse = await fetch(`http://localhost:3000/student/attempt/${params.id}/submit`, {
+            const submitResponse = await fetch(`http://localhost:3000/student/attempt/${attempt.id}/submit`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -225,12 +301,12 @@ export default function SimuladoQuestoesPage() {
                 body: JSON.stringify(dataToSend),
             });
 
-            await handleApiError(submitResponse, 'responder simulado');
             const submitData = await submitResponse.json();
             console.log('Resposta da tentativa:', submitData);
 
             setResultado(submitData);
             setMostrarResultado(true);
+            setConcluido(true); // Marcar como concluído
             toast.success('Simulado respondido com sucesso!');
         } catch (error) {
             handleFetchError(error, 'responder simulado');
@@ -272,6 +348,7 @@ export default function SimuladoQuestoesPage() {
                     <div className="text-sm text-gray-700 font-semibold flex flex-col lg:flex-row md:flex-row md:justify-between lg:justify-between gap-2 align-center mt-4 ">
                         <p>Tentativas máximas: {simulado?.max_attempts}</p>
                         <p>Duração: {simulado?.duration_minutes} minutos</p>
+                        <p>Pontos máximos: {simulado?.max_points}</p>
                         <p>Status: {status}</p>
                     </div>
                     {simulado?.description && (
@@ -280,7 +357,27 @@ export default function SimuladoQuestoesPage() {
                 </CardHeader>
             </Card>
 
-            {questoes.map((questao, index) => (
+            {/* Botão para iniciar simulado quando não há dados carregados */}
+            {(viewMode === 'start' || (!hasAttemptId && !isTeacher && viewMode === 'answer')) && (
+                <Card className="mb-6 shadow-lg rounded-2xl border border-blue-200">
+                    <CardContent className="text-center py-10">
+                        <h2 className="text-2xl font-bold text-blue-600 mb-4">Pronto para começar?</h2>
+                        <p className="text-gray-600 mb-6">
+                            Clique no botão abaixo para iniciar o simulado.
+                        </p>
+                        <Button
+                            onClick={iniciarSimulado}
+                            disabled={isLoading}
+                            className="bg-[#133d86] hover:bg-blue-600 text-white px-8 py-3 text-lg font-semibold rounded-xl"
+                        >
+                            {isLoading ? 'Iniciando...' : 'Iniciar Simulado'}
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Questões aparecem quando há attemptId ou para professores */}
+            {(hasAttemptId || (isTeacher && simulado?.questions?.length > 0)) && (hasAttemptId ? questoes : simulado.questions).map((questao, index) => (
                 <Card key={questao.id} className="mb-6 shadow-md border border-gray-200 rounded-xl">
                     <CardHeader className="mb-2">
                         <CardTitle className="text-xl mb-4 font-bold flex justify-between items-center ">
@@ -371,19 +468,19 @@ export default function SimuladoQuestoesPage() {
                 </Card>
             ))}
 
-            {/* Botão Finalizar aparece no modo 'answer' e não concluído */}
-            {(viewMode === 'answer' && !concluido) && (
+            {/* Botão Finalizar aparece no modo 'answer', não concluído e com attemptId */}
+            {(viewMode === 'answer' && !concluido && hasAttemptId) && (
                 <div className="flex justify-end mt-10">
                     <Button
                         variant="default"
                         size="lg"
                         className={`w-full py-6 text-base font-bold rounded-xl transition 
-                            ${Object.keys(respostasUsuario).length !== questoes.length
+                            ${Object.keys(respostasUsuario).length !== (hasAttemptId ? questoes : simulado.questions).length
                                 ? 'bg-gray-400 cursor-not-allowed'
                                 : 'bg-[#133d86] hover:bg-blue-600'}
                         `}
-                        disabled={Object.keys(respostasUsuario).length !== questoes.length}
-                        onClick={onSubmit} // Simular conclusão ao clicar
+                        disabled={Object.keys(respostasUsuario).length !== (hasAttemptId ? questoes : simulado.questions).length}
+                        onClick={onSubmit}
                     >
                         <Send className="h-5 w-5 mr-2" />
                         Finalizar Simulado
@@ -394,25 +491,36 @@ export default function SimuladoQuestoesPage() {
 
             
             {/* Mensagem informativa para modo resultado */}
-            {viewMode === 'result' && (
+            {viewMode === 'result' && (hasAttemptId || (isTeacher && simulado?.questions?.length > 0)) && (
                 <div className="text-center mt-10 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <p className="text-gray-700 font-medium">
-                        Este simulado está arquivado. Você está visualizando apenas o resultado.
+                        {isTeacher 
+                            ? 'Visualização do professor: Este simulado está arquivado.' 
+                            : 'Este simulado está arquivado. Você está visualizando apenas o resultado.'}
                     </p>
                 </div>
             )}
             
             {/* Mensagem informativa para usuários que concluíram */}
-            {(concluido && viewMode === 'answer') && (
+            {(concluido && viewMode === 'answer' && hasAttemptId) && (
                 <div className="text-center mt-10 p-4 bg-green-50 rounded-lg border border-green-200">
                     <p className="text-green-700 font-medium">
                         ✅ Simulado concluído! As respostas corretas estão destacadas em verde.
                     </p>
                 </div>
             )}
+            
+            {/* Mensagem informativa para professores visualizando questões */}
+            {isTeacher && simulado?.questions?.length > 0 && !hasAttemptId && (
+                <div className="text-center mt-10 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-blue-700 font-medium">
+                        👨‍🏫 Visualização do Professor: Você está vendo as questões do simulado.
+                    </p>
+                </div>
+            )}
 
             {mostrarResultado && resultado && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-slate-100 bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white p-8 rounded-xl max-w-2xl w-full mx-4">
                         <h2 className="text-2xl font-bold text-[#133D86] mb-4">Resultado do Simulado</h2>
                         
@@ -480,4 +588,4 @@ export default function SimuladoQuestoesPage() {
             )}
         </div>
     );
-}
+    }

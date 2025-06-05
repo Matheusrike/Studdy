@@ -11,6 +11,14 @@ import { PageLoader } from "@/components/ui/loader";
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 import { QuizVisibility, getVisibilityText, getVisibilityColor, getVisibilityIcon } from './enums/QuizVisibility';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+    DialogDescription,
+} from "@/components/ui/dialog";
 
 const statusVisibility = [
     { id: 'todos', label: 'Todos' },
@@ -25,6 +33,8 @@ export default function SimuladosPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [quiz, setQuiz] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isStartModalOpen, setIsStartModalOpen] = useState(false);
+    const [selectedSimulado, setSelectedSimulado] = useState(null);
 
     // Função para buscar simulados do aluno
     const fetchSimulados = async () => {
@@ -113,17 +123,12 @@ export default function SimuladosPage() {
                                                 <BookOpen className="h-6 w-6" />
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <span className={`px-2 py-1 rounded text-xs ${
-                                                    simulado.status === 'completed' 
+                                                <span className={`px-2 py-1 rounded text-xs ${simulado.status === 'completed'
                                                         ? 'bg-green-100 text-green-800'
-                                                        : simulado.status === 'in_progress'
-                                                        ? 'bg-yellow-100 text-yellow-800'
                                                         : 'bg-blue-100 text-blue-800'
-                                                }`}>
-                                                    {simulado.status === 'completed' 
+                                                    }`}>
+                                                    {simulado.status === 'completed'
                                                         ? 'Concluído'
-                                                        : simulado.status === 'in_progress'
-                                                        ? 'Em Progresso'
                                                         : 'Disponível'}
                                                 </span>
                                             </div>
@@ -148,32 +153,24 @@ export default function SimuladosPage() {
                                     <CardContent className="pt-0">
                                         <div className="space-y-4">
                                             <Button
-                                                className={`w-full ${
-                                                    simulado.status === 'completed'
+                                                className={`w-full ${simulado.status === 'completed'
                                                         ? 'bg-green-600 hover:bg-green-700'
-                                                        : simulado.status === 'in_progress'
-                                                        ? 'bg-yellow-600 hover:bg-yellow-700'
                                                         : 'bg-[#133D86] hover:bg-[#0e2a5c]'
-                                                } text-white transition-all duration-300 shadow-md hover:shadow-lg rounded-lg font-medium text-sm flex items-center justify-center gap-3 py-4`}
+                                                    } text-white transition-all duration-300 shadow-md hover:shadow-lg rounded-lg font-medium text-sm flex items-center justify-center gap-3 py-4`}
                                                 onClick={() => {
                                                     if (simulado.status === 'completed') {
                                                         router.push(`/pages/simulados/${simulado.attempt_id}/result`);
-                                                    } else if (simulado.status === 'in_progress') {
-                                                        router.push(`/pages/simulados/${simulado.attempt_id}/attempt`);
                                                     } else {
-                                                        router.push(`/pages/simulados/${simulado.id}`);
+                                                        setSelectedSimulado(simulado);
+                                                        setIsStartModalOpen(true);
                                                     }
                                                 }}
                                             >
                                                 {simulado.status === 'completed'
                                                     ? 'Ver Resultados'
-                                                    : simulado.status === 'in_progress'
-                                                    ? 'Continuar Simulado'
                                                     : 'Iniciar Simulado'}
                                                 {simulado.status === 'completed'
                                                     ? <CheckCircle className="h-5 w-5" />
-                                                    : simulado.status === 'in_progress'
-                                                    ? <PlayCircle className="h-5 w-5" />
                                                     : <Play className="h-5 w-5" />}
                                             </Button>
                                         </div>
@@ -184,6 +181,73 @@ export default function SimuladosPage() {
                     )}
                 </div>
             </div>
+
+            {/* Modal de Confirmação para Iniciar Simulado */}
+            <Dialog open={isStartModalOpen} onOpenChange={setIsStartModalOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Iniciar Simulado</DialogTitle>
+                        <DialogDescription>
+                            Você está prestes a iniciar o simulado "{selectedSimulado?.title}". 
+                            Certifique-se de que tem tempo suficiente para completá-lo.
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    {selectedSimulado && (
+                        <div className="space-y-4 py-4">
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4 text-gray-500" />
+                                    <span className="font-medium">Duração:</span>
+                                    <span>{selectedSimulado.duration_minutes} minutos</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <BookOpen className="h-4 w-4 text-gray-500" />
+                                    <span className="font-medium">Matéria:</span>
+                                    <span>{selectedSimulado.subject?.name}</span>
+                                </div>
+                            </div>
+                            
+                            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <div className="flex items-start gap-2">
+                                    <HelpCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                                    <div className="text-sm text-yellow-800">
+                                        <p className="font-medium mb-1">Instruções importantes:</p>
+                                        <ul className="list-disc list-inside space-y-1">
+                                            <li>O tempo começará a contar assim que você iniciar</li>
+                                            <li>Certifique-se de ter uma conexão estável com a internet</li>
+                                            <li>Não feche a aba do navegador durante o simulado</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    <DialogFooter>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setIsStartModalOpen(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button 
+                            onClick={() => {
+                                if (!selectedSimulado) return;
+                                
+                                setIsStartModalOpen(false);
+                                
+                                // Redirecionar para a página [id] onde o start será feito
+                                router.push(`/pages/simulados/${selectedSimulado.id}`);
+                            }}
+                            className="bg-[#133D86] hover:bg-[#0e2a5c]"
+                        >
+                            <Play className="h-4 w-4 mr-2" />
+                            Iniciar Agora
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
