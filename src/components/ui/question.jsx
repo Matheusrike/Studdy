@@ -1,116 +1,105 @@
 'use client';
 
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { useState, useEffect } from "react";
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { MinusCircle } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { MinusCircle } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { toast } from 'sonner';
 import Cookies from 'js-cookie';
 
-import Alert from "@/components/ui/alerts";
-
 const formSchema = z.object({
-    question: z.string().min(1, "Digite uma question"),
-    correct_answer: z.string().min(1, "Digite a resposta correta"),
+    question: z.string().min(1, 'A pergunta é obrigatória'),
+    correct_answer: z.string().min(1, 'A resposta correta é obrigatória')
 });
 
-function QuestionForm({ questionId, numeroQuestao, onAddQuestion, onDeleteQuestion, onAlternativesGenerated, existingQuestion }) {
+function QuestionForm({ questionId, numeroQuestao, onAddQuestion, onDeleteQuestion, onAlternativesGenerated, existingQuestion, onQuestionChange }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitError, setSubmitError] = useState(null);
-    const [submitSuccess, setSubmitSuccess] = useState(false);
     const [alternativas, setAlternativas] = useState({
         alternativa1: '',
         alternativa2: '',
         alternativa3: ''
     });
 
-    // Função para enviar dados atualizados para o componente pai
-    const updateParentData = (questionText, correctAnswer, alts) => {
-        if (questionText && correctAnswer && (alts.alternativa1 || alts.alternativa2 || alts.alternativa3)) {
-            onAlternativesGenerated({
-                questionId: questionId,
-                question: questionText,
-                correct_answer: correctAnswer,
-                alternativas: alts
-            });
-        }
-    };
-
-    // Atualizar dados quando alternativas mudarem
-    useEffect(() => {
-        const currentQuestion = form.getValues('question');
-        const currentCorrectAnswer = form.getValues('correct_answer');
-        if (currentQuestion && currentCorrectAnswer) {
-            updateParentData(currentQuestion, currentCorrectAnswer, alternativas);
-        }
-    }, [alternativas]);
-
-    // Atualizar dados quando pergunta ou resposta correta mudarem
-    const handleFormChange = () => {
-        const currentQuestion = form.getValues('question');
-        const currentCorrectAnswer = form.getValues('correct_answer');
-        if (currentQuestion && currentCorrectAnswer) {
-            updateParentData(currentQuestion, currentCorrectAnswer, alternativas);
-        }
-    };
-
     const form = useForm({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            question: "",
-            correct_answer: ""
-        },
+            question: existingQuestion?.statement || '',
+            correct_answer: existingQuestion?.alternatives?.find(alt => alt.isCorrect)?.text || ''
+        }
     });
 
-    // Carregar dados existentes da questão no modo de edição
+    const question = form.watch('question');
+    const correctAnswer = form.watch('correct_answer');
+
+    // Carregar dados iniciais apenas uma vez
     useEffect(() => {
         if (existingQuestion) {
-            form.setValue('question', existingQuestion.statement || '');
-            
-            // Encontrar a alternativa correta
-            const correctAlternative = existingQuestion.alternatives?.find(alt => alt.isCorrect);
-            if (correctAlternative) {
-                form.setValue('correct_answer', correctAlternative.text || '');
-            }
-            
-            // Carregar alternativas incorretas
+            form.reset({
+                question: existingQuestion.statement || '',
+                correct_answer: existingQuestion.alternatives?.find(alt => alt.isCorrect)?.text || ''
+            });
+
             const incorrectAlternatives = existingQuestion.alternatives?.filter(alt => !alt.isCorrect) || [];
-            const newAlternativas = {
+            setAlternativas({
                 alternativa1: incorrectAlternatives[0]?.text || '',
                 alternativa2: incorrectAlternatives[1]?.text || '',
                 alternativa3: incorrectAlternatives[2]?.text || ''
-            };
-            setAlternativas(newAlternativas);
-            
-            // Atualizar dados no componente pai
-            if (existingQuestion.statement && correctAlternative) {
-                updateParentData(existingQuestion.statement, correctAlternative.text, newAlternativas);
-            }
+            });
         }
-    }, [existingQuestion]);
+    }, [existingQuestion?.id]); // Dependência apenas no ID da questão
+
+    // Função para atualizar a questão
+    const updateQuestion = useCallback(() => {
+        if (!onQuestionChange || !existingQuestion) return;
+
+            const correctAlternative = existingQuestion.alternatives.find(alt => alt.isCorrect);
+            const incorrectAlternatives = existingQuestion.alternatives.filter(alt => !alt.isCorrect);
+
+            const updatedQuestion = {
+                id: questionId,
+                statement: question,
+                points: existingQuestion.points || 1,
+                alternatives: [
+                    { 
+                        id: correctAlternative?.id || Date.now(), 
+                        text: correctAnswer, 
+                        isCorrect: true 
+                    },
+                    { 
+                        id: incorrectAlternatives[0]?.id || Date.now() + 1, 
+                        text: alternativas.alternativa1, 
+                        isCorrect: false 
+                    },
+                    { 
+                        id: incorrectAlternatives[1]?.id || Date.now() + 2, 
+                        text: alternativas.alternativa2, 
+                        isCorrect: false 
+                    },
+                    { 
+                        id: incorrectAlternatives[2]?.id || Date.now() + 3, 
+                        text: alternativas.alternativa3, 
+                        isCorrect: false 
+                    }
+                ]
+            };
+            onQuestionChange(updatedQuestion);
+    }, [question, correctAnswer, alternativas, questionId, onQuestionChange, existingQuestion]);
+
+    // Atualizar quando os valores mudarem
+    useEffect(() => {
+        const timeoutId = setTimeout(updateQuestion, 500); // Debounce de 500ms
+        return () => clearTimeout(timeoutId);
+    }, [updateQuestion]);
 
     const onSubmit = async (data) => {
         try {
             setIsSubmitting(true);
-            setSubmitError(null);
-            setSubmitSuccess(false);
-            setAlternativas({
-                alternativa1: '',
-                alternativa2: '',
-                alternativa3: ''
-            });
 
             const token = Cookies.get('token');
             if (!token) {
@@ -148,22 +137,22 @@ function QuestionForm({ questionId, numeroQuestao, onAddQuestion, onDeleteQuesti
                     alternativa3: result.incorrectAnswers[2].trim()
                 };
                 setAlternativas(novasAlternativas);
-                setSubmitSuccess(true);
                 
-                // Passa as alternativas geradas para o componente pai
                 onAlternativesGenerated({
                     questionId: questionId,
                     question: data.question,
                     correct_answer: data.correct_answer,
                     alternativas: novasAlternativas
                 });
+
+                toast.success('Alternativas geradas com sucesso!');
             } else {
                 throw new Error('Não foi possível gerar as alternativas corretamente');
             }
 
         } catch (error) {
             console.error(error);
-            setSubmitError(error.message || 'Erro ao gerar alternativas');
+            toast.error(error.message || 'Erro ao gerar alternativas');
         } finally {
             setIsSubmitting(false);
         }
@@ -172,13 +161,6 @@ function QuestionForm({ questionId, numeroQuestao, onAddQuestion, onDeleteQuesti
     return (
         <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-bold mb-4">Questão {numeroQuestao}</h2>
-
-            <Alert
-                submitSuccess={submitSuccess}
-                submitError={submitError}
-                successMessage="Alternativas geradas com sucesso!"
-                errorMessage="Erro ao gerar alternativas"
-            />
 
             <Form {...form}>
                 <div className="space-y-4">
@@ -194,10 +176,6 @@ function QuestionForm({ questionId, numeroQuestao, onAddQuestion, onDeleteQuesti
                                         {...field}
                                         disabled={isSubmitting}
                                         className="min-h-[100px] resize-none focus-visible:border-[#1e40af] focus-visible:ring-[#1e40af] focus-visible:ring-[3px]"
-                                        onChange={(e) => {
-                                            field.onChange(e);
-                                            setTimeout(handleFormChange, 100);
-                                        }}
                                     />
                                 </FormControl>
                                 <FormMessage />
@@ -217,10 +195,6 @@ function QuestionForm({ questionId, numeroQuestao, onAddQuestion, onDeleteQuesti
                                         {...field}
                                         disabled={isSubmitting}
                                         className="focus-visible:border-green-500 focus-visible:ring-green-500/50 focus-visible:ring-[3px]"
-                                        onChange={(e) => {
-                                            field.onChange(e);
-                                            setTimeout(handleFormChange, 100);
-                                        }}
                                     />
                                 </FormControl>
                                 <FormMessage />
@@ -240,7 +214,6 @@ function QuestionForm({ questionId, numeroQuestao, onAddQuestion, onDeleteQuesti
                                             ...prev,
                                             alternativa1: e.target.value
                                         }));
-                                        setTimeout(handleFormChange, 100);
                                     }}
                                     className="focus-visible:border-red-500 focus-visible:ring-red-500/50 focus-visible:ring-[3px]"
                                 />
@@ -258,7 +231,6 @@ function QuestionForm({ questionId, numeroQuestao, onAddQuestion, onDeleteQuesti
                                             ...prev,
                                             alternativa2: e.target.value
                                         }));
-                                        setTimeout(handleFormChange, 100);
                                     }}
                                     className="focus-visible:border-red-500 focus-visible:ring-red-500/50 focus-visible:ring-[3px]"
                                 />
@@ -276,7 +248,6 @@ function QuestionForm({ questionId, numeroQuestao, onAddQuestion, onDeleteQuesti
                                             ...prev,
                                             alternativa3: e.target.value
                                         }));
-                                        setTimeout(handleFormChange, 100);
                                     }}
                                     className="focus-visible:border-red-500 focus-visible:ring-red-500/50 focus-visible:ring-[3px]"
                                 />
@@ -310,12 +281,14 @@ function QuestionForm({ questionId, numeroQuestao, onAddQuestion, onDeleteQuesti
     );
 }
 
-export default function Question({ questionId, numeroQuestao, onAddQuestion, onDeleteQuestion, onAlternativesGenerated }) {
+export default function Question({ questionId, numeroQuestao, onAddQuestion, onDeleteQuestion, onAlternativesGenerated, existingQuestion, onQuestionChange }) {
     return <QuestionForm 
         questionId={questionId}
         numeroQuestao={numeroQuestao} 
         onAddQuestion={onAddQuestion} 
         onDeleteQuestion={onDeleteQuestion}
         onAlternativesGenerated={onAlternativesGenerated}
+        existingQuestion={existingQuestion}
+        onQuestionChange={onQuestionChange}
     />;
 }

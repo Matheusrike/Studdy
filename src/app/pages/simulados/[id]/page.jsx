@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Send, Edit } from "lucide-react";
 import Link from "next/link";
-import { handleUnexpectedError } from "@/utils/errorHandler";
+import { handleUnexpectedError, handleFetchError, handleApiError } from "@/utils/errorHandler";
 import Image from "next/image";
 import { QuizVisibility } from "../enums/QuizVisibility";
 import { useUser } from "@/contexts/UserContext";
 import Cookies from "js-cookie";
+import { toast } from "sonner";
 
 
 export default function SimuladoQuestoesPage() {
@@ -22,9 +23,14 @@ export default function SimuladoQuestoesPage() {
     const [respostasUsuario, setRespostasUsuario] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [resultado, setResultado] = useState(null);
+    const [mostrarResultado, setMostrarResultado] = useState(false);
 
     // Estado para indicar se o simulado já foi concluído
     const [concluido, setConcluido] = useState(false);
+
+    // Verificar se o usuário é professor
+    const isTeacher = userRole === 'Teacher';
 
     // Função para embaralhar array (Fisher-Yates shuffle)
     const shuffleArray = (array) => {
@@ -48,13 +54,18 @@ export default function SimuladoQuestoesPage() {
         }));
     };
     
-    // Determinar o modo de visualização baseado no status
+    // Determinar o modo de visualização baseado no status e papel do usuário
     const getViewMode = () => {
         if (!simulado) return 'loading';
         
+        // Se for professor, permite edição independente do status
+        if (isTeacher) {
+            return 'edit';
+        }
+        
         switch (simulado.visibility) {
             case QuizVisibility.DRAFT:
-                // Draft: não pode ser visualizado
+                // Draft: não pode ser visualizado por alunos
                 return 'restricted';
             case QuizVisibility.PUBLIC:
                 // Published: todos podem responder
@@ -181,16 +192,74 @@ export default function SimuladoQuestoesPage() {
                 return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">Desconhecido</span>;
         }
     })();
+
+    const onSubmit = async (formData) => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const token = Cookies.get('token');
+            if (!token) {
+                throw new Error('Token não encontrado');
+            }
+
+            // Transformar o objeto respostasUsuario no formato esperado
+            const responses = Object.entries(respostasUsuario).map(([questionId, markedAlternativeId]) => ({
+                questionId: parseInt(questionId),
+                markedAlternativeId: parseInt(markedAlternativeId)
+            }));
+
+            const dataToSend = {
+                responses: responses
+            };
+
+            console.log('Enviando dados das respostas:', dataToSend);
+
+            // Enviar as respostas
+            const submitResponse = await fetch(`http://localhost:3000/student/attempt/${params.id}/submit`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(dataToSend),
+            });
+
+            await handleApiError(submitResponse, 'responder simulado');
+            const submitData = await submitResponse.json();
+            console.log('Resposta da tentativa:', submitData);
+
+            setResultado(submitData);
+            setMostrarResultado(true);
+            toast.success('Simulado respondido com sucesso!');
+        } catch (error) {
+            handleFetchError(error, 'responder simulado');
+            setError('Erro ao responder simulado. Tente novamente.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
     
 
 
     return (
         <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-            <div className="mb-6">
+            <div className="mb-6 flex justify-between items-center">
                 <Link href="/pages/simulados" className="flex items-center text-blue-600 hover:underline font-medium">
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Voltar para Simulados
                 </Link>
+                
+                {isTeacher && (
+                    <Button
+                        variant="outline"
+                        className="flex items-center gap-2"
+                        onClick={() => router.push(`/pages/simulados/editar-simulado/${params.id}`)}
+                    >
+                        <Edit className="h-4 w-4" />
+                        Editar Simulado
+                    </Button>
+                )}
             </div>
 
             <Card className="mb-6 shadow-lg rounded-2xl border border-gray-200">
@@ -314,7 +383,7 @@ export default function SimuladoQuestoesPage() {
                                 : 'bg-[#133d86] hover:bg-blue-600'}
                         `}
                         disabled={Object.keys(respostasUsuario).length !== questoes.length}
-                        onClick={() => setConcluido(true)} // Simular conclusão ao clicar
+                        onClick={onSubmit} // Simular conclusão ao clicar
                     >
                         <Send className="h-5 w-5 mr-2" />
                         Finalizar Simulado
@@ -339,6 +408,74 @@ export default function SimuladoQuestoesPage() {
                     <p className="text-green-700 font-medium">
                         ✅ Simulado concluído! As respostas corretas estão destacadas em verde.
                     </p>
+                </div>
+            )}
+
+            {mostrarResultado && resultado && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white p-8 rounded-xl max-w-2xl w-full mx-4">
+                        <h2 className="text-2xl font-bold text-[#133D86] mb-4">Resultado do Simulado</h2>
+                        
+                        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                            <div className="grid grid-cols-3 gap-4 text-center">
+                                <div>
+                                    <p className="text-sm text-gray-600">Pontuação Total</p>
+                                    <p className="text-2xl font-bold text-[#133D86]">{resultado.totalScore}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600">Respostas Corretas</p>
+                                    <p className="text-2xl font-bold text-green-600">{resultado.correctAnswers}/{resultado.totalQuestions}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600">Taxa de Acerto</p>
+                                    <p className="text-2xl font-bold text-[#133D86]">
+                                        {((resultado.correctAnswers / resultado.totalQuestions) * 100).toFixed(1)}%
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            {resultado.details.map((detail) => (
+                                <div key={detail.questionId} className={`p-4 rounded-lg border ${detail.isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h3 className="font-semibold">Questão {detail.questionId}</h3>
+                                        <span className={`px-2 py-1 rounded text-sm ${detail.isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                            {detail.isCorrect ? 'Correta' : 'Incorreta'}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div>
+                                            <p className="text-sm text-gray-600">Sua resposta:</p>
+                                            <p className={`font-medium ${detail.isCorrect ? 'text-green-700' : 'text-red-700'}`}>
+                                                {detail.markedAlternative.description}
+                                            </p>
+                                        </div>
+                                        {!detail.isCorrect && (
+                                            <div>
+                                                <p className="text-sm text-gray-600">Resposta correta:</p>
+                                                <p className="font-medium text-green-700">
+                                                    {detail.correctAlternative.description}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-6 flex justify-end">
+                            <Button
+                                onClick={() => {
+                                    setMostrarResultado(false);
+                                    router.push('/pages/simulados');
+                                }}
+                                className="bg-[#133D86] hover:bg-[#0e2a5c] text-white"
+                            >
+                                Voltar para Simulados
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
