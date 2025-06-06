@@ -9,7 +9,6 @@ import { useUser } from "@/contexts/UserContext";
 import { PageLoader } from "@/components/ui/loader";
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
-import { Sidebar } from "@/components/ui/sidebar";
 
 export default function TeacherSimuladosPage() {
     const { userRole } = useUser();
@@ -60,7 +59,6 @@ export default function TeacherSimuladosPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-            <Sidebar />
             <div className="container mx-auto p-4 md:p-6">
                 <div className="mx-auto">
                     <div className="flex flex-col items-center mb-8 bg-white rounded-xl shadow-lg p-6 border border-gray-100">
@@ -68,7 +66,13 @@ export default function TeacherSimuladosPage() {
                         <h1 className="mt-4 text-3xl font-bold tracking-tight text-[#133D86]">Gerenciar Simulados</h1>
                         <p className="mt-2 text-center text-gray-600">Selecione uma turma para gerenciar seus simulados</p>
                     </div>
-
+                    <Button
+                        className="bg-[#133D86] hover:bg-[#0e2a5c] text-white transition-all duration-300 shadow-md hover:shadow-lg rounded-lg font-medium text-sm flex items-center justify-center gap-2 px-4 py-2 mb-4"
+                        onClick={() => router.push('/pages/simulados/teacher/criar-simulados')}
+                    >
+                        <Plus className="h-4 w-4" />
+                        Criar Simulado
+                    </Button>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {classes.map((classItem) => (
                             <Card
@@ -85,7 +89,7 @@ export default function TeacherSimuladosPage() {
                                         {classItem.class_name}
                                     </CardTitle>
                                     <p className="text-sm text-gray-600 line-clamp-2">
-                                        {classItem.class_course} • {classItem.class_shift}
+                                        {classItem.class_course} • {classItem.class_shift === 'Morning' ? 'Manhã' : classItem.class_shift === 'Afternoon' ? 'Tarde' : 'Noite'}
                                     </p>
                                 </CardHeader>
                                 <CardContent className="pt-0">

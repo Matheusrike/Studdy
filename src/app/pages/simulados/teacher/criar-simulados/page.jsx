@@ -241,7 +241,7 @@ export default function CriarSimuladosPage() {
 				} catch (error) {
 					console.error('Erro ao carregar simulado:', error);
 					toast.error('Erro ao carregar dados do simulado');
-					router.push('/pages/simulados');
+					router.push('/pages/simulados/teacher');
 				} finally {
 					setLoadingSimulado(false);
 				}
@@ -329,7 +329,7 @@ export default function CriarSimuladosPage() {
 				: (visibility === QuizVisibility.DRAFT ? 'Rascunho salvo com sucesso!' : 'Simulado publicado com sucesso!');
 			
 			toast.success(successMessage);
-			router.push('/pages/simulados');
+			router.push('/pages/simulados/teacher');
 		} catch (error) {
 			const action = isEditMode ? 'atualizar' : (visibility === QuizVisibility.DRAFT ? 'salvar rascunho' : 'publicar simulado');
 			const errorMessage = `Erro ao ${action}`;
@@ -342,10 +342,15 @@ export default function CriarSimuladosPage() {
 
 	const handleAddQuestion = () => {
 		setQuestions([...questions, {
-			id: questions.length + 1,
+			id: Date.now(),
 			statement: '',
 			points: 1,
-			alternatives: []
+			alternatives: [
+				{ id: Date.now(), text: '', isCorrect: true },
+				{ id: Date.now() + 1, text: '', isCorrect: false },
+				{ id: Date.now() + 2, text: '', isCorrect: false },
+				{ id: Date.now() + 3, text: '', isCorrect: false }
+			]
 		}]);
 	};
 
@@ -370,6 +375,12 @@ export default function CriarSimuladosPage() {
 			}
 			return q;
 		}));
+	};
+
+	const handleQuestionChange = (updatedQuestion) => {
+		setQuestions(prev => prev.map(q => 
+			q.id === updatedQuestion.id ? updatedQuestion : q
+		));
 	};
 
 	// Mostrar loading enquanto carrega dados do simulado
@@ -528,6 +539,7 @@ export default function CriarSimuladosPage() {
 								onDeleteQuestion={() => handleDeleteQuestion(question.id)}
 								onAlternativesGenerated={handleAlternativesGenerated}
 								existingQuestion={question}
+								onQuestionChange={handleQuestionChange}
 							/>
 						))}
 					</div>

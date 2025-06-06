@@ -21,9 +21,9 @@ const formSchema = z.object({
 function QuestionForm({ questionId, numeroQuestao, onAddQuestion, onDeleteQuestion, onAlternativesGenerated, existingQuestion, onQuestionChange }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alternativas, setAlternativas] = useState({
-        alternativa1: '',
-        alternativa2: '',
-        alternativa3: ''
+        alternativa1: existingQuestion?.alternatives?.find(alt => !alt.isCorrect)?.text || '',
+        alternativa2: existingQuestion?.alternatives?.filter(alt => !alt.isCorrect)[1]?.text || '',
+        alternativa3: existingQuestion?.alternatives?.filter(alt => !alt.isCorrect)[2]?.text || ''
     });
 
     const form = useForm({
@@ -37,52 +37,32 @@ function QuestionForm({ questionId, numeroQuestao, onAddQuestion, onDeleteQuesti
     const question = form.watch('question');
     const correctAnswer = form.watch('correct_answer');
 
-    // Carregar dados iniciais apenas uma vez
-    useEffect(() => {
-        if (existingQuestion) {
-            form.reset({
-                question: existingQuestion.statement || '',
-                correct_answer: existingQuestion.alternatives?.find(alt => alt.isCorrect)?.text || ''
-            });
-
-            const incorrectAlternatives = existingQuestion.alternatives?.filter(alt => !alt.isCorrect) || [];
-            setAlternativas({
-                alternativa1: incorrectAlternatives[0]?.text || '',
-                alternativa2: incorrectAlternatives[1]?.text || '',
-                alternativa3: incorrectAlternatives[2]?.text || ''
-            });
-        }
-    }, [existingQuestion?.id]); // Dependência apenas no ID da questão
-
     // Função para atualizar a questão
     const updateQuestion = useCallback(() => {
-        if (!onQuestionChange || !existingQuestion) return;
-
-            const correctAlternative = existingQuestion.alternatives.find(alt => alt.isCorrect);
-            const incorrectAlternatives = existingQuestion.alternatives.filter(alt => !alt.isCorrect);
+        if (!onQuestionChange) return;
 
             const updatedQuestion = {
                 id: questionId,
                 statement: question,
-                points: existingQuestion.points || 1,
+            points: existingQuestion?.points || 1,
                 alternatives: [
                     { 
-                        id: correctAlternative?.id || Date.now(), 
+                    id: existingQuestion?.alternatives?.find(alt => alt.isCorrect)?.id || Date.now(), 
                         text: correctAnswer, 
                         isCorrect: true 
                     },
                     { 
-                        id: incorrectAlternatives[0]?.id || Date.now() + 1, 
+                    id: existingQuestion?.alternatives?.filter(alt => !alt.isCorrect)[0]?.id || Date.now() + 1, 
                         text: alternativas.alternativa1, 
                         isCorrect: false 
                     },
                     { 
-                        id: incorrectAlternatives[1]?.id || Date.now() + 2, 
+                    id: existingQuestion?.alternatives?.filter(alt => !alt.isCorrect)[1]?.id || Date.now() + 2, 
                         text: alternativas.alternativa2, 
                         isCorrect: false 
                     },
                     { 
-                        id: incorrectAlternatives[2]?.id || Date.now() + 3, 
+                    id: existingQuestion?.alternatives?.filter(alt => !alt.isCorrect)[2]?.id || Date.now() + 3, 
                         text: alternativas.alternativa3, 
                         isCorrect: false 
                     }
@@ -91,9 +71,9 @@ function QuestionForm({ questionId, numeroQuestao, onAddQuestion, onDeleteQuesti
             onQuestionChange(updatedQuestion);
     }, [question, correctAnswer, alternativas, questionId, onQuestionChange, existingQuestion]);
 
-    // Atualizar quando os valores mudarem
+    // Atualizar quando os valores mudarem, com debounce
     useEffect(() => {
-        const timeoutId = setTimeout(updateQuestion, 500); // Debounce de 500ms
+        const timeoutId = setTimeout(updateQuestion, 500);
         return () => clearTimeout(timeoutId);
     }, [updateQuestion]);
 
@@ -138,12 +118,37 @@ function QuestionForm({ questionId, numeroQuestao, onAddQuestion, onDeleteQuesti
                 };
                 setAlternativas(novasAlternativas);
                 
-                onAlternativesGenerated({
-                    questionId: questionId,
-                    question: data.question,
-                    correct_answer: data.correct_answer,
-                    alternativas: novasAlternativas
-                });
+                // Atualizar a questão com as novas alternativas
+                if (onQuestionChange) {
+                    const updatedQuestion = {
+                        id: questionId,
+                        statement: data.question,
+                        points: existingQuestion?.points || 1,
+                        alternatives: [
+                            { 
+                                id: existingQuestion?.alternatives?.find(alt => alt.isCorrect)?.id || Date.now(), 
+                                text: data.correct_answer, 
+                                isCorrect: true 
+                            },
+                            { 
+                                id: existingQuestion?.alternatives?.filter(alt => !alt.isCorrect)[0]?.id || Date.now() + 1, 
+                                text: novasAlternativas.alternativa1, 
+                                isCorrect: false 
+                            },
+                            { 
+                                id: existingQuestion?.alternatives?.filter(alt => !alt.isCorrect)[1]?.id || Date.now() + 2, 
+                                text: novasAlternativas.alternativa2, 
+                                isCorrect: false 
+                            },
+                            { 
+                                id: existingQuestion?.alternatives?.filter(alt => !alt.isCorrect)[2]?.id || Date.now() + 3, 
+                                text: novasAlternativas.alternativa3, 
+                                isCorrect: false 
+                            }
+                        ]
+                    };
+                    onQuestionChange(updatedQuestion);
+                }
 
                 toast.success('Alternativas geradas com sucesso!');
             } else {
@@ -188,7 +193,7 @@ function QuestionForm({ questionId, numeroQuestao, onAddQuestion, onDeleteQuesti
                         name="correct_answer"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="text-green-500">Resposta Correta</FormLabel>
+                                <FormLabel className="text-green-600">Resposta Correta</FormLabel>
                                 <FormControl>
                                     <Input
                                         placeholder="Digite a resposta correta"

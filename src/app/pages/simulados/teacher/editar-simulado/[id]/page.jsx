@@ -289,7 +289,7 @@ export default function EditarSimuladoPage() {
             }
 
             toast.success('Simulado atualizado com sucesso!');
-            router.push(`/pages/simulados/${quizId}`);
+            router.push(`/pages/simulados/teacher/classes/${simulado.class.id}`);
         } catch (error) {
             console.error('Erro ao atualizar simulado:', error);
             toast.error('Erro ao atualizar simulado');

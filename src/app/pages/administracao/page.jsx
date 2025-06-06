@@ -1,487 +1,219 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Info, Plus, Trash2, Loader2 } from "lucide-react";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-
+import { Input } from "@/components/ui/input";
+import Logo from "@/components/ui/logo";
+import { Users, Mail, Calendar, User, GraduationCap, BookOpen, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/contexts/UserContext";
+import { PageLoader } from "@/components/ui/loader";
+import Cookies from 'js-cookie';
+import { toast } from 'sonner';
 
 export default function AdministracaoPage() {
-    const [searchTerm, setSearchTerm] = useState("");
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [selectedItem, setSelectedItem] = useState(null);
-    const [selectedType, setSelectedType] = useState('teachers');
-    const [teachers, setTeachers] = useState([]);
-    const [students, setStudents] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
-
-    const types = [
-        { id: 'teachers', label: 'Professores' },
-        { id: 'students', label: 'Alunos' },
-    ];
+    const { userRole } = useUser();
+    const router = useRouter();
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        const fetchTeachers = async () => {
-            try {
-                setIsLoading(true);
-                setError(null);
-                console.log('Iniciando busca de professores...');
+        if (userRole !== 'Admin') {
+            router.push('/');
+            return;
+        }
+        fetchUsers();
+    }, [userRole]);
 
-                const response = await fetch('http://localhost:3000/admin/teachers', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Erro ao buscar professores');
-                }
-
-                const teachersData = await response.json();
-                console.log('Dados recebidos:', teachersData);
-
-                const formattedTeachers = teachersData.map(teacher => ({
-                    id: teacher.id,
-                    nome: teacher.user.name,
-                    email: teacher.user.email,
-                    cpf: teacher.user.cpf,
-                    dataNascimento: teacher.user.birth_date ? new Date(teacher.user.birth_date).toLocaleDateString('pt-BR') : 'Não informado',
-                    materias: teacher.teacher_subjects.map(ts => ts.subject.name).join(', ')
-                }));
-                
-                setTeachers(formattedTeachers);
-            } catch (error) {
-                console.error('Erro ao buscar professores:', error);
-                setError(error.message || 'Não foi possível carregar os professores');
-            } finally {
-                setIsLoading(false);
+    const fetchUsers = async () => {
+        setLoading(true);
+        try {
+            const token = Cookies.get('token');
+            if (!token) {
+                toast.error('Token não encontrado');
+                return;
             }
-        };
 
-        const fetchStudents = async () => {
-            try {
-                setIsLoading(true);
-                setError(null);
-                console.log('Iniciando busca de alunos...');
-
-                const response = await fetch('http://localhost:3000/admin/students', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Erro ao buscar alunos');
+            const response = await fetch('http://localhost:3000/user', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
                 }
+            });
 
-                const studentsData = await response.json();
-                console.log('Dados recebidos:', studentsData);
-
-                const formattedStudents = studentsData.map(student => ({
-                    id: student.id,
-                    nome: student.user.name,
-                    email: student.user.email,
-                    cpf: student.user.cpf,
-                    dataNascimento: student.user.birth_date ? new Date(student.user.birth_date).toLocaleDateString('pt-BR') : 'Não informado',
-                    matricula: student.enrollment ,
-                    turma: student.class?.name || 'Não informado',
-                    curso: student.class?.course || 'Não informado'
-                }));
-                
-                setStudents(formattedStudents);
-            } catch (error) {
-                console.error('Erro ao buscar alunos:', error);
-                setError(error.message || 'Não foi possível carregar os alunos');
-            } finally {
-                setIsLoading(false);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Erro ao carregar usuários');
             }
-        };
 
-        fetchTeachers();
-        fetchStudents();
-    }, []);
+            const data = await response.json();
+            // Filtrar o admin da lista
+            const filteredUsers = data.filter(user => user.role !== 'Admin');
+            setUsers(filteredUsers);
+        } catch (error) {
+            console.error('Erro ao carregar usuários:', error);
+            toast.error(error.message || 'Erro ao carregar usuários');
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    const filterItems = (items) => {
-        if (!items) return [];
-        return items.filter(item =>
-            (item.nome?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-            (item.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleDateString('pt-BR');
+    };
+
+    const filterUsers = (users) => {
+        return users.filter(user => 
+            user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.cpf.includes(searchTerm)
         );
     };
 
-    const currentItems = selectedType === 'teachers' ? filterItems(teachers) : filterItems(students);
+    const teachers = filterUsers(users.filter(user => user.role === 'Teacher'));
+    const students = filterUsers(users.filter(user => user.role === 'Student'));
 
-
-
-    const handleUpdate = async (id, data) => {
-        try {
-            setIsLoading(true);
-            const item = selectedType === 'teachers' 
-                ? teachers.find(t => t.id === id)
-                : students.find(s => s.id === id);
-            
-            const endpoint = selectedType === 'teachers' 
-                ? `http://localhost:3000/admin/teachers/${id}`
-                : `http://localhost:3000/admin/students/${id}`;
-
-            const response = await fetch(endpoint, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    user: {
-                        name: data.nome,
-                        email: data.email,
-                        cpf: data.cpf,
-                        birth_date: data.dataNascimento
-                    }
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`Erro ao atualizar ${selectedType === 'teachers' ? 'professor' : 'aluno'}`);
-            }
-
-            const updatedData = await response.json();
-            
-            if (selectedType === 'teachers') {
-                const updatedTeacher = {
-                    ...item,
-                    nome: updatedData.user.name,
-                    email: updatedData.user.email,
-                    cpf: updatedData.user.cpf,
-                    dataNascimento: updatedData.user.birth_date ? new Date(updatedData.user.birth_date).toLocaleDateString('pt-BR') : 'Não informado',
-                    materias: updatedData.teacher_subjects.map(ts => ts.subject.name).join(', ')
-                };
-                setTeachers(prev => prev.map(t => t.id === id ? updatedTeacher : t));
-            } else {
-                const updatedStudent = {
-                    ...item,
-                    nome: updatedData.user.name,
-                    email: updatedData.user.email,
-                    cpf: updatedData.user.cpf,
-                    dataNascimento: updatedData.user.birth_date ? new Date(updatedData.user.birth_date).toLocaleDateString('pt-BR') : 'Não informado',
-                    matricula: updatedData.enrollment,
-                    turma: updatedData.class.name,
-                    curso: updatedData.class.course
-                };
-                setStudents(prev => prev.map(s => s.id === id ? updatedStudent : s));
-            }
-
-            setIsEditModalOpen(false);
-            toast.success(`${selectedType === 'teachers' ? 'Professor' : 'Aluno'} atualizado com sucesso!`);
-        } catch (error) {
-            console.error(`Erro ao atualizar ${selectedType === 'teachers' ? 'professor' : 'aluno'}:`, error);
-            toast.error(`Erro ao atualizar ${selectedType === 'teachers' ? 'professor' : 'aluno'}`);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleDelete = async (id) => {
-        if (!confirm(`Tem certeza que deseja excluir este ${selectedType === 'teachers' ? 'professor' : 'aluno'}?`)) {
-            return;
-        }
-
-        try {
-            setIsLoading(true);
-            const endpoint = selectedType === 'teachers' 
-                ? `http://localhost:3000/admin/teachers/${id}`
-                : `http://localhost:3000/admin/students/${id}`;
-
-            const response = await fetch(endpoint, {
-                method: 'DELETE',
-            });
-
-            if (!response.ok) {
-                throw new Error(`Erro ao excluir ${selectedType === 'teachers' ? 'professor' : 'aluno'}`);
-            }
-
-            if (selectedType === 'teachers') {
-                setTeachers(prev => prev.filter(t => t.id !== id));
-            } else {
-                setStudents(prev => prev.filter(s => s.id !== id));
-            }
-
-            toast.success(`${selectedType === 'teachers' ? 'Professor' : 'Aluno'} excluído com sucesso!`);
-        } catch (error) {
-            console.error(`Erro ao excluir ${selectedType === 'teachers' ? 'professor' : 'aluno'}:`, error);
-            toast.error(`Erro ao excluir ${selectedType === 'teachers' ? 'professor' : 'aluno'}`);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleDetails = (id) => {
-        const item = selectedType === 'teachers' 
-            ? teachers.find(teacher => teacher.id === id)
-            : students.find(student => student.id === id);
-        setSelectedItem(item);
-        setIsDetailsModalOpen(true);
-    };
+    if (loading) return <PageLoader />;
 
     return (
-        <div className="container mx-auto py-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-2xl font-bold">Administração</CardTitle>
-                    <div className="flex items-center gap-4 mt-4">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+            <div className="container mx-auto p-4 md:p-6">
+                <div className="mx-auto">
+                    <div className="flex flex-col items-center mb-8 bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                        <Logo className="h-12 w-12" variant="icon" />
+                        <h1 className="mt-4 text-3xl font-bold tracking-tight text-[#133D86]">Gerenciar Usuários</h1>
+                        <p className="mt-2 text-center text-gray-600">Visualize e gerencie os usuários do sistema</p>
+                    </div>
+
+                    {/* Barra de Pesquisa */}
+                    <div className="mb-6">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                             <Input
-                                placeholder="Buscar..."
+                                type="text"
+                                placeholder="Pesquisar por nome, email ou CPF..."
+                                className="pl-10 py-6 text-lg border-2 border-gray-200 focus:border-[#133D86] focus:ring-[#133D86] rounded-xl shadow-sm"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-8"
-                            />
-                        </div>
-                        
-                    </div>
-                </CardHeader>
-                <div className="px-6 flex flex-wrap gap-2">
-                    {types.map((type) => (
-                        <Button
-                            key={type.id}
-                            variant={selectedType === type.id ? "default" : "outline"}
-                            className="text-sm"
-                            onClick={() => setSelectedType(type.id)}
-                        >
-                            {type.label}
-                        </Button>
-                    ))}
-                </div>
-                <CardContent>
-                    {isLoading ? (
-                        <div className="flex justify-center items-center py-8">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        </div>
-                    ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Nome</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    {selectedType === 'teachers' ? (
-                                        <TableHead>Matérias</TableHead>
-                                    ) : (
-                                        <TableHead>Turma</TableHead>
-                                    )}
-                                    <TableHead className="text-right">Ações</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {currentItems.map((item) => (
-                                    <TableRow key={item.id}>
-                                        <TableCell>{item.nome}</TableCell>
-                                        <TableCell>{item.email}</TableCell>
-                                        {selectedType === 'teachers' ? (
-                                            <TableCell>{item.materias?.split(', ').map(materia => 
-                                                materia.charAt(0).toUpperCase() + materia.slice(1)
-                                            ).join(', ')}</TableCell>
-                                        ) : (
-                                            <TableCell>{item.turma}</TableCell>
-                                        )}
-                                        <TableCell className="text-right space-x-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => {
-                                                    setSelectedItem(item);
-                                                    setIsEditModalOpen(true);
-                                                }}
-                                            >
-                                                Editar
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleDetails(item.id)}
-                                            >
-                                                <Info className="h-4 w-4 mr-2" />
-                                                Detalhes
-                                            </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() => handleDelete(item.id)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    )}
-                </CardContent>
-            </Card>
-
-            {/* Modal de Criação/Edição */}
-            <Dialog open={isEditModalOpen || isCreateModalOpen} onOpenChange={(open) => {
-                setIsEditModalOpen(open);
-                setIsCreateModalOpen(open);
-                if (!open) setSelectedItem(null);
-            }}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>
-                            {isCreateModalOpen ? 'Adicionar' : 'Editar'} {selectedType === 'teachers' ? 'Professor' : 'Aluno'}
-                        </DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="nome" className="text-right">
-                                Nome
-                            </Label>
-                            <Input
-                                id="nome"
-                                value={selectedItem?.nome || ""}
-                                onChange={(e) => setSelectedItem(prev => ({ ...prev, nome: e.target.value }))}
-                                className="col-span-3"
-                            />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="email" className="text-right">
-                                Email
-                            </Label>
-                            <Input
-                                id="email"
-                                value={selectedItem?.email || ""}
-                                onChange={(e) => setSelectedItem(prev => ({ ...prev, email: e.target.value }))}
-                                className="col-span-3"
-                            />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="cpf" className="text-right">
-                                CPF
-                            </Label>
-                            <Input
-                                id="cpf"
-                                value={selectedItem?.cpf || ""}
-                                onChange={(e) => setSelectedItem(prev => ({ ...prev, cpf: e.target.value }))}
-                                className="col-span-3"
-                            />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="dataNascimento" className="text-right">
-                                Data de Nascimento
-                            </Label>
-                            <Input
-                                id="dataNascimento"
-                                type="date"
-                                value={selectedItem?.dataNascimento && selectedItem.dataNascimento !== 'Não informado' 
-                                    ? new Date(selectedItem.dataNascimento.split('/').reverse().join('-')).toISOString().split('T')[0] 
-                                    : ""}
-                                onChange={(e) => setSelectedItem(prev => ({ ...prev, dataNascimento: e.target.value }))}
-                                className="col-span-3"
                             />
                         </div>
                     </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => {
-                            setIsEditModalOpen(false);
-                            setIsCreateModalOpen(false);
-                        }}>
-                            Cancelar
-                        </Button>
-                        <Button onClick={() => {
-                            if (isCreateModalOpen) {
-                                handleCreate(selectedItem);
-                            } else {
-                                handleUpdate(selectedItem.id, selectedItem);
-                            }
-                        }}>
-                            Salvar
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
 
-            {/* Modal de Detalhes */}
-            <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
-                <DialogContent className="max-w-3xl w-full" aria-describedby="descricao-modal">
-                    <p id="descricao-modal" className="sr-only">
-                        Modal com detalhes completos do {selectedType === 'teachers' ? 'professor' : 'aluno'} selecionado.
-                    </p>
-                    <DialogHeader>
-                        <DialogTitle>Detalhes do {selectedType === 'teachers' ? 'Professor' : 'Aluno'}</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label>Nome Completo</Label>
-                            <p className="text-sm text-muted-foreground">{selectedItem?.nome || 'Não informado'}</p>
-                        </div>
-                        <div>
-                            <Label>Email</Label>
-                            <p className="text-sm text-muted-foreground">{selectedItem?.email || 'Não informado'}</p>
-                        </div>
-                        <div>
-                            <Label>CPF</Label>
-                            <p className="text-sm text-muted-foreground">{selectedItem?.cpf || 'Não informado'}</p>
-                        </div>
-                        <div>
-                            <Label>Data de Nascimento</Label>
-                            <p className="text-sm text-muted-foreground">{selectedItem?.dataNascimento || 'Não informado'}</p>
-                        </div>
-                        {selectedType === 'teachers' ? (
-                            <div className="grid grid-cols-2 gap-4 col-span-2">
-                                <div>
-                                    <Label>Matérias</Label>
-                                    <p className="text-sm text-muted-foreground">{selectedItem?.materias?.charAt(0).toUpperCase() + selectedItem?.materias?.slice(1) || 'Não informado'}</p>
+                    {/* Professores */}
+                    <Card className="mb-8 border-2 border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300 pt-0">
+                        <CardHeader className="bg-gradient-to-r pt-1 from-[#133D86] to-[#1e56b3] text-white rounded-t-xl">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <GraduationCap className="h-6 w-6" />
+                                    <CardTitle>Professores</CardTitle>
                                 </div>
-                                <div>
-                                    <Label>Turmas</Label>
-                                    <p className="text-sm text-muted-foreground">{selectedItem?.turmas?.charAt(0).toUpperCase() + selectedItem?.turmas?.slice(1) || 'Não informado'}</p>
-                                </div>
+                                <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
+                                    {teachers.length} {teachers.length === 1 ? 'professor' : 'professores'}
+                                </span>
                             </div>
-                        ) : (
-                            <>
-                                <div>
-                                    <Label>Matrícula</Label>
-                                    <p className="text-sm text-muted-foreground">{selectedItem?.matricula}</p>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="bg-gray-50">
+                                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data de Nascimento</th>
+                                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CPF</th>
+                                            <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {teachers.map((teacher) => (
+                                            <tr key={teacher.id} className="hover:bg-gray-50 transition-colors duration-200">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{teacher.name}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{teacher.email}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(teacher.birth_date)}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{teacher.cpf}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    <Button
+                                                        variant="ghost"
+                                                        className="text-[#133D86] hover:text-[#0e2a5c] hover:bg-[#133D86]/10 transition-colors duration-200"
+                                                        onClick={() => router.push(`/pages/administracao/users/${teacher.id}`)}
+                                                    >
+                                                        Gerenciar
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {teachers.length === 0 && (
+                                            <tr>
+                                                <td colSpan="5" className="px-6 py-8 text-center text-sm text-gray-500">
+                                                    Nenhum professor encontrado
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Alunos */}
+                    <Card className="border-2 pt-0 border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                        <CardHeader className="bg-gradient-to-r pt-1 from-[#133D86] to-[#1e56b3] text-white rounded-t-xl">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <BookOpen className="h-6 w-6" />
+                                    <CardTitle>Alunos</CardTitle>
                                 </div>
-                                <div>
-                                    <Label>Turma</Label>
-                                    <p className="text-sm text-muted-foreground">{selectedItem?.turma || 'Não informado'}</p>
-                                </div>
-                                <div className="col-span-2">
-                                    <Label>Curso</Label>
-                                    <p className="text-sm text-muted-foreground">{selectedItem?.curso || 'Não informado'}</p>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsDetailsModalOpen(false)}>
-                            Fechar
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                                <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
+                                    {students.length} {students.length === 1 ? 'aluno' : 'alunos'}
+                                </span>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="bg-gray-50">
+                                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data de Nascimento</th>
+                                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CPF</th>
+                                            <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {students.map((student) => (
+                                            <tr key={student.id} className="hover:bg-gray-50 transition-colors duration-200">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{student.name}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.email}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(student.birth_date)}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.cpf}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    <Button
+                                                        variant="ghost"
+                                                        className="text-[#133D86] hover:text-[#0e2a5c] hover:bg-[#133D86]/10 transition-colors duration-200"
+                                                        onClick={() => router.push(`/pages/administracao/users/${student.id}`)}
+                                                    >
+                                                        Gerenciar
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {students.length === 0 && (
+                                            <tr>
+                                                <td colSpan="5" className="px-6 py-8 text-center text-sm text-gray-500">
+                                                    Nenhum aluno encontrado
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
         </div>
     );
 } 

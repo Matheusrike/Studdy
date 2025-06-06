@@ -30,6 +30,8 @@ const protectedRoutes = {
 		'/pages/professor',
 		'/pages/materiais',
 		'/pages/simulados',
+		'/pages/simulados/teacher',
+		'/pages/simulados/teacher/classes',
 		'/pages/concursos',
 		'/pages/simulados/criar-simulados',
 		'/pages/material/videoaulas/criar-videoaulas',
@@ -95,7 +97,13 @@ function RootLayoutContent({ children }) {
 	];
 
 	// Se a rota não existir nas rotas protegidas, não mostra a sidebar
-	if (!allProtectedRoutes.includes(pathname) && !pathname.startsWith('/pages/turmas/')) {
+	const isProtectedRoute = allProtectedRoutes.some(route => 
+		pathname === route || 
+		pathname.startsWith(route + '/') ||
+		pathname.startsWith('/pages/turmas/')
+	);
+
+	if (!isProtectedRoute) {
 		return (
 			<div className="flex h-screen w-screen bg-slate-100 min-h-screen min-w-screen">
 				<main className="flex-1 overflow-y-auto">
