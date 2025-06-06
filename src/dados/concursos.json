@@ -5,35 +5,35 @@
       "link": "https://www.ita.br/",
       "icon": "School",
       "color": "bg-indigo-500",
-      "date": "Dezembro 2024",
-      "category": "militares"
+      "date": "2024-12-01",
+      "type": "militares"
     },
     {
-      "title": "IME", 
-      "description": "Instituto Militar de Engenharia",
+      "title": "IME",
+      "description": "Instituto Militar de Engenharia", 
       "link": "https://www.ime.eb.br/",
       "icon": "School",
       "color": "bg-orange-500",
-      "date": "Dezembro 2024",
-      "category": "militares"
+      "date": "2024-12-01",
+      "type": "militares"
     },
     {
       "title": "AFA",
       "description": "Academia da Força Aérea",
       "link": "https://www.afa.eb.mil.br/",
       "icon": "Shield",
-      "color": "bg-sky-500", 
-      "date": "Maio 2024",
-      "category": "militares"
+      "color": "bg-sky-500",
+      "date": "2024-05-01",
+      "type": "militares"
     },
     {
       "title": "ESPCEX",
       "description": "Escola Preparatória de Cadetes do Exército",
       "link": "https://www.espcex.eb.mil.br/",
-      "icon": "Shield",
+      "icon": "Shield", 
       "color": "bg-emerald-500",
-      "date": "Setembro 2024",
-      "category": "militares"
+      "date": "2024-09-01",
+      "type": "militares"
     },
     {
       "title": "EN",
@@ -41,17 +41,17 @@
       "link": "https://www.marinha.mil.br/ensino/",
       "icon": "Shield",
       "color": "bg-blue-600",
-      "date": "Junho 2024",
-      "category": "militares"
+      "date": "2024-06-01",
+      "type": "militares"
     },
     {
       "title": "EsPCEx",
       "description": "Escola Preparatória de Cadetes do Exército",
       "link": "https://www.espcex.eb.mil.br/",
       "icon": "Shield",
-      "color": "bg-green-600",
-      "date": "Setembro 2024",
-      "category": "militares"
+      "color": "bg-green-600", 
+      "date": "2024-09-01",
+      "type": "militares"
     },
     {
       "title": "CFO",
@@ -59,8 +59,8 @@
       "link": "https://www.eb.mil.br/",
       "icon": "Shield",
       "color": "bg-yellow-600",
-      "date": "Julho 2024",
-      "category": "militares"
+      "date": "2024-07-01",
+      "type": "militares"
     },
     {
       "title": "CFS",
@@ -68,8 +68,8 @@
       "link": "https://www.eb.mil.br/",
       "icon": "Shield",
       "color": "bg-red-600",
-      "date": "Julho 2024",
-      "category": "militares"
+      "date": "2024-07-01",
+      "type": "militares"
     },
     {
       "title": "PM-SP",
@@ -77,8 +77,8 @@
       "link": "https://www.policiamilitar.sp.gov.br/",
       "icon": "Shield",
       "color": "bg-blue-700",
-      "date": "Março 2024",
-      "category": "estaduais"
+      "date": "2024-03-01",
+      "type": "estaduais"
     },
     {
       "title": "PC-SP",
@@ -86,8 +86,8 @@
       "link": "https://www.policiacivil.sp.gov.br/",
       "icon": "Shield",
       "color": "bg-red-700",
-      "date": "Abril 2024",
-      "category": "estaduais"
+      "date": "2024-04-01",
+      "type": "estaduais"
     },
     {
       "title": "PM-RJ",
@@ -95,8 +95,8 @@
       "link": "https://www.policiamilitar.rj.gov.br/",
       "icon": "Shield",
       "color": "bg-green-700",
-      "date": "Maio 2024",
-      "category": "estaduais"
+      "date": "2024-05-01",
+      "type": "estaduais"
     },
     {
       "title": "PC-RJ",
@@ -104,8 +104,8 @@
       "link": "https://www.policiacivil.rj.gov.br/",
       "icon": "Shield",
       "color": "bg-yellow-700",
-      "date": "Junho 2024",
-      "category": "estaduais"
+      "date": "2024-06-01",
+      "type": "estaduais"
     },
     {
       "title": "PM-MG",
@@ -113,8 +113,8 @@
       "link": "https://www.policiamilitar.mg.gov.br/",
       "icon": "Shield",
       "color": "bg-blue-800",
-      "date": "Julho 2024",
-      "category": "estaduais"
+      "date": "2024-07-01",
+      "type": "estaduais"
     },
     {
       "title": "PC-MG",
@@ -122,8 +122,8 @@
       "link": "https://www.policiacivil.mg.gov.br/",
       "icon": "Shield",
       "color": "bg-red-800",
-      "date": "Agosto 2024",
-      "category": "estaduais"
+      "date": "2024-08-01",
+      "type": "estaduais"
     },
     {
       "title": "BB",
@@ -131,8 +131,8 @@
       "link": "https://www.bb.com.br/",
       "icon": "Briefcase",
       "color": "bg-yellow-700",
-      "date": "Em breve",
-      "category": "bancarios"
+      "date": "2024-12-31",
+      "type": "bancarios"
     },
     {
       "title": "Caixa Econômica",
@@ -140,8 +140,8 @@
       "link": "https://www.caixa.gov.br/",
       "icon": "Briefcase",
       "color": "bg-blue-800",
-      "date": "Em breve",
-      "category": "bancarios"
+      "date": "2024-12-31",
+      "type": "bancarios"
     },
     {
       "title": "Bradesco",
@@ -149,8 +149,8 @@
       "link": "https://www.bradesco.com.br/",
       "icon": "Briefcase",
       "color": "bg-red-800",
-      "date": "Em breve",
-      "category": "bancarios"
+      "date": "2024-12-31",
+      "type": "bancarios"
     },
     {
       "title": "Itaú",
@@ -158,8 +158,8 @@
       "link": "https://www.itau.com.br/",
       "icon": "Briefcase",
       "color": "bg-orange-800",
-      "date": "Em breve",
-      "category": "bancarios"
+      "date": "2024-12-31",
+      "type": "bancarios"
     },
     {
       "title": "Santander",
@@ -167,8 +167,8 @@
       "link": "https://www.santander.com.br/",
       "icon": "Briefcase",
       "color": "bg-red-900",
-      "date": "Em breve",
-      "category": "bancarios"
+      "date": "2024-12-31",
+      "type": "bancarios"
     },
     {
       "title": "Receita Federal",
@@ -176,8 +176,8 @@
       "link": "https://www.gov.br/receitafederal/",
       "icon": "Scale",
       "color": "bg-green-800",
-      "date": "Em breve",
-      "category": "federais"
+      "date": "2024-12-31",
+      "type": "federais"
     },
     {
       "title": "TCU",
@@ -185,8 +185,8 @@
       "link": "https://portal.tcu.gov.br/",
       "icon": "Landmark",
       "color": "bg-purple-800",
-      "date": "Em breve",
-      "category": "federais"
+      "date": "2024-12-31",
+      "type": "federais"
     },
     {
       "title": "STF",
@@ -194,8 +194,8 @@
       "link": "https://www.stf.jus.br/",
       "icon": "Scale",
       "color": "bg-red-800",
-      "date": "Em breve",
-      "category": "federais"
+      "date": "2024-12-31",
+      "type": "federais"
     },
     {
       "title": "BNDES",
@@ -203,8 +203,8 @@
       "link": "https://www.bndes.gov.br/",
       "icon": "Building2",
       "color": "bg-blue-900",
-      "date": "Em breve",
-      "category": "federais"
+      "date": "2024-12-31",
+      "type": "federais"
     },
     {
       "title": "Câmara dos Deputados",
@@ -212,8 +212,8 @@
       "link": "https://www.camara.leg.br/",
       "icon": "Landmark",
       "color": "bg-green-900",
-      "date": "Em breve",
-      "category": "federais"
+      "date": "2024-12-31",
+      "type": "federais"
     },
     {
       "title": "Senado Federal",
@@ -221,8 +221,8 @@
       "link": "https://www.senado.leg.br/",
       "icon": "Landmark",
       "color": "bg-yellow-900",
-      "date": "Em breve",
-      "category": "federais"
+      "date": "2024-12-31",
+      "type": "federais"
     },
     {
       "title": "STJ",
@@ -230,8 +230,8 @@
       "link": "https://www.stj.jus.br/",
       "icon": "Scale",
       "color": "bg-purple-900",
-      "date": "Em breve",
-      "category": "federais"
+      "date": "2024-12-31",
+      "type": "federais"
     },
     {
       "title": "TST",
@@ -239,8 +239,8 @@
       "link": "https://www.tst.jus.br/",
       "icon": "Scale",
       "color": "bg-blue-950",
-      "date": "Em breve",
-      "category": "federais"
+      "date": "2024-12-31",
+      "type": "federais"
     },
     {
       "title": "TRT",
@@ -248,8 +248,8 @@
       "link": "https://www.tst.jus.br/",
       "icon": "Scale",
       "color": "bg-red-950",
-      "date": "Em breve",
-      "category": "federais"
+      "date": "2024-12-31",
+      "type": "federais"
     },
     {
       "title": "TRF",
@@ -257,8 +257,8 @@
       "link": "https://www.trf1.jus.br/",
       "icon": "Scale",
       "color": "bg-green-950",
-      "date": "Em breve",
-      "category": "federais"
+      "date": "2024-12-31",
+      "type": "federais"
     },
     {
       "title": "MPF",
@@ -266,8 +266,8 @@
       "link": "https://www.mpf.mp.br/",
       "icon": "Scale",
       "color": "bg-yellow-950",
-      "date": "Em breve",
-      "category": "federais"
+      "date": "2024-12-31",
+      "type": "federais"
     },
     {
       "title": "DPF",
@@ -275,8 +275,8 @@
       "link": "https://www.gov.br/pf/",
       "icon": "Shield",
       "color": "bg-blue-950",
-      "date": "Em breve",
-      "category": "federais"
+      "date": "2024-12-31",
+      "type": "federais"
     },
     {
       "title": "PRF",
@@ -284,8 +284,8 @@
       "link": "https://www.gov.br/prf/",
       "icon": "Shield",
       "color": "bg-red-950",
-      "date": "Em breve",
-      "category": "federais"
+      "date": "2024-12-31",
+      "type": "federais"
     },
     {
       "title": "TCESP",
@@ -293,7 +293,7 @@
       "link": "https://www.tce.sp.gov.br/",
       "icon": "Scale",
       "color": "bg-red-900",
-      "date": "Em breve",
-      "category": "estaduais"
+      "date": "2024-12-31",
+      "type": "estaduais"
     }
 ]

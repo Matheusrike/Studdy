@@ -26,7 +26,7 @@ const routePermissions = {
 };
 
 export default function RotasPage() {
-  const { userRole } = useUser();
+  const { userRole } = useUser(); 
   const router = useRouter();
 
   useEffect(() => {

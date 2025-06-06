@@ -10,8 +10,8 @@ import Cookies from 'js-cookie';
  * @param {string} role - 'student' ou 'teacher'
  */
 export const setUserRole = (role) => {
-    if (role !== 'student' && role !== 'teacher') {
-        console.warn('Role deve ser "student" ou "teacher"');
+    if (role !== 'student' && role !== 'teacher' && role !== 'admin') {
+        console.warn('Role deve ser "student", "teacher" ou "admin"');
         return;
     }
     
@@ -51,7 +51,8 @@ if (typeof window !== 'undefined') {
         console.log('Role atual:', getCurrentUserRole());
         console.log('Para alterar a role, use:');
         console.log('- setUserRole("student") - Define como estudante');
-        console.log('- setUserRole("teacher") - Define como professor');
+console.log('- setUserRole("teacher") - Define como professor');
+console.log('- setUserRole("admin") - Define como administrador');
         console.log('- toggleUserRole() - Alterna entre student e teacher');
         console.log('- forceStudentRole() - Força role de student e recarrega');
         console.log('- forceTeacherRole() - Força role de teacher e recarrega');

@@ -36,6 +36,7 @@ const dataAluno = {
     { title: "Painel", url: "/pages/painel", icon: SquareTerminal, isActive: true },
     { title: "Simulados", url: "/pages/simulados", icon: Bot },
     { title: "Estatísticas", url: "/pages/estatisticas", icon: BookOpen },
+    { title: "Perfil", url: "/pages/profile", icon: Frame },
   ],
   navMainDropdown: [
     {
@@ -53,6 +54,7 @@ const dataAluno = {
   projects: [
     { name: "Concursos", url: "/pages/concursos", icon: PieChart },
     { name: "Vestibulares", url: "/pages/vestibulares", icon: Map },
+    { name: "Turmas", url: "/pages/turmas", icon: Frame },
   ],
 }
 
@@ -65,22 +67,26 @@ const dataProfessor = {
   },
   navMain: [
     { title: "Painel", url: "/pages/painel", icon: SquareTerminal, isActive: true },
-    { title: "Atividades", url: "#", icon: Bot },
+    { title: "Simulados", url: "/pages/simulados/teacher", icon: Bot },
+    { title: "Perfil", url: "/pages/profile", icon: Frame },
   ],
   navMainDropdown: [
     {
-      title: "Conteúdo Didático",
-      url: "#",
+      title: "Biblioteca",
+      url: "/pages/material",
       icon: BookOpen,
       itemsDropdown: [
-        { title: "Minhas Aulas", url: "#" },
-        { title: "Materiais", url: "#" },
+        { title: "Materiais", url: "/pages/material" },
+        { title: "Criar Videoaulas", url: "/pages/material/videoaulas/criar-videoaulas" },
+        { title: "Criar Apostilas", url: "/pages/material/apostilas/criar-apostilas" },
+        { title: "Criar Resumos", url: "/pages/material/resumos/criar-resumos" },
       ],
     },
   ],
   projects: [
-    { name: "Turma 1", url: "#", icon: Frame },
-    { name: "Turma 2", url: "#", icon: PieChart },
+    { name: "Concursos", url: "/pages/concursos", icon: PieChart },
+    { name: "Vestibulares", url: "/pages/vestibulares", icon: Map },
+    { name: "Turmas", url: "/pages/turmas", icon: Frame },
   ],
 }
 
@@ -94,23 +100,26 @@ const dataAdmin = {
   navMain: [
     { title: "Painel", url: "/pages/painel", icon: SquareTerminal, isActive: true },
     { title: "Administração", url: "/pages/administracao", icon: BookOpen },
+    { title: "Cadastro", url: "/pages/cadastro", icon: Bot },
+    { title: "Perfil", url: "/pages/profile", icon: Frame },
   ],
   navMainDropdown: [
     {
-      title: "Gerenciamento",
-      url: "#",
+      title: "Biblioteca",
+      url: "/pages/material",
       icon: BookOpen,
       itemsDropdown: [
-        { title: "Usuários", url: "#" },
-        { title: "Permissões", url: "#" },
-        { title: "Configurações", url: "#" },
+        { title: "Materiais", url: "/pages/material" },
+        { title: "Videoaulas", url: "/pages/material/videoaulas" },
+        { title: "Apostilas", url: "/pages/material/apostilas" },
+        { title: "Resumos", url: "/pages/material/resumos" },
       ],
     },
   ],
   projects: [
-    { name: "Sistema Principal", url: "#", icon: Frame },
-    { name: "Ambiente de Teste", url: "#", icon: PieChart },
-    { name: "Produção", url: "#", icon: Map },
+    { name: "Concursos", url: "/pages/concursos", icon: PieChart },
+    { name: "Vestibulares", url: "/pages/vestibulares", icon: Map },
+    { name: "Turmas", url: "/pages/turmas", icon: Frame },
   ],
 }
 
@@ -151,18 +160,20 @@ export function AppSidebar({ children, ...props }) {
   useEffect(() => {
     const role = Cookies.get("userRole")
     console.log("🚀 Papel detectado via cookie:", role) // <== debug
-    setUserRole(role || "Student")
+    setUserRole(role || "student")
   }, [])
 
   if (!userRole) return null // ou um loader visual
 
   const { user, NavComponent } = (() => {
     switch (userRole) {
-      case "Admin":
+      case "admin":
         return { user: dataAdmin.user, NavComponent: <AdminNav /> }
-      case "Teacher":
+      case "teacher":
+      case "professor":
         return { user: dataProfessor.user, NavComponent: <ProfessorNav /> }
-      case "Student":
+      case "student":
+      case "aluno":
       default:
         return { user: dataAluno.user, NavComponent: <AlunoNav /> }
     }

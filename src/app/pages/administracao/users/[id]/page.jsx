@@ -28,7 +28,7 @@ export default function EditUserPage() {
     });
 
     useEffect(() => {
-        if (userRole !== 'Admin') {
+        if (userRole !== 'admin') {
             router.push('/');
             return;
         }
@@ -228,4 +228,4 @@ export default function EditUserPage() {
             </div>
         </div>
     );
-} 
+}

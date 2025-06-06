@@ -20,7 +20,7 @@ export default function AdministracaoPage() {
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        if (userRole !== 'Admin') {
+        if (userRole !== 'admin') {
             router.push('/');
             return;
         }
@@ -50,7 +50,7 @@ export default function AdministracaoPage() {
 
             const data = await response.json();
             // Filtrar o admin da lista
-            const filteredUsers = data.filter(user => user.role !== 'Admin');
+            const filteredUsers = data.filter(user => user.role !== 'admin');
             setUsers(filteredUsers);
         } catch (error) {
             console.error('Erro ao carregar usuários:', error);
@@ -216,4 +216,4 @@ export default function AdministracaoPage() {
             </div>
         </div>
     );
-} 
+}

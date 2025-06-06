@@ -9,6 +9,10 @@ import { useState, useEffect } from "react";
 import { BaseFormField, SelectFormField, IconSelector } from "@/components/ui/formfield";
 import React from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import Cookies from 'js-cookie';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -42,7 +46,6 @@ const ICON_OPTIONS = {
     { label: 'Calendário', value: 'Calendar', icon: Calendar }
   ]
 };
-const vestibulares = require("@/dados/vestibulares.json");
 
 
 
@@ -61,6 +64,9 @@ export default function VestibularesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [favorites, setFavorites] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [vestibulares, setVestibulares] = useState([]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     // Simulate loading user role
@@ -70,6 +76,51 @@ export default function VestibularesPage() {
     }, 500);
 
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const fetchVestibulares = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const token = Cookies.get('token');
+        if (!token) throw new Error('Token não encontrado');
+
+        console.log('Buscando lista de vestibulares');
+        const response = await fetch('http://localhost:3000/contestsEntrace/entrance-exams', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Erro ao buscar lista de vestibulares');
+        }
+
+        const data = await response.json();
+        console.log('Lista de vestibulares recebida:', data);
+        
+        // Transformar os dados para o formato esperado pelo componente
+        const formattedVestibulares = data.map(vestibular => ({
+          ...vestibular,
+          category: vestibular.type, // Mapear type para category para compatibilidade com o filtro
+          date: new Date(vestibular.date).toLocaleDateString('pt-BR') // Formatar data
+        }));
+        
+        setVestibulares(formattedVestibulares);
+      } catch (err) {
+        console.error('Erro ao buscar vestibulares:', err);
+        setError(err.message);
+        toast.error(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchVestibulares();
   }, []);
 
   useEffect(() => {
@@ -104,10 +155,88 @@ export default function VestibularesPage() {
 
 
 
+  const vestibularSchema = z.object({
+    title: z.string().min(1, { message: 'Title is required' }),
+    link: z.string().url({ message: 'Invalid URL' }),
+    type: z.string().min(1, { message: 'Type is required' }),
+    icon: z.string().min(1, { message: 'Icon is required' }),
+    color: z.string().min(1, { message: 'Color is required' }),
+    description: z.string().min(1, { message: 'Description is required' }),
+    date: z.coerce.date({ message: 'Invalid date' }),
+  });
+
   const CreateVestibularModal = () => {
-    const form = useForm();
-    const onSubmit = (data) => {
-      console.log(data);
+    const form = useForm({
+      resolver: zodResolver(vestibularSchema),
+      defaultValues: {
+        title: '',
+        link: '',
+        type: '',
+        icon: '',
+        color: '',
+        description: '',
+        date: '',
+      },
+    });
+
+    const onSubmit = async (formData) => {
+      setIsSubmitting(true);
+
+      try {
+        const token = Cookies.get('token');
+        if (!token) {
+          throw new Error('Token não encontrado');
+        }
+
+        // Preparar dados do vestibular para envio
+        const vestibularData = {
+          title: formData.title,
+          link: formData.link,
+          type: formData.type,
+          icon: formData.icon,
+          color: formData.color,
+          description: formData.description,
+          date: formData.date,
+        };
+
+        console.log('Enviando dados do vestibular:', vestibularData);
+
+        // Enviar dados do vestibular para o backend
+        const response = await fetch(
+          'http://localhost:3000/contestsEntrace/entrance-exams',
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(vestibularData),
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error(`Erro HTTP: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Vestibular criado:', result);
+
+        // Fechar modal e resetar formulário
+        setIsCreateVestibularModalOpen(false);
+        form.reset();
+
+        // Mostrar mensagem de sucesso
+        toast.success('Vestibular criado com sucesso!');
+
+        // Aqui você pode atualizar a lista de vestibulares se necessário
+        // window.location.reload(); // ou implementar uma atualização mais elegante
+
+      } catch (error) {
+        console.error('Erro ao criar vestibular:', error);
+        toast.error('Erro ao criar vestibular. Tente novamente.');
+      } finally {
+        setIsSubmitting(false);
+      }
     };
     return (
       <>
@@ -120,7 +249,7 @@ export default function VestibularesPage() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <BaseFormField
                   control={form.control}
-                  name="name"
+                  name="title"
                   label="Nome do Vestibular"
                   placeholder="Nome do Vestibular"
                 />
@@ -132,27 +261,33 @@ export default function VestibularesPage() {
                 />
                 <SelectFormField
                   control={form.control}
-                  name="tipo_concurso"
+                  name="type"
                   label="Categoria"
                   options={VESTIBULAR_CATEGORIES}
                   placeholder="Selecione a categoria"
                 />
                 <BaseFormField
                   control={form.control}
-                  name="data"
+                  name="date"
                   label="Data do Vestibular"
                   type="date"
                 />
                 <IconSelector
                   control={form.control}
-                  name="icone"
+                  name="icon"
                   label="Ícone"
                   options={ICON_OPTIONS.vestibulares}
                   form={form}
                 />
                 <BaseFormField
                   control={form.control}
-                  name="descricao"
+                  name="color"
+                  label="Cor"
+                  placeholder="bg-blue-500"
+                />
+                <BaseFormField
+                  control={form.control}
+                  name="description"
                   label="Descrição"
                   placeholder="Descrição do vestibular"
                 />
@@ -164,11 +299,9 @@ export default function VestibularesPage() {
                   </Button>
                   <Button
                     type="submit"
-                    onClick={() => {
-                      setIsCreateVestibularModalOpen(false);
-                    }}
+                    disabled={isSubmitting}
                   >
-                    {isLoading ? 'Cadastrando...' : 'Cadastrar Vestibular'}
+                    {isSubmitting ? 'Cadastrando...' : 'Cadastrar Vestibular'}
                   </Button>
                 </DialogFooter>
               </form>
@@ -198,7 +331,7 @@ export default function VestibularesPage() {
             <h1 className="mt-4 text-2xl font-bold tracking-tight">Vestibulares</h1>
             <p className="mt-2 text-center">Acompanhe os principais vestibulares do Brasil</p>
           </div>
-          {isAuthorized && userRole === "admin" && (
+          {isAuthorized && (userRole === "Admin" || userRole === "Teacher") && (
             <Button onClick={() => setIsCreateVestibularModalOpen(true)} className="mb-4">
               <Plus className="h-4 w-4 mr-2 " />
               Novo Vestibular
@@ -238,7 +371,7 @@ export default function VestibularesPage() {
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <div className={`p-3 rounded-lg ${vestibular.color} text-white`}>
+                    <div className="p-3 rounded-lg text-white" style={{ backgroundColor: vestibular.color }}>
                       {React.createElement(iconMap[vestibular.icon], { className: "h-6 w-6" })}
                     </div>
                     <div className="flex items-center gap-2">
@@ -279,4 +412,4 @@ export default function VestibularesPage() {
     <CreateVestibularModal />
     </>
   );
-} 
+}

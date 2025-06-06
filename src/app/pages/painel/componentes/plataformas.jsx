@@ -47,21 +47,19 @@ const plataformas = [
     },
 ];
 
+
 export default function PlataformasAprendizagem() {
     const { userRole } = useUser();
-    const Nome =
-        userRole === 'professor'
-            ? 'Plataformas de Ensino'
-            : 'Plataformas de Aprendizagem'
-    // ? dashProfessor
-    // : userRole === 'admin'
-    //     ? dashAdmin
-    //     : dashAlunos;
+    
+    // Seleciona título e plataformas baseado no papel do usuário
+    const title = userRole === 'professor' || userRole === 'teacher' 
+        ? "Plataformas de Ensino" 
+        : "Plataformas de Aprendizagem";
 
     return (
         <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold">{Nome}</h2>
+                <h2 className="text-2xl font-bold">{title}</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {plataformas.map((plataforma) => (
