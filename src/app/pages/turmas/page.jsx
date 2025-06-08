@@ -44,6 +44,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { handleApiError, handleFetchError, handleUnexpectedError } from '@/utils/errorHandler';
+import Cookies from 'js-cookie';
 
 const SHIFT_OPTIONS = [
 	{ value: 'Morning', label: 'Manhã' },
@@ -174,11 +175,12 @@ export default function TurmasPage() {
 			try {
 				setIsLoading(true);
 				setError(null);
-
+				const token = Cookies.get('token');
 				const response = await fetch('http://localhost:3000/admin/classes', {
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${token}`
 					},
 				});
 
@@ -195,10 +197,12 @@ export default function TurmasPage() {
 		};
 		const fetchTeachers = async () => {
 			try {
+				const token = Cookies.get('token');
 				const response = await fetch('http://localhost:3000/admin/teachers', {
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${token}`	
 					},
 				});
 
@@ -216,10 +220,12 @@ export default function TurmasPage() {
 
 		const fetchSubjects = async () => {
 			try {
+				const token = Cookies.get('token');
 				const response = await fetch('http://localhost:3000/admin/subjects', {
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${token}`
 					},
 				});
 
@@ -344,7 +350,7 @@ export default function TurmasPage() {
 	const onSubmit = async (formData) => {
 		setIsLoading(true);
 		setError(null);
-
+		const token = Cookies.get('token');
 		try {
 			// Preparar os dados no formato correto
 			const dataToSend = {
@@ -361,6 +367,7 @@ export default function TurmasPage() {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
 				},
 				body: JSON.stringify(dataToSend),
 			});

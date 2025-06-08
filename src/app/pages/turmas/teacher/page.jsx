@@ -17,7 +17,7 @@ export default function TeacherSimuladosPage() {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (userRole !== 'Teacher') {
+        if (userRole !== 'teacher') {
             router.push('/pages/simulados');
             return;
         }
@@ -63,16 +63,10 @@ export default function TeacherSimuladosPage() {
                 <div className="mx-auto">
                     <div className="flex flex-col items-center mb-8 bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                         <Logo className="h-12 w-12" variant="icon" />
-                        <h1 className="mt-4 text-3xl font-bold tracking-tight text-[#133D86]">Gerenciar Simulados</h1>
-                        <p className="mt-2 text-center text-gray-600">Selecione uma turma para gerenciar seus simulados</p>
+                        <h1 className="mt-4 text-3xl font-bold tracking-tight text-[#133D86]">Gerenciar minhas turmas</h1>
+                        <p className="mt-2 text-center text-gray-600">Selecione uma turma para gerenciar</p>
                     </div>
-                    <Button
-                        className="bg-[#133D86] hover:bg-[#0e2a5c] text-white transition-all duration-300 shadow-md hover:shadow-lg rounded-lg font-medium text-sm flex items-center justify-center gap-2 px-4 py-2 mb-4"
-                        onClick={() => router.push('/pages/simulados/teacher/criar-simulados')}
-                    >
-                        <Plus className="h-4 w-4" />
-                        Criar Simulado
-                    </Button>
+                 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {classes.map((classItem) => (
                             <Card
@@ -95,10 +89,10 @@ export default function TeacherSimuladosPage() {
                                 <CardContent className="pt-0">
                                     <Button
                                         className="w-full bg-[#133D86] hover:bg-[#0e2a5c] text-white transition-all duration-300 shadow-md hover:shadow-lg rounded-lg font-medium text-sm flex items-center justify-center gap-3 py-4"
-                                        onClick={() => router.push(`/pages/simulados/teacher/classes/${classItem.class_id}`)}
+                                        onClick={() => router.push(`/pages/turmas/teacher/classes/${classItem.class_id}`)}
                                     >
                                         <BookOpen className="h-4 w-4" />
-                                        Gerenciar Simulados
+                                        Gerenciar Turma
                                     </Button>
                                 </CardContent>
                             </Card>

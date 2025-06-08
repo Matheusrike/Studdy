@@ -14,10 +14,11 @@ import { BaseFormField, SelectFormField } from "@/components/ui/formfield";
 import { useUser } from "@/contexts/UserContext";
 import { useRouter } from "next/navigation";
 import { PageLoader } from "@/components/ui/loader";
+import Cookies from 'js-cookie';
 
-const ENDPOINTS = {
-    Student: "http://localhost:3000/admin/students",
-    Teacher: "http://localhost:3000/admin/teachers",
+const API_ENDPOINTS = {
+    student: "http://localhost:3000/admin/students",
+    teacher: "http://localhost:3000/admin/teachers",
     classes: "http://localhost:3000/admin/classes",
     subjects: "http://localhost:3000/admin/subjects"
 };
@@ -36,8 +37,8 @@ const shiftTurma = (shift) => {
 const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('pt-BR') : null;
 
 const formSchema = z.object({
-    tipo: z.enum(["Student", "Teacher", "subjects"], {
-        errorMap: () => ({ message: "Selecione um tipo de usuário válido" })
+    tipo: z.enum(["student", "teacher", "subjects"], {
+        required_error: "Selecione um tipo",
     }),
     name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").max(100, "Nome deve ter no máximo 100 caracteres"),
     email: z.string().email("Email inválido").optional().or(z.literal('')),
@@ -64,7 +65,7 @@ const formSchema = z.object({
     subject2: z.string().optional().or(z.literal('')),
 }).refine((data) => {
     // Validações específicas por tipo
-    if (data.tipo === 'Teacher' || data.tipo === 'Student') {
+    if (data.tipo === 'teacher' || data.tipo === 'student') {
         return data.email && data.password && data.cpf && data.birth_date;
     }
     return true;
@@ -248,11 +249,14 @@ function CadastroForm() {
     const tipo = form.watch("tipo");
 
     const fetchData = async (endpoint, setter, loadingKey) => {
+        const token = Cookies.get('token');
         try {
             setState(prev => ({ ...prev, [loadingKey]: true }));
             const response = await fetch(endpoint, {
                 method: 'GET',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                 }
             });
 
             if (!response.ok) throw new Error(`Erro ao buscar dados de ${endpoint}`);
@@ -275,12 +279,12 @@ function CadastroForm() {
     useEffect(() => {
         const loadInitialData = async () => {
             await fetchData(
-                ENDPOINTS.classes,
+                API_ENDPOINTS.classes,
                 data => setState(prev => ({ ...prev, classes: data })),
                 'isLoadingClasses'
             );
             await fetchData(
-                ENDPOINTS.subjects,
+                API_ENDPOINTS.subjects,
                 data => setState(prev => ({ ...prev, subjects: data.map(item => item.name) })),
                 'isLoading'
             );
@@ -291,9 +295,9 @@ function CadastroForm() {
 
     // Recarregar turmas apenas quando o tipo mudar para students
     useEffect(() => {
-        if (tipo === 'students' && state.classes.length === 0) {
+        if (tipo === 'student' && state.classes.length === 0) {
             fetchData(
-                ENDPOINTS.classes,
+                API_ENDPOINTS.classes,
                 data => setState(prev => ({ ...prev, classes: data })),
                 'isLoadingClasses'
             );
@@ -325,32 +329,26 @@ function CadastroForm() {
     const formatPayload = (data, tipo) => {
         const payloads = {
             subjects: { name: data.name.trim() },
-            Teacher: {
-                user: {
-                    name: data.name.trim(),
-                    email: data.email.trim().toLowerCase(),
-                    password: data.password,
-                    cpf: data.cpf.replace(/\D/g, ''),
-                    birth_date: formatDate(data.birth_date),
-                    role: "Teacher"
-                },
+            teacher: {
+                name: data.name,
+                email: data.email,
+                password: data.password,
+                birth_date: data.birth_date,
+                cpf: data.cpf,
+                role: "teacher",
                 teacher: {
-                    subjects: [parseInt(data.subject || '1'), parseInt(data.subject2 || '')]
-                        .filter(id => !isNaN(id))
-                        .map(id => ({ id }))
+                    subject_id: parseInt(data.subject_id)
                 }
             },
-            Student: {
-                user: {
-                    name: data.name.trim(),
-                    email: data.email.trim().toLowerCase(),
-                    password: data.password,
-                    cpf: data.cpf.replace(/\D/g, ''),
-                    birth_date: formatDate(data.birth_date),
-                    role: "Student"
-                },
+            student: {
+                name: data.name,
+                email: data.email,
+                password: data.password,
+                birth_date: data.birth_date,
+                cpf: data.cpf,
+                role: "student",
                 student: {
-                    class_id: data.class ? parseInt(data.class) : null
+                    class_id: parseInt(data.class_id)
                 }
             }
         };
@@ -358,13 +356,12 @@ function CadastroForm() {
     };
 
     const onSubmit = async (data) => {
+        const token = Cookies.get('token');
         try {
             setState(prev => ({ ...prev, isSubmitting: true, submitError: null, submitSuccess: false }));
 
-            const endpoint = ENDPOINTS[data.tipo];
+            const endpoint = API_ENDPOINTS[data.tipo];
             if (!endpoint) throw new Error("Tipo de cadastro inválido");
-
-
 
             const cleanData = formatPayload(data, data.tipo);
             if (!cleanData) throw new Error("Formato de dados inválido para o tipo selecionado");
@@ -373,7 +370,8 @@ function CadastroForm() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 mode: 'cors',
                 credentials: 'include',
@@ -401,7 +399,7 @@ function CadastroForm() {
         switch (tipo) {
             case "subjects":
                 return <SubjectForm control={form.control} />;
-            case "Teacher":
+            case "teacher":
                 return <ProfessorForm
                     control={form.control}
                     subjects={state.subjects}
@@ -409,7 +407,7 @@ function CadastroForm() {
                     isLoading={state.isLoading}
                     error={state.error}
                 />;
-            case "Student":
+            case "student":
                 return <AlunoForm
                     control={form.control}
                     classes={state.classes}
@@ -450,8 +448,8 @@ function CadastroForm() {
                             name="tipo"
                          
                             options={[
-                                { value: "Student", label: "Alunos" },
-                                { value: "Teacher", label: "Professores" },
+                                { value: "student", label: "Alunos" },
+                                { value: "teacher", label: "Professores" },
                                 { value: "subjects", label: "Disciplinas" }
                             ]}
                             placeholder="Selecione"

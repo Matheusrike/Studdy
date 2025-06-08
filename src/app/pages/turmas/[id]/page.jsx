@@ -17,6 +17,7 @@ import { Search, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { handleApiError, handleFetchError, handleUnexpectedError } from "@/utils/errorHandler";
+import Cookies from "js-cookie";
 
 export default function TurmaDetalhesPage() {
   const params = useParams();
@@ -31,11 +32,12 @@ export default function TurmaDetalhesPage() {
       try {
         setIsLoading(true);
         setError(null);
-
+        const token = Cookies.get('token');
         const turmaResponse = await fetch(`http://localhost:3000/admin/classes/${params.id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           }
         });
         console.log('Resposta da turma:', turmaResponse.json);

@@ -32,7 +32,7 @@ export default function SimuladoQuestoesPage() {
     const [concluido, setConcluido] = useState(false);
 
     // Verificar se o usuário é professor
-    const isTeacher = userRole === 'Teacher';
+    const isTeacher = userRole === 'teacher';
 
     // Função para embaralhar array (Fisher-Yates shuffle)
     const shuffleArray = (array) => {

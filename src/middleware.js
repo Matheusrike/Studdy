@@ -10,7 +10,7 @@ const protectedRoutes = {
         '/pages/vestibular',
         '/pages/turmas',
     ],
-    professor: [
+    teacher: [
         '/pages/professor',
         '/pages/materiais',
         '/pages/simulados',
@@ -20,7 +20,7 @@ const protectedRoutes = {
         '/pages/material/apostilas/criar-apostilas',
         '/pages/turmas',
     ],
-    aluno: [
+    student: [
         '/pages/aluno',
         '/pages/estudos',
         '/pages/simulados',

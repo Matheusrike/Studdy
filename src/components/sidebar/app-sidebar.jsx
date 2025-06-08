@@ -67,7 +67,7 @@ const dataProfessor = {
   },
   navMain: [
     { title: "Painel", url: "/pages/painel", icon: SquareTerminal, isActive: true },
-    { title: "Simulados", url: "/pages/simulados/teacher", icon: Bot },
+    { title: "Simulados", url: "/pages/turmas/teacher", icon: Bot },
     { title: "Perfil", url: "/pages/profile", icon: Frame },
   ],
   navMainDropdown: [
@@ -86,7 +86,7 @@ const dataProfessor = {
   projects: [
     { name: "Concursos", url: "/pages/concursos", icon: PieChart },
     { name: "Vestibulares", url: "/pages/vestibulares", icon: Map },
-    { name: "Turmas", url: "/pages/turmas", icon: Frame },
+    { name: "Turmas", url: "/pages/turmas/teacher", icon: Frame },
   ],
 }
 
@@ -160,7 +160,9 @@ export function AppSidebar({ children, ...props }) {
   useEffect(() => {
     const role = Cookies.get("userRole")
     console.log("🚀 Papel detectado via cookie:", role) // <== debug
-    setUserRole(role || "student")
+    if (role) {
+      setUserRole(role.toLowerCase())
+    }
   }, [])
 
   if (!userRole) return null // ou um loader visual
@@ -170,10 +172,9 @@ export function AppSidebar({ children, ...props }) {
       case "admin":
         return { user: dataAdmin.user, NavComponent: <AdminNav /> }
       case "teacher":
-      case "professor":
         return { user: dataProfessor.user, NavComponent: <ProfessorNav /> }
       case "student":
-      case "aluno":
+        return { user: dataAluno.user, NavComponent: <AlunoNav /> }
       default:
         return { user: dataAluno.user, NavComponent: <AlunoNav /> }
     }

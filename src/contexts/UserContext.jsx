@@ -10,34 +10,35 @@ export function UserProvider({ children }) {
         // Verifica se estamos no cliente antes de acessar cookies
         if (typeof window !== 'undefined') {
             const cookieRole = Cookies.get('userRole');
-            return cookieRole || 'student';
+            // Normaliza a role para lowercase
+            return cookieRole ? cookieRole.toLowerCase() : null;
         }
-        // No servidor, retorna o valor padrão
-        return 'student';
+        return null;
     });
 
     // Sincroniza com o cookie quando o componente monta no cliente
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const cookieRole = Cookies.get('userRole');
-            if (cookieRole && cookieRole !== userRole) {
-                setUserRole(cookieRole);
+            if (cookieRole && cookieRole.toLowerCase() !== userRole) {
+                setUserRole(cookieRole.toLowerCase());
             }
         }
     }, []);
 
     // Quando a role mudar, atualiza o cookie
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            Cookies.set('userRole', userRole, { expires: 7 }); // Cookie expira em 7 dias
+        if (typeof window !== 'undefined' && userRole) {
+            Cookies.set('userRole', userRole.toLowerCase(), { expires: 7 }); // Cookie expira em 7 dias
         }
     }, [userRole]);
 
     // Função para atualizar a role do usuário
     const updateUserRole = (newRole) => {
-        setUserRole(newRole);
+        const normalizedRole = newRole.toLowerCase();
+        setUserRole(normalizedRole);
         if (typeof window !== 'undefined') {
-            Cookies.set('userRole', newRole, { expires: 7 });
+            Cookies.set('userRole', normalizedRole, { expires: 7 });
         }
     };
 

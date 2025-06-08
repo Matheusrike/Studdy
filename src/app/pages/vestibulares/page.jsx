@@ -331,7 +331,7 @@ export default function VestibularesPage() {
             <h1 className="mt-4 text-2xl font-bold tracking-tight">Vestibulares</h1>
             <p className="mt-2 text-center">Acompanhe os principais vestibulares do Brasil</p>
           </div>
-          {isAuthorized && (userRole === "Admin" || userRole === "Teacher") && (
+          {isAuthorized && (userRole === "admin" || userRole === "teacher") && (
             <Button onClick={() => setIsCreateVestibularModalOpen(true)} className="mb-4">
               <Plus className="h-4 w-4 mr-2 " />
               Novo Vestibular

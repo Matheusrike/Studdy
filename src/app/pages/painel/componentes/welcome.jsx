@@ -18,13 +18,13 @@ export default function Welcome() {
     // Mensagens personalizadas baseadas no papel do usuário
     const getWelcomeMessage = () => {
         switch (userRole) {
-            case 'professor':
-            case 'Teacher':
+
+            case 'teacher':
                 return {
                     greeting: `Bem-vindo(a), Professor(a) ${user.name}!`,
                     subtitle: 'Bom dia! Pronto para inspirar seus alunos hoje?'
                 };
-            case 'Admin':
+            case 'admin':
                 return {
                     greeting: `Bem-vindo(a), ${user.name}!`,
                     subtitle: 'Bom dia! Vamos gerenciar a plataforma hoje?'

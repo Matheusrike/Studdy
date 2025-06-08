@@ -91,11 +91,12 @@ export default function CriarSimuladosPage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const editId = searchParams.get('edit');
+	const classId = searchParams.get('classId');
 	const isEditMode = !!editId;
 	
 	const [classes, setClasses] = useState([]);
 	const [subjects, setSubjects] = useState([]);
-	const [selectedClass, setSelectedClass] = useState('');
+	const [selectedClass, setSelectedClass] = useState(classId || '');
 	const [selectedSubject, setSelectedSubject] = useState('');
 	const [isLoading, setIsLoading] = useState(false);
 	const [questoes, setQuestoes] = useState([1]);
@@ -264,23 +265,19 @@ export default function CriarSimuladosPage() {
 			title: titulo,
 			description: descricao,
 			icon: icone,
-			class_id: selectedClass,
-			subject_id: selectedSubject,
-			max_attempts: tentativas_maximas,
+			class_id: parseInt(selectedClass),
+			subject_id: parseInt(selectedSubject),
+			max_attempt: tentativas_maximas,
 			duration_minutes: duracao_minutos,
-			visibility: visibility,
-			questions: questions.map((question) => {
-				return {
-					statement: question.statement,
-					points: question.points,
-					alternatives: question.alternatives.map((alternative) => {
-						return {
-							response: alternative.text,
-							correct_alternative: alternative.isCorrect
-						};
-					})
-				};
-			})
+			visibility: visibility.toLowerCase(),
+			questions: questions.map((question) => ({
+				statement: question.statement,
+				points: question.points,
+				alternatives: question.alternatives.map((alternative) => ({
+					response: alternative.text,
+					correct_alternative: alternative.isCorrect
+				}))
+			}))
 		};
 		return payload;
 	};

@@ -76,7 +76,7 @@ export function NavUser() {
     switch (role?.toLowerCase()) {
       case 'admin':
         return 'Administrador'
-      case 'professor':
+      case 'teacher':
         return 'Professor'
       case 'student':
         return 'Aluno'

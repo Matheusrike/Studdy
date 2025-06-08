@@ -1,39 +1,63 @@
 'use client';
 
-import { FileText, CheckCircle, LineChart } from 'lucide-react';
+import { FileText, CheckCircle, LineChart, Users } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { useState, useEffect } from 'react';
+import Cookies from 'js-cookie';
 
 export default function Overview() {
     const { userRole } = useUser();
-    const [studentData, setStudentData] = useState(null);
+    const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // Buscar dados do estudante da API
+    // Buscar dados baseado na role do usuário
     useEffect(() => {
-        if (userRole === 'student') {
-            setLoading(true);
-            fetch('http://localhost:3000/student/status')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Falha ao buscar dados do estudante');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    setStudentData(data);
-                    setError(null);
-                })
-                .catch(err => {
-                    setError(err.message);
-                    console.error('Erro ao buscar dados do estudante:', err);
-                })
-                .finally(() => {
-                    setLoading(false);
-                });
+        const token = Cookies.get('token');
+        if (!token) return;
+
+        setLoading(true);
+        let endpoint = '';
+
+        switch (userRole) {
+            case 'student':
+                endpoint = 'http://localhost:3000/student/status';
+                break;
+            case 'teacher':
+                endpoint = 'http://localhost:3000/teacher/status';
+                break;
+            case 'admin':
+                endpoint = 'http://localhost:3000/admin/status';
+                break;
+            default:
+                setLoading(false);
+                return;
         }
+
+        fetch(endpoint, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Falha ao buscar dados');
+                }
+                return response.json();
+            })
+            .then(data => {
+                setData(data);
+                setError(null);
+            })
+            .catch(err => {
+                setError(err.message);
+                console.error('Erro ao buscar dados:', err);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
     }, [userRole]);
 
     // Função para gerar dados do dashboard do aluno
@@ -41,12 +65,12 @@ export default function Overview() {
         if (loading) {
             return [
                 {
-                    title: 'Simulados Realizados',
+                    title: 'Quizzes Disponíveis',
                     value: '...',
                     subtitle: 'Carregando...',
-                    icon: <FileText className="h-6 w-6 text-primary" />,
-                    iconBg: 'bg-primary/10',
-                    textColor: 'text-primary'
+                    icon: <FileText className="h-6 w-6 text-purple-600" />,
+                    iconBg: 'bg-purple-100',
+                    textColor: 'text-purple-600'
                 },
                 {
                     title: 'Média de Acertos',
@@ -70,7 +94,7 @@ export default function Overview() {
         if (error) {
             return [
                 {
-                    title: 'Simulados Realizados',
+                    title: 'Quizzes Disponíveis',
                     value: 'Erro',
                     subtitle: 'Falha ao carregar dados',
                     icon: <FileText className="h-6 w-6 text-red-600" />,
@@ -96,27 +120,27 @@ export default function Overview() {
             ];
         }
 
-        if (studentData) {
+        if (data) {
             return [
                 {
-                    title: 'Simulados Realizados',
-                    value: studentData.completedQuizzes,
-                    subtitle: `${studentData.availableQuizzes} disponíveis`,
-                    icon: <FileText className="h-6 w-6 text-primary" />,
-                    iconBg: 'bg-primary/10',
-                    textColor: 'text-primary'
+                    title: 'Simulados Disponíveis',
+                    value: data.availableQuizzes,
+                    subtitle: data.availableQuizzes === 0 ? 'Parabéns! Você completou todos os simulados disponíveis!' : 'Vamos resolver mais simulados?',
+                    icon: <FileText className="h-6 w-6 text-purple-600" />,
+                    iconBg: 'bg-purple-100',
+                    textColor: 'text-purple-600'
                 },
                 {
                     title: 'Média de Acertos',
-                    value: `${studentData.averageCorrectResponses}%`,
-                    subtitle: `${studentData.completionPercentageOverall}% concluído`,
+                    value: `${data.averageCorrectResponses}%`,
+                    subtitle: `${data.completionPercentageOverall}% concluído`,
                     icon: <CheckCircle className="h-6 w-6 text-green-600" />,
                     iconBg: 'bg-green-100',
                     textColor: 'text-green-600'
                 },
                 {
                     title: 'Tempo de Estudo',
-                    value: `${Math.floor(studentData.totalTimeSpentMinutes / 60)}h ${studentData.totalTimeSpentMinutes % 60}m`,
+                    value: `${Math.floor(data.totalTimeSpentMinutes / 60)}h ${data.totalTimeSpentMinutes % 60}m`,
                     subtitle: 'Total acumulado',
                     icon: <LineChart className="h-6 w-6 text-blue-600" />,
                     iconBg: 'bg-blue-100',
@@ -125,15 +149,14 @@ export default function Overview() {
             ];
         }
 
-        // Dados padrão caso não haja dados da API
         return [
             {
-                title: 'Simulados Realizados',
+                title: 'Simulados Disponíveis',
                 value: 0,
-                subtitle: 'Nenhum simulado realizado',
-                icon: <FileText className="h-6 w-6 text-primary" />,
-                iconBg: 'bg-primary/10',
-                textColor: 'text-primary'
+                subtitle: 'Sem simulados disponíveis',
+                icon: <FileText className="h-6 w-6 text-purple-600" />,
+                iconBg: 'bg-purple-100',
+                textColor: 'text-purple-600'
             },
             {
                 title: 'Média de Acertos',
@@ -154,66 +177,244 @@ export default function Overview() {
         ];
     };
 
-    const dashProfessor = [
-        {
-            title: 'Alunos Ativos',
-            value: 45,
-            subtitle: '+5 este mês',
-            icon: <FileText className="h-6 w-6 text-primary" />,
-            iconBg: 'bg-primary/10',
-            textColor: 'text-primary'
-        },
-        {
-            title: 'Média da Turma',
-            value: '82%',
-            subtitle: '+3% este mês',
-            icon: <CheckCircle className="h-6 w-6 text-green-600" />,
-            iconBg: 'bg-green-100',
-            textColor: 'text-green-600'
-        },
-        {
-            title: 'Atividades Pendentes',
-            value: 8,
-            subtitle: 'Para corrigir',
-            icon: <LineChart className="h-6 w-6 text-blue-600" />,
-            iconBg: 'bg-blue-100',
-            textColor: 'text-blue-600'
+    const getDashProfessor = () => {
+        if (loading) {
+            return [
+                {
+                    title: 'Total de Alunos',
+                    value: '...',
+                    subtitle: 'Carregando...',
+                    icon: <Users className="h-6 w-6 text-primary" />,
+                    iconBg: 'bg-primary/10',
+                    textColor: 'text-primary'
+                },
+                {
+                    title: 'Taxa de Conclusão',
+                    value: '...',
+                    subtitle: 'Carregando...',
+                    icon: <CheckCircle className="h-6 w-6 text-green-600" />,
+                    iconBg: 'bg-green-100',
+                    textColor: 'text-green-600'
+                },
+                {
+                    title: 'Média da Turma',
+                    value: '...',
+                    subtitle: 'Carregando...',
+                    icon: <LineChart className="h-6 w-6 text-blue-600" />,
+                    iconBg: 'bg-blue-100',
+                    textColor: 'text-blue-600'
+                }
+            ];
         }
-    ];
 
-    const dashAdmin = [
-        {
-            title: 'Total Users',
-            value: 154,
-            subtitle: '+10 this week',
-            icon: <FileText className="h-6 w-6 text-primary" />,
-            iconBg: 'bg-primary/10',
-            textColor: 'text-primary'
-        },
-        {
-            title: 'Active Professors',
-            value: 18,
-            subtitle: '3 new this month',
-            icon: <CheckCircle className="h-6 w-6 text-green-600" />,
-            iconBg: 'bg-green-100',
-            textColor: 'text-green-600'
-        },
-        {
-            title: 'System Uptime',
-            value: '99.9%',
-            subtitle: 'Stable this month',
-            icon: <LineChart className="h-6 w-6 text-blue-600" />,
-            iconBg: 'bg-blue-100',
-            textColor: 'text-blue-600'
+        if (error) {
+            return [
+                {
+                    title: 'Total de Alunos',
+                    value: 'Erro',
+                    subtitle: 'Falha ao carregar dados',
+                    icon: <Users className="h-6 w-6 text-red-600" />,
+                    iconBg: 'bg-red-100',
+                    textColor: 'text-red-600'
+                },
+                {
+                    title: 'Taxa de Conclusão',
+                    value: 'Erro',
+                    subtitle: 'Falha ao carregar dados',
+                    icon: <CheckCircle className="h-6 w-6 text-red-600" />,
+                    iconBg: 'bg-red-100',
+                    textColor: 'text-red-600'
+                },
+                {
+                    title: 'Média da Turma',
+                    value: 'Erro',
+                    subtitle: 'Falha ao carregar dados',
+                    icon: <LineChart className="h-6 w-6 text-red-600" />,
+                    iconBg: 'bg-red-100',
+                    textColor: 'text-red-600'
+                }
+            ];
         }
-    ];
+
+        if (data) {
+            return [
+                {
+                    title: 'Total de Alunos',
+                    value: data.totalStudents,
+                    subtitle: 'Alunos ativos',
+                    icon: <Users className="h-6 w-6 text-primary" />,
+                    iconBg: 'bg-primary/10',
+                    textColor: 'text-primary'
+                },
+                {
+                    title: 'Taxa de Conclusão',
+                    value: `${data.quizCompletionRate}%`,
+                    subtitle: 'Quizzes concluídos pelos alunos',
+                    icon: <CheckCircle className="h-6 w-6 text-green-600" />,
+                    iconBg: 'bg-green-100',
+                    textColor: 'text-green-600'
+                },
+                {
+                    title: 'Média da Geral de Acertos',
+                    value: `${data.classAverageScoreGlobal}`,
+                    subtitle: 'Pontuação média',
+                    icon: <LineChart className="h-6 w-6 text-blue-600" />,
+                    iconBg: 'bg-blue-100',
+                    textColor: 'text-blue-600'
+                }
+            ];
+        }
+
+        return [
+            {
+                title: 'Total de Alunos',
+                value: 0,
+                subtitle: 'Sem alunos registrados',
+                icon: <Users className="h-6 w-6 text-primary" />,
+                iconBg: 'bg-primary/10',
+                textColor: 'text-primary'
+            },
+            {
+                title: 'Taxa de Conclusão',
+                value: '0%',
+                subtitle: 'Sem dados disponíveis',
+                icon: <CheckCircle className="h-6 w-6 text-green-600" />,
+                iconBg: 'bg-green-100',
+                textColor: 'text-green-600'
+            },
+            {
+                title: 'Média da Turma',
+                value: '0',
+                subtitle: 'Sem pontuações registradas',
+                icon: <LineChart className="h-6 w-6 text-blue-600" />,
+                iconBg: 'bg-blue-100',
+                textColor: 'text-blue-600'
+            }
+        ];
+    };
+
+    const getDashAdmin = () => {
+        if (loading) {
+            return [
+                {
+                    title: 'Total de Usuários',
+                    value: '...',
+                    subtitle: 'Carregando...',
+                    icon: <Users className="h-6 w-6 text-primary" />,
+                    iconBg: 'bg-primary/10',
+                    textColor: 'text-primary'
+                },
+                {
+                    title: 'Total de Professores',
+                    value: '...',
+                    subtitle: 'Carregando...',
+                    icon: <FileText className="h-6 w-6 text-green-600" />,
+                    iconBg: 'bg-green-100',
+                    textColor: 'text-green-600'
+                },
+                {
+                    title: 'Total de Alunos',
+                    value: '...',
+                    subtitle: 'Carregando...',
+                    icon: <LineChart className="h-6 w-6 text-blue-600" />,
+                    iconBg: 'bg-blue-100',
+                    textColor: 'text-blue-600'
+                }
+            ];
+        }
+
+        if (error) {
+            return [
+                {
+                    title: 'Total de Usuários',
+                    value: 'Erro',
+                    subtitle: 'Falha ao carregar dados',
+                    icon: <Users className="h-6 w-6 text-red-600" />,
+                    iconBg: 'bg-red-100',
+                    textColor: 'text-red-600'
+                },
+                {
+                    title: 'Total de Professores',
+                    value: 'Erro',
+                    subtitle: 'Falha ao carregar dados',
+                    icon: <FileText className="h-6 w-6 text-red-600" />,
+                    iconBg: 'bg-red-100',
+                    textColor: 'text-red-600'
+                },
+                {
+                    title: 'Total de Alunos',
+                    value: 'Erro',
+                    subtitle: 'Falha ao carregar dados',
+                    icon: <LineChart className="h-6 w-6 text-red-600" />,
+                    iconBg: 'bg-red-100',
+                    textColor: 'text-red-600'
+                }
+            ];
+        }
+
+        if (data) {
+            return [
+                {
+                    title: 'Total de Usuários',
+                    value: data.totalUsers,
+                    subtitle: 'Usuários ativos',
+                    icon: <Users className="h-6 w-6 text-primary" />,
+                    iconBg: 'bg-primary/10',
+                    textColor: 'text-primary'
+                },
+                {
+                    title: 'Total de Professores',
+                    value: data.totalTeachers,
+                    subtitle: 'Professores ativos',
+                    icon: <FileText className="h-6 w-6 text-green-600" />,
+                    iconBg: 'bg-green-100',
+                    textColor: 'text-green-600'
+                },
+                {
+                    title: 'Total de Alunos',
+                    value: data.totalStudents,
+                    subtitle: 'Alunos ativos',
+                    icon: <LineChart className="h-6 w-6 text-blue-600" />,
+                    iconBg: 'bg-blue-100',
+                    textColor: 'text-blue-600'
+                }
+            ];
+        }
+
+        return [
+            {
+                title: 'Total de Usuários',
+                value: 0,
+                subtitle: 'Sem usuários registrados',
+                icon: <Users className="h-6 w-6 text-primary" />,
+                iconBg: 'bg-primary/10',
+                textColor: 'text-primary'
+            },
+            {
+                title: 'Total de Professores',
+                value: 0,
+                subtitle: 'Sem professores registrados',
+                icon: <FileText className="h-6 w-6 text-green-600" />,
+                iconBg: 'bg-green-100',
+                textColor: 'text-green-600'
+            },
+            {
+                title: 'Total de Alunos',
+                value: 0,
+                subtitle: 'Sem alunos registrados',
+                icon: <LineChart className="h-6 w-6 text-blue-600" />,
+                iconBg: 'bg-blue-100',
+                textColor: 'text-blue-600'
+            }
+        ];
+    };
 
     // Seleciona o dashboard com base no papel
     const dashData =
-        userRole === 'professor'
-            ? dashProfessor
+        userRole === 'teacher'
+            ? getDashProfessor()
             : userRole === 'admin'
-                ? dashAdmin
+                ? getDashAdmin()
                 : getDashAlunos();
 
     return (
