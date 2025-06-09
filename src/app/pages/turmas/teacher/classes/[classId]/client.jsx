@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/ui/logo";
-import { Search, Plus, Calculator, Atom, Pen, ScrollText, Trash2, Users, BookOpen, BarChart2 } from "lucide-react";
+import { Search, Plus, Calculator, Atom, Pen, ScrollText, Trash2, Users, BookOpen, BarChart2, Filter, PlayCircle, Clock, CheckCircle, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
@@ -23,11 +23,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import QuizResults from './quiz-results';
 
-const statusVisibility = [
-    { value: 'todos', label: 'Todos' },
-    { value: 'public', label: 'Público' },
-    { value: 'private', label: 'Privado' },
-    { value: 'draft', label: 'Rascunho' },
+const statusFilters = [
+    { id: 'todos', label: 'Todos', icon: BookOpen },
+    { id: 'public', label: 'Público', icon: Eye },
+    { id: 'draft', label: 'Rascunho', icon: Pen }
 ];
 
 export default function ClassDetailsClient({ classId }) {
@@ -36,7 +35,7 @@ export default function ClassDetailsClient({ classId }) {
     const [classData, setClassData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedVisibility, setSelectedVisibility] = useState('todos');
+    const [statusFilter, setStatusFilter] = useState('todos');
     const [quizToDelete, setQuizToDelete] = useState(null);
     const [activeTab, setActiveTab] = useState("simulados");
     const [selectedQuiz, setSelectedQuiz] = useState(null);
@@ -101,8 +100,18 @@ export default function ClassDetailsClient({ classId }) {
         return items.filter(item => {
             const matchesSearch = (item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 item.description?.toLowerCase().includes(searchTerm.toLowerCase()));
-            const matchesVisibility = selectedVisibility === 'todos' || item.visibility === selectedVisibility;
-            return matchesSearch && matchesVisibility;
+            
+            let matchesStatus = true;
+            if (statusFilter === 'todos') {
+                matchesStatus = true;
+            } else if (statusFilter === 'public') {
+                matchesStatus = item.visibility === 'public';
+            } else if (statusFilter === 'draft') {
+                matchesStatus = item.visibility === 'draft';
+
+            }
+            
+            return matchesSearch && matchesStatus;
         });
     };
 
@@ -177,28 +186,82 @@ export default function ClassDetailsClient({ classId }) {
                             </TabsList>
 
                             <TabsContent value="simulados">
-                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                                    <div className="relative w-full sm:w-64">
-                                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+                                <div className="mb-8 space-y-4">
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                                         <Input
-                                            placeholder="Buscar simulados..."
+                                            type="text"
+                                            placeholder="Buscar Simulados..."
+                                            className="pl-10 w-full h-12 rounded-lg border-gray-200 focus:border-[#133D86] focus:ring-[#133D86]"
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="pl-8"
                                         />
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {statusVisibility.map((status) => (
-                                            <Button
-                                                key={status.value}
-                                                variant={selectedVisibility === status.value ? "default" : "outline"}
-                                                className="text-sm"
-                                                onClick={() => setSelectedVisibility(status.value)}
-                                            >
-                                                {status.label}
-                                            </Button>
-                                        ))}
+                                    
+                                    {/* Filtros de Status */}
+                                    <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Filter className="h-4 w-4 text-gray-600" />
+                                            <span className="text-sm font-medium text-gray-700">Filtrar por status:</span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {statusFilters.map((filter) => {
+                                                const IconComponent = filter.icon;
+                                                
+                                                // Calcular contagem para cada filtro
+                                                const getFilterCount = (filterId) => {
+                                                    if (!classData?.quizzes) return 0;
+                                                    return classData.quizzes.filter(q => {
+                                                        if (filterId === 'todos') return true;
+                                                        if (filterId === 'public') {
+                                                            return q.visibility === 'public';
+                                                        }
+                                                        if (filterId === 'draft') {
+                                                            return q.visibility === 'draft';
+                                                        }
+
+                                                        return true;
+                                                    }).length;
+                                                };
+                                                
+                                                const count = getFilterCount(filter.id);
+                                                
+                                                return (
+                                                    <Button
+                                                        key={filter.id}
+                                                        variant={statusFilter === filter.id ? "default" : "outline"}
+                                                        size="sm"
+                                                        onClick={() => setStatusFilter(filter.id)}
+                                                        className={`flex items-center gap-2 transition-all duration-200 ${
+                                                            statusFilter === filter.id 
+                                                                ? 'bg-[#133D86] hover:bg-[#0e2a5c] text-white shadow-md' 
+                                                                : 'hover:bg-gray-50 hover:border-[#133D86] hover:text-[#133D86]'
+                                                        }`}
+                                                    >
+                                                        <IconComponent className="h-4 w-4" />
+                                                        <span>{filter.label}</span>
+                                                        <span className={`ml-1 px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                                                            statusFilter === filter.id 
+                                                                ? 'bg-white/20 text-white' 
+                                                                : 'bg-gray-100 text-gray-600'
+                                                        }`}>
+                                                            {count}
+                                                        </span>
+                                                    </Button>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
+                                </div>
+
+                                <div className="mb-6">
+                                    <Button
+                                        className="bg-[#133D86] hover:bg-[#0e2a5c] text-white transition-all duration-300 shadow-md hover:shadow-lg rounded-lg font-medium flex items-center gap-2"
+                                        onClick={() => router.push(`/pages/turmas/teacher/criar-simulados?classId=${classId}`)}
+                                    >
+                                        <Plus className="h-5 w-5" />
+                                        Criar Novo Simulado
+                                    </Button>
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -393,4 +456,4 @@ export default function ClassDetailsClient({ classId }) {
             </Dialog>
         </div>
     );
-} 
+}

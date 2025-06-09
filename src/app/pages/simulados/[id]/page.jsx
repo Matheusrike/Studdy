@@ -82,7 +82,62 @@ export default function SimuladoQuestoesPage() {
     
     const viewMode = getViewMode();
     const showAnswerStyles = viewMode === 'result' || concluido;
+    
+    // Função utilitária para buscar dados do quiz atual
+    const fetchCurrentQuizData = async () => {
+        const token = Cookies.get('token');
+        if (!token) return null;
 
+        try {
+            const quizzesResponse = await fetch('http://localhost:3000/student/quizzes', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            console.log('Resposta do endpoint /student/quizzes:', quizzesResponse.status);
+            if (!quizzesResponse.ok) return null;
+
+            const quizzesData = await quizzesResponse.json();
+            
+            console.log('Dados completos recebidos:', quizzesData);
+            console.log('ID do parâmetro (params.id):', params.id);
+            console.log('ID do parâmetro convertido:', parseInt(params.id));
+            
+            let currentQuiz;
+            if (quizzesData.quizzes && Array.isArray(quizzesData.quizzes)) {
+                console.log('Array de quizzes:', quizzesData.quizzes.map(q => ({ id: q.id, title: q.title, attempt_id: q.attempt_id, status: q.status })));
+                
+                // Primeiro, tentar encontrar por attempt_id (para casos de continue)
+                currentQuiz = quizzesData.quizzes.find(quiz => quiz.attempt_id === parseInt(params.id));
+                
+                // Se não encontrar por attempt_id, tentar por quiz.id (para casos normais)
+                if (!currentQuiz) {
+                    currentQuiz = quizzesData.quizzes.find(quiz => quiz.id === parseInt(params.id));
+                    
+                    // Se encontrou o quiz por ID, verificar se tem attempt em progresso
+                    if (currentQuiz && currentQuiz.status === 'in_progress' && currentQuiz.attempt_id) {
+                        console.log('Quiz encontrado com attempt em progresso:', currentQuiz.attempt_id);
+                        currentQuiz.hasInProgressAttempt = true;
+                        currentQuiz.inProgressAttemptId = currentQuiz.attempt_id;
+                    }
+                }
+                
+                console.log('Quiz encontrado:', currentQuiz);
+            } else if (quizzesData.data) {
+                currentQuiz = quizzesData.data;
+                currentQuiz.id = parseInt(params.id);
+                console.log('Quiz encontrado em data:', currentQuiz);
+            }
+
+            return currentQuiz;
+        } catch (error) {
+            console.error('Erro ao buscar dados do quiz:', error);
+            return null;
+        }
+    };
 
     // Função para iniciar um novo simulado
     const iniciarSimulado = async () => {
@@ -95,13 +150,96 @@ export default function SimuladoQuestoesPage() {
                 throw new Error('Token não encontrado');
             }
 
-            // Buscar informações básicas do quiz primeiro para obter o subject_id
+            // Primeiro, verificar se já existe um attempt em progresso
+            const currentQuiz = await fetchCurrentQuizData();
+            if (!currentQuiz) {
+                throw new Error('Erro ao buscar dados do quiz atual');
+            }
+            
+            let data;
             let subjectId;
-            if (simulado?.subject?.id) {
-                subjectId = simulado.subject.id;
+
+            if (currentQuiz && currentQuiz.hasInProgressAttempt && currentQuiz.inProgressAttemptId) {
+                // Já existe um attempt em progresso, usar ele
+                console.log('Attempt em progresso encontrado:', currentQuiz.inProgressAttemptId);
+                
+                // Usar os dados do attempt em progresso diretamente
+                data = {
+                    attempt_id: currentQuiz.inProgressAttemptId,
+                    started_at: new Date().toISOString(), // Será atualizado com dados reais se necessário
+                    status: 'in_progress',
+                    quiz: {
+                        title: currentQuiz.title,
+                        id: parseInt(params.id)
+                    },
+                    totalAttempts: currentQuiz.attempts_count || 0,
+                    maxAttempts: currentQuiz.max_attempts || 1,
+                    canStartNewAttempt: false // Já tem um em progresso
+                };
+                subjectId = currentQuiz.subject?.id;
+                
             } else {
-                // Se não temos o simulado carregado, precisamos buscar o subject_id
-                const quizInfoResponse = await fetch(`http://localhost:3000/quiz/${params.id}`, {
+                // Não existe attempt em progresso, verificar se pode criar um novo
+                console.log('Verificando se pode criar novo attempt para o quiz');
+                
+                // Só verificar canStartNewAttempt se realmente não há attempt em progresso
+                if (currentQuiz && currentQuiz.hasInProgressAttempt === false && !currentQuiz.canStartNewAttempt) {
+                    setError('Você já esgotou todas as suas tentativas para este simulado.');
+                    return;
+                }
+                
+                // Buscar informações básicas do quiz primeiro para obter o subject_id
+                if (simulado?.subject?.id) {
+                    subjectId = simulado.subject.id;
+                } else {
+                    // Se não temos o simulado carregado, precisamos buscar o subject_id
+                    const quizInfoResponse = await fetch(`http://localhost:3000/quiz/${params.id}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (!quizInfoResponse.ok) {
+                        throw new Error('Erro ao buscar informações do quiz');
+                    }
+                    
+                    const quizInfo = await quizInfoResponse.json();
+                    subjectId = quizInfo.subject?.id;
+                    
+                    if (!subjectId) {
+                        toast.error('Erro: ID do assunto não encontrado');
+                        return;
+                    }
+                }
+
+                // Iniciar novo attempt
+                const response = await fetch(`http://localhost:3000/student/subjects/${subjectId}/quizzes/${params.id}/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                // Verificar se o usuário já esgotou suas tentativas
+                if (response.status === 400) {
+                    const errorData = await response.json();
+                    if (errorData.message && errorData.message.includes('tentativas')) {
+                        setError('Você já esgotou todas as suas tentativas para este simulado.');
+                        return;
+                    }
+                }
+
+                await handleApiError(response, 'iniciar simulado');
+                data = await response.json();
+            }
+            
+            // Verificar se é um attempt em progresso ou um novo attempt
+            if (currentQuiz && currentQuiz.hasInProgressAttempt) {
+                // Para attempt em progresso, precisamos buscar as questões separadamente
+                const quizResponse = await fetch(`http://localhost:3000/quiz/${params.id}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -109,57 +247,63 @@ export default function SimuladoQuestoesPage() {
                     }
                 });
                 
-                if (!quizInfoResponse.ok) {
-                    throw new Error('Erro ao buscar informações do quiz');
+                if (!quizResponse.ok) {
+                    throw new Error('Erro ao buscar dados do quiz');
                 }
                 
-                const quizInfo = await quizInfoResponse.json();
-                subjectId = quizInfo.subject?.id;
+                const quizData = await quizResponse.json();
                 
-                if (!subjectId) {
-                    toast.error('Erro: ID do assunto não encontrado');
-                    return;
-                }
+                // Atualizar dados do simulado
+                const simuladoCompleto = {
+                    id: parseInt(params.id),
+                    title: data.quiz.title,
+                    description: quizData.description,
+                    duration_minutes: quizData.duration_minutes,
+                    max_points: quizData.max_points,
+                    max_attempts: data.maxAttempts || quizData.max_attempts || 1,
+                    visibility: simulado?.visibility || QuizVisibility.PUBLIC,
+                    subject: simulado?.subject || { id: subjectId },
+                    questions: quizData.questions || []
+                };
+                
+                setSimulado(simuladoCompleto);
+                
+                // Usar as questões do quiz
+                const questoesParaEmbaralhar = quizData.questions || [];
+                
+                // Embaralhar questões e suas alternativas
+                const questoesEmbaralhadas = shuffleQuestionsAndAlternatives(questoesParaEmbaralhar);
+                
+                setQuestoes(questoesEmbaralhadas);
+                
+            } else {
+                // Para novo attempt, usar os dados que vêm da resposta
+                const simuladoCompleto = {
+                    id: data.id || parseInt(params.id),
+                    title: data.title,
+                    description: data.description,
+                    duration_minutes: data.duration_minutes,
+                    max_points: data.max_points,
+                    max_attempts: data.max_attempt || simulado?.max_attempts || 1,
+                    visibility: simulado?.visibility || QuizVisibility.PUBLIC,
+                    subject: simulado?.subject || { id: subjectId },
+                    questions: data.questions || []
+                };
+                
+                setSimulado(simuladoCompleto);
+                
+                // Usar as questões que vêm da resposta da API
+                const questoesParaEmbaralhar = data.questions || [];
+                
+                // Embaralhar questões e suas alternativas
+                const questoesEmbaralhadas = shuffleQuestionsAndAlternatives(questoesParaEmbaralhar);
+                
+                setQuestoes(questoesEmbaralhadas);
             }
-
-            // Iniciar attempt
-            const response = await fetch(`http://localhost:3000/student/subjects/${subjectId}/quizzes/${params.id}/start`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            await handleApiError(response, 'iniciar simulado');
-            const data = await response.json();
-            
-            // Atualizar dados do simulado com as informações completas da API
-            const simuladoCompleto = {
-                id: data.id,
-                title: data.title,
-                description: data.description,
-                duration_minutes: data.duration_minutes,
-                max_points: data.max_points,
-                max_attempts: data.max_attempt || simulado?.max_attempts || 1,
-                visibility: simulado?.visibility || QuizVisibility.PUBLIC,
-                subject: simulado?.subject || { id: subjectId },
-                questions: data.questions || []
-            };
-            
-            setSimulado(simuladoCompleto);
             
             // Salvar dados do attempt - o attempt_id vem diretamente na resposta
             setAttempt({ id: data.attempt_id });
             setHasAttemptId(true);
-            
-            // Usar as questões que vêm da resposta da API
-            const questoesParaEmbaralhar = data.questions || [];
-            
-            // Embaralhar questões e suas alternativas
-            const questoesEmbaralhadas = shuffleQuestionsAndAlternatives(questoesParaEmbaralhar);
-            
-            setQuestoes(questoesEmbaralhadas);
             toast.success('Simulado iniciado com sucesso!');
             
         } catch (error) {
@@ -170,42 +314,12 @@ export default function SimuladoQuestoesPage() {
         }
     };
 
+    // Effect para inicializar o estado da página
     useEffect(() => {
-        // Inicializar estado básico - os dados completos vêm do endpoint /start
         setIsLoading(false);
-        setHasAttemptId(false);
-        setConcluido(false);
     }, [params.id]);
+    
 
-    // Effect para detectar fechamento da aba e enviar status de abandono
-    useEffect(() => {
-        const handleBeforeUnload = async () => {
-            // Só envia se o simulado não foi concluído, existe um attempt e tem attemptId
-            if (!concluido && hasAttemptId && attempt?.id) {
-                try {
-                    const token = Cookies.get('token');
-                    await fetch(`http://localhost:3000/student/attempt/${attempt.id}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({
-                            status: 'abandoned'
-                        })
-                    });
-                } catch (error) {
-                    console.error('Erro ao enviar status de abandono:', error);
-                }
-            }
-        };
-
-        window.addEventListener('beforeunload', handleBeforeUnload);
-
-        return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-        };
-    }, [concluido, hasAttemptId, attempt?.id]);
 
     const handleRespostaChange = (questaoId, alternativa) => {
         if (viewMode !== 'answer' || concluido) return; // Só permite alteração no modo resposta e não concluído
@@ -214,6 +328,8 @@ export default function SimuladoQuestoesPage() {
             [questaoId]: alternativa
         }));
     };
+
+
 
     if (isLoading) {
         return (
@@ -304,10 +420,23 @@ export default function SimuladoQuestoesPage() {
             const submitData = await submitResponse.json();
             console.log('Resposta da tentativa:', submitData);
 
+            // Marcar o attempt como completed
+            await fetch(`http://localhost:3000/student/attempt/${attempt.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: 'completed'
+                }),
+            });
+
             setResultado(submitData);
             setMostrarResultado(true);
             setConcluido(true); // Marcar como concluído
             toast.success('Simulado respondido com sucesso!');
+            console.log('Attempt marcado como completed');
         } catch (error) {
             handleFetchError(error, 'responder simulado');
             setError('Erro ao responder simulado. Tente novamente.');
@@ -356,6 +485,8 @@ export default function SimuladoQuestoesPage() {
                     )}
                 </CardHeader>
             </Card>
+
+
 
             {/* Botão para iniciar simulado quando não há dados carregados */}
             {(viewMode === 'start' || (!hasAttemptId && !isTeacher && viewMode === 'answer')) && (
@@ -544,10 +675,10 @@ export default function SimuladoQuestoesPage() {
                         </div>
 
                         <div className="space-y-4">
-                            {resultado.details.map((detail) => (
+                            {resultado.details.map((detail, index) => (
                                 <div key={detail.questionId} className={`p-4 rounded-lg border ${detail.isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
                                     <div className="flex items-center justify-between mb-2">
-                                        <h3 className="font-semibold">Questão {detail.questionId}</h3>
+                                        <h3 className="font-semibold">Questão {index + 1}</h3>
                                         <span className={`px-2 py-1 rounded text-sm ${detail.isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                             {detail.isCorrect ? 'Correta' : 'Incorreta'}
                                         </span>
@@ -588,4 +719,4 @@ export default function SimuladoQuestoesPage() {
             )}
         </div>
     );
-    }
+}

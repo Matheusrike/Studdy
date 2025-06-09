@@ -23,7 +23,8 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { Search, Info, Plus } from 'lucide-react';
+import { Search, Info, Plus, GraduationCap, Users } from 'lucide-react';
+import Logo from '@/components/ui/logo';
 import {
 	Dialog,
 	DialogContent,
@@ -333,16 +334,38 @@ export default function TurmasPage() {
 
 	if (isLoading) {
 		return (
-			<div className="container mx-auto py-6">
-				<div className="text-center">Carregando...</div>
+			<div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+				<div className="container mx-auto p-4 md:p-6">
+					<div className="animate-pulse space-y-4">
+						<div className="h-8 bg-gray-200 rounded w-1/4"></div>
+						<div className="h-32 bg-gray-200 rounded"></div>
+						<div className="h-32 bg-gray-200 rounded"></div>
+					</div>
+				</div>
 			</div>
 		);
 	}
 
 	if (error) {
 		return (
-			<div className="container mx-auto py-6">
-				<div className="text-center text-red-500">{error}</div>
+			<div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+				<div className="container mx-auto p-4 md:p-6">
+					<div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+						<p>Erro ao carregar dados da turma: {error}</p>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	if (!turmas || turmas.length === 0) {
+		return (
+			<div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+				<div className="container mx-auto p-4 md:p-6">
+					<div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
+						<p>Nenhuma turma encontrada.</p>
+					</div>
+				</div>
 			</div>
 		);
 	}
@@ -542,56 +565,95 @@ export default function TurmasPage() {
 	};
 
 	return (
-		<div className="container py-6 mx-auto">
-			<Card>
-				<CardHeader>
-					<div className="flex items-center justify-between">
-						<CardTitle className="text-2xl">Turmas</CardTitle>
-						<Button onClick={() => setIsCreateModalOpen(true)}>
+		<div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+			<div className="container mx-auto p-4 md:p-6">
+				<div className="mx-auto">
+					<div className="flex flex-col items-center mb-8 bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+						<Logo className="h-12 w-12" variant="icon" />
+						<h1 className="mt-4 text-3xl font-bold tracking-tight text-[#133D86]">Gerenciar Turmas</h1>
+						<p className="mt-2 text-center text-gray-600">Visualize e gerencie todas as turmas do sistema</p>
+						<Button onClick={() => setIsCreateModalOpen(true)} className="mt-4">
 							<Plus className="h-4 w-4 mr-2" />
 							Nova Turma
 						</Button>
 					</div>
-					<div className="relative w-64 mt-4">
-						<Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-						<Input
-							placeholder="Buscar turma..."
-							value={searchTerm}
-							onChange={(e) => setSearchTerm(e.target.value)}
-							className="pl-8"
-						/>
-					</div>
-				</CardHeader>
-				<CardContent>
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Nome</TableHead>
-								<TableHead>Curso</TableHead>
-								<TableHead>Turno</TableHead>
-								<TableHead>Data de Criação</TableHead>
-								<TableHead className="text-right">Ações</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{filteredTurmas.map((turma) => (
-								<TableRow key={turma.id}>
-									<TableCell>{turma.name}</TableCell>
-									<TableCell>{turma.course}</TableCell>
-									<TableCell>{turma.shift === 'Afternoon' ? 'Tarde' : 'Manhã'}</TableCell>
-									<TableCell>{turma.created_at}</TableCell>
 
-									<TableCell className="text-right">
-										<Button variant="ghost" size="sm" onClick={() => handleDetails(turma.id)}>
-											Ver Turma
-										</Button>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</CardContent>
-			</Card>
+					{/* Barra de Pesquisa */}
+					<div className="mb-6">
+						<div className="relative">
+							<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+							<Input
+								type="text"
+								placeholder="Pesquisar por nome ou curso..."
+								className="pl-10 py-6 text-lg border-2 border-gray-200 focus:border-[#133D86] focus:ring-[#133D86] rounded-xl shadow-sm"
+								value={searchTerm}
+								onChange={(e) => setSearchTerm(e.target.value)}
+							/>
+						</div>
+					</div>
+
+					{/* Lista de Turmas */}
+					<Card className="border-2 border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300 pt-0">
+						<CardHeader className="bg-gradient-to-r pt-1 from-[#133D86] to-[#1e56b3] text-white rounded-t-xl">
+							<div className="flex items-center justify-between">
+								<div className="flex items-center gap-2">
+									<GraduationCap className="h-6 w-6" />
+									<CardTitle>Turmas Cadastradas</CardTitle>
+								</div>
+								<span className="bg-white/20 px-3 py-1 rounded-full text-sm">
+									{filteredTurmas.length} {filteredTurmas.length === 1 ? 'turma' : 'turmas'}
+								</span>
+							</div>
+						</CardHeader>
+						<CardContent className="p-0">
+							<div className="overflow-x-auto">
+								<table className="w-full">
+									<thead>
+										<tr className="bg-gray-50">
+											<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+											<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Curso</th>
+											<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Turno</th>
+											<th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data de Criação</th>
+											<th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+										</tr>
+									</thead>
+									<tbody className="bg-white divide-y divide-gray-200">
+										{filteredTurmas.map((turma) => (
+											<tr key={turma.id} className="hover:bg-gray-50 transition-colors duration-200">
+												<td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{turma.name}</td>
+												<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{turma.course}</td>
+												<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+													<span className={`px-2 py-1 rounded-full text-sm ${
+														turma.shift === 'Morning' ? 'bg-yellow-100 text-yellow-700' :
+														turma.shift === 'Afternoon' ? 'bg-orange-100 text-orange-700' :
+														'bg-blue-100 text-blue-700'
+													}`}>
+														{turma.shift === 'Morning' ? 'Manhã' : turma.shift === 'Afternoon' ? 'Tarde' : 'Noite'}
+													</span>
+												</td>
+												<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+													{new Date(turma.created_at).toLocaleDateString('pt-BR')}
+												</td>
+												<td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+													<Button 
+														variant="ghost" 
+														size="sm" 
+														onClick={() => handleDetails(turma.id)}
+														className="text-[#133D86] hover:text-[#1e56b3] hover:bg-blue-50"
+													>
+														<Users className="h-4 w-4 mr-1" />
+														Ver Turma
+													</Button>
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						</CardContent>
+					</Card>
+				</div>
+			</div>
 
 			{/* Modal de Edição */}
 			<Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>

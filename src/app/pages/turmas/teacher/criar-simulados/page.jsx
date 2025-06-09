@@ -227,7 +227,7 @@ export default function CriarSimuladosPage() {
 					setTitulo(simulado.title || '');
 					setdescricao(simulado.description || '');
 					setIcone(simulado.icon || 'Calculator');
-					setTentativasMaximas(simulado.max_attempts || 3);
+					setTentativasMaximas(simulado.max_attempts || 1);
 					setDuracaoMinutos(simulado.duration_minutes || 60);
 					setVisibilidade(simulado.visibility || QuizVisibility.DRAFT);
 					setSelectedClass(simulado.class_id || '');
@@ -242,7 +242,7 @@ export default function CriarSimuladosPage() {
 				} catch (error) {
 					console.error('Erro ao carregar simulado:', error);
 					toast.error('Erro ao carregar dados do simulado');
-					router.push('/pages/simulados/teacher');
+					router.push('/pages/turmas/teacher');
 				} finally {
 					setLoadingSimulado(false);
 				}
@@ -326,7 +326,7 @@ export default function CriarSimuladosPage() {
 				: (visibility === QuizVisibility.DRAFT ? 'Rascunho salvo com sucesso!' : 'Simulado publicado com sucesso!');
 			
 			toast.success(successMessage);
-			router.push('/pages/simulados/teacher');
+			router.push('/pages/turmas/teacher');
 		} catch (error) {
 			const action = isEditMode ? 'atualizar' : (visibility === QuizVisibility.DRAFT ? 'salvar rascunho' : 'publicar simulado');
 			const errorMessage = `Erro ao ${action}`;

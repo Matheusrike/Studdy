@@ -178,7 +178,7 @@ export default function EditarSimuladoPage() {
             } catch (error) {
                 console.error('Erro ao carregar simulado:', error);
                 toast.error(error.message || 'Erro ao carregar dados do simulado');
-                router.push('/pages/simulados');
+                router.push('/pages/turmas/teacher');
             } finally {
                 setLoadingSimulado(false);
             }
@@ -257,23 +257,20 @@ export default function EditarSimuladoPage() {
                 icon: icone,
                 duration_minutes: duracao_minutos,
                 visibility: visibility,
-                max_attempts: 1,
+                max_attempt: 1,
                 questions: questions.map((question) => ({
-                    id: question.id,
                     statement: question.statement,
                     points: parseInt(question.points),
                     alternatives: question.alternatives.map((alternative) => ({
-                        id: alternative.id,
-                        response: alternative.text,
-                        correct_alternative: alternative.isCorrect
+                        response: alternative.text || alternative.response,
+                        correct_alternative: Boolean(alternative.isCorrect || alternative.correct_alternative)
                     }))
                 }))
             };
-
             console.log('Dados a serem enviados:', payload);
-            console.log('URL da requisição:', `http://localhost:3000/teacher/classes/${simulado.class.id}/subjects/${simulado.subject.id}/quiz/${quizId}`);
+            console.log('URL da requisição:', `http://localhost:3000/teacher/quiz/${quizId}`);
 
-            const response = await fetch(`http://localhost:3000/teacher/classes/${simulado.class.id}/subjects/${simulado.subject.id}/quiz/${quizId}`, {
+            const response = await fetch(`http://localhost:3000/teacher/quiz/${quizId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -281,15 +278,22 @@ export default function EditarSimuladoPage() {
                 },
                 body: JSON.stringify(payload)
             });
-
-            if (!response.ok) {
-                const errorData = await response.json();
+           if (!response.ok) {
+                let errorData;
+                try {
+                    const responseText = await response.text();
+                    console.log('Resposta do servidor:', responseText);
+                    errorData = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('Erro ao fazer parse da resposta:', parseError);
+                    errorData = { message: 'Erro desconhecido do servidor' };
+                }
                 console.error('Erro na resposta:', errorData);
                 throw new Error('Erro ao atualizar simulado');
             }
 
             toast.success('Simulado atualizado com sucesso!');
-            router.push(`/pages/simulados/teacher/classes/${simulado.class.id}`);
+            router.push(`/pages/turmas/teacher/classes/${simulado.class.id}`);
         } catch (error) {
             console.error('Erro ao atualizar simulado:', error);
             toast.error('Erro ao atualizar simulado');
@@ -432,4 +436,4 @@ export default function EditarSimuladoPage() {
             </div>
         </div>
     );
-} 
+}
