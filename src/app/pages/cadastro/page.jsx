@@ -330,25 +330,32 @@ function CadastroForm() {
         const payloads = {
             subjects: { name: data.name.trim() },
             teacher: {
-                name: data.name,
-                email: data.email,
-                password: data.password,
-                birth_date: data.birth_date,
-                cpf: data.cpf,
-                role: "teacher",
+                user: {
+                    name: data.name,
+                    email: data.email,
+                    password: data.password,
+                    birth_date: data.birth_date.split('-').reverse().join('/'),
+                    cpf: data.cpf,
+                    role: "Teacher"
+                },
                 teacher: {
-                    subject_id: parseInt(data.subject_id)
+                    subjects: [
+                        { id: parseInt(data.subject) },
+                        ...(data.subject2 ? [{ id: parseInt(data.subject2) }] : [])
+                    ]
                 }
             },
             student: {
-                name: data.name,
-                email: data.email,
-                password: data.password,
-                birth_date: data.birth_date,
-                cpf: data.cpf,
-                role: "student",
+                user: {
+                    name: data.name,
+                    email: data.email,
+                    password: data.password,
+                    birth_date: data.birth_date.split('-').reverse().join('/'),
+                    cpf: data.cpf,
+                    role: "Student"
+                },
                 student: {
-                    class_id: parseInt(data.class_id)
+                    class_id: parseInt(data.class)
                 }
             }
         };

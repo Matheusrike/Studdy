@@ -197,7 +197,7 @@ export default function CriarResumosPage() {
             }
 
             const payload = {
-                teacher_id: 1, // TODO: Pegar o ID do professor logado
+               
                 subject_id: selectedSubject,
                 class_id: selectedClass,
                 title: titulo,
