@@ -396,17 +396,7 @@ export default function TurmasPage() {
 		);
 	}
 
-	if (!turmas || turmas.length === 0) {
-		return (
-			<div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-				<div className="container mx-auto p-4 md:p-6">
-					<div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
-						<p>Nenhuma turma encontrada.</p>
-					</div>
-				</div>
-			</div>
-		);
-	}
+
 
 	const onSubmit = async (formData) => {
 		setIsLoading(true);
@@ -441,6 +431,7 @@ export default function TurmasPage() {
 			setIsAtributeTeacherClassOpen(false);
 			setAssignments([]);
 			toast.success('Turma criada com sucesso!');
+			window.location.reload();
 			form.reset();
 		} catch (error) {
 			handleFetchError(error, 'criar turma');

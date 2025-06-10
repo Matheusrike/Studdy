@@ -100,17 +100,7 @@ const dataAdmin = {
     { title: "Administração", url: "/pages/administracao", icon: BookOpen },
     { title: "Cadastro", url: "/pages/cadastro", icon: Bot },
   ],
-  navMainDropdown: [
-    {
-      title: "Biblioteca",
-      url: "/pages/material",
-      icon: BookOpen,
-      itemsDropdown: [
-        { title: "Videoaulas", url: "/pages/material/videoaulas" },
-        { title: "Resumos", url: "/pages/material/resumos" },
-      ],
-    },
-  ],
+
   projects: [
     { name: "Concursos", url: "/pages/concursos", icon: PieChart },
     { name: "Vestibulares", url: "/pages/vestibulares", icon: Map },
@@ -143,7 +133,6 @@ function AdminNav() {
   return (
     <>
       <NavMain items={dataAdmin.navMain} role="admin" />
-      <NavMainDropdown itemsDropdown={dataAdmin.navMainDropdown} role="admin" />
       <NavProjects projects={dataAdmin.projects} role="admin" />
     </>
   )
