@@ -254,13 +254,20 @@ export default function ClassDetailsClient({ classId }) {
                                     </div>
                                 </div>
 
-                                <div className="mb-6">
+                                <div className="mb-6 flex gap-4">
                                     <Button
                                         className="bg-[#133D86] hover:bg-[#0e2a5c] text-white transition-all duration-300 shadow-md hover:shadow-lg rounded-lg font-medium flex items-center gap-2"
                                         onClick={() => router.push(`/pages/turmas/teacher/criar-simulados?classId=${classId}`)}
                                     >
                                         <Plus className="h-5 w-5" />
                                         Criar Novo Simulado
+                                    </Button>
+                                    <Button
+                                        className="bg-[#133D86] hover:bg-[#0e2a5c] text-white transition-all duration-300 shadow-md hover:shadow-lg rounded-lg font-medium flex items-center gap-2"
+                                        onClick={() => router.push(`/pages/turmas/teacher/criar-resumos?classId=${classId}`)}
+                                    >
+                                        <Plus className="h-5 w-5" />
+                                        Criar Novo Resumo
                                     </Button>
                                 </div>
 

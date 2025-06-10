@@ -59,9 +59,9 @@ export default function Profile() {
 				const userData = await response.json();
 				
 				// Formata as datas para o formato brasileiro
-				const birthDate = userData.birth_date ? new Date(userData.birth_date).toLocaleDateString('pt-BR') : '';
-				const createdAt = userData.created_at ? new Date(userData.created_at).toLocaleString('pt-BR') : '';
-				const modifiedAt = userData.modified_at ? new Date(userData.modified_at).toLocaleString('pt-BR') : '';
+				const birthDate = userData.birth_date || '';
+				const createdAt = userData.created_at ? new Date(userData.created_at).toLocaleDateString('pt-BR') : '';
+				const modifiedAt = userData.modified_at ? new Date(userData.modified_at).toLocaleDateString('pt-BR') : '';
 				
 				setProfile({
 					name: userData.name || '',
@@ -216,10 +216,11 @@ export default function Profile() {
 									<Label className="min-w-[120px] font-medium">Data de Nascimento:</Label>
 									{isEditing ? (
 										<Input
-											type="date"
+											type="text"
 											value={profile.birthDate}
 											onChange={(e) => setProfile({ ...profile, birthDate: e.target.value })}
 											className="flex-1"
+											placeholder="DD/MM/AAAA"
 										/>
 									) : (
 										<span className="text-muted-foreground">{profile.birthDate || 'Não informado'}</span>
@@ -271,11 +272,7 @@ export default function Profile() {
 									<Label className="min-w-[120px] font-medium">Conta Criada:</Label>
 									<span className="text-muted-foreground">{profile.createdAt}</span>
 								</div>
-								<div className="flex items-center gap-3">
-									<Clock className="h-5 w-5 text-primary" />
-									<Label className="min-w-[120px] font-medium">Última Atualização:</Label>
-									<span className="text-muted-foreground">{profile.modifiedAt}</span>
-								</div>
+								
 							</div>
 						</CardContent>
 					</Card>

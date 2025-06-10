@@ -41,24 +41,47 @@ export function NavUser() {
   const router = useRouter()
   const [userName, setUserName] = useState('')
   const [userEmail, setUserEmail] = useState('')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const storedRole = Cookies.get('userRole')
-    const storedName = Cookies.get('userName')
-    const storedEmail = Cookies.get('userEmail')
+    const fetchUserData = async () => {
+      try {
+        const token = Cookies.get('token')
+        const userId = Cookies.get('userId')
+        
+        if (!token || !userId) {
+          console.error('Token ou ID do usuário não encontrado')
+          return
+        }
 
-    if (storedRole) {
-      setUserRole(storedRole)
+        const response = await fetch(`http://localhost:3000/user/${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+
+        if (!response.ok) {
+          throw new Error('Falha ao buscar dados do usuário')
+        }
+
+        const data = await response.json()
+        setUserName(data.name)
+        setUserEmail(data.email)
+        setUserRole(data.role.toLowerCase())
+      } catch (error) {
+        console.error('Erro ao buscar dados do usuário:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-    if (storedName) {
-      setUserName(storedName)
-    }
-    if (storedEmail) {
-      setUserEmail(storedEmail)
-    }
+
+    fetchUserData()
   }, [setUserRole])
 
   const handleLogout = () => {
+    Cookies.remove('token')
+    Cookies.remove('userId')
     Cookies.remove('userRole')
     Cookies.remove('userName')
     Cookies.remove('userEmail')
@@ -83,6 +106,24 @@ export function NavUser() {
       default:
         return 'Usuário'
     }
+  }
+
+  if (loading) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton size="lg">
+            <div className="animate-pulse flex items-center gap-4">
+              <div className="h-8 w-8 rounded-lg bg-gray-200" />
+              <div className="flex-1">
+                <div className="h-4 w-24 bg-gray-200 rounded" />
+                <div className="h-3 w-16 bg-gray-200 rounded mt-1" />
+              </div>
+            </div>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    )
   }
 
   return (
