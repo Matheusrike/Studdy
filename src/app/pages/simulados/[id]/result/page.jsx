@@ -61,7 +61,7 @@ export default function SimuladoResultadoPage() {
 
     const correctAnswers = resultado.responses.filter(r => r.is_correct).length;
     const totalQuestions = resultado.responses.length;
-    const scorePercentage = Math.round((resultado.total_score / totalQuestions) * 100);
+    const scorePercentage = resultado.total_score / totalQuestions ;
     const correctPercentage = Math.round((correctAnswers / totalQuestions) * 100);
     const timeInMinutes = Math.round((new Date(resultado.finished_at) - new Date(resultado.started_at)) / 1000 / 60);
 
