@@ -23,7 +23,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { Search, Info, Plus, GraduationCap, Users } from 'lucide-react';
+import { Search, Info, Plus, GraduationCap, Users, Trash2 } from 'lucide-react';
 import Logo from '@/components/ui/logo';
 import {
 	Dialog,
@@ -153,6 +153,8 @@ export default function TurmasPage() {
 			observacoes: 'Excelente desempenho em todas as disciplinas.',
 		},
 	]);
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [turmaToDelete, setTurmaToDelete] = useState(null);
 
 	const router = useRouter();
 
@@ -332,6 +334,42 @@ export default function TurmasPage() {
 		}
 	};
 
+	const resetCreateClassFlow = () => {
+		setIsCreateModalOpen(false);
+		setIsAtributeTeacherClassOpen(false);
+		setAssignments([]);
+		form.reset();
+	};
+
+	const handleDeleteTurma = (turma) => {
+		setTurmaToDelete(turma);
+		setDeleteDialogOpen(true);
+	};
+
+	const confirmDeleteTurma = async () => {
+		if (!turmaToDelete) return;
+		try {
+			setIsLoading(true);
+			const token = Cookies.get('token');
+			const response = await fetch(`http://localhost:3000/admin/classes/${turmaToDelete.id}`, {
+				method: 'DELETE',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
+				},
+			});
+			if (!response.ok) throw new Error('Erro ao deletar turma');
+			setTurmas(prev => prev.filter(t => t.id !== turmaToDelete.id));
+			toast.success('Turma deletada com sucesso!');
+		} catch (error) {
+			toast.error('Erro ao deletar turma. Tente novamente.');
+		} finally {
+			setDeleteDialogOpen(false);
+			setTurmaToDelete(null);
+			setIsLoading(false);
+		}
+	};
+
 	if (isLoading) {
 		return (
 			<div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
@@ -415,7 +453,7 @@ export default function TurmasPage() {
 	const CreateClassModal = () => {
 		return (
 			<>
-				<Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+				<Dialog open={isCreateModalOpen} onOpenChange={(open) => { if (!open) resetCreateClassFlow(); else setIsCreateModalOpen(true); }}>
 					<DialogContent className="sm:max-w-[425px]">
 						<DialogHeader>
 							<DialogTitle>Nova Turma</DialogTitle>
@@ -448,19 +486,17 @@ export default function TurmasPage() {
 									<Button
 										type="button"
 										variant="outline"
-										onClick={() => setIsCreateModalOpen(false)}
+										onClick={resetCreateClassFlow}
 									>
 										Cancelar
 									</Button>
 									<Button
 										type="button"
-										onClick={() => {
-											const formData = form.getValues();
-											if (form.formState.isValid) {
-												setIsCreateModalOpen(false); // Fecha o modal de criação
-												setTimeout(() => setIsAtributeTeacherClassOpen(true), 300); // Abre o próximo modal após animação
-											} else {
-												form.trigger(); // Dispara validação
+										onClick={async () => {
+											const valid = await form.trigger();
+											if (valid) {
+												setIsCreateModalOpen(false);
+												setTimeout(() => setIsAtributeTeacherClassOpen(true), 300);
 											}
 										}}
 									>
@@ -472,7 +508,7 @@ export default function TurmasPage() {
 					</DialogContent>
 				</Dialog>
 
-				<Dialog open={isAtributeTeacherClassOpen} onOpenChange={setIsAtributeTeacherClassOpen}>
+				<Dialog open={isAtributeTeacherClassOpen} onOpenChange={(open) => { if (!open) resetCreateClassFlow(); else setIsAtributeTeacherClassOpen(true); }}>
 					<DialogContent>
 						<DialogHeader>
 							<DialogTitle>Atribuir Professor à Turma</DialogTitle>
@@ -544,7 +580,7 @@ export default function TurmasPage() {
 							<Button
 								type="button"
 								variant="outline"
-								onClick={() => setIsAtributeTeacherClassOpen(false)}
+								onClick={resetCreateClassFlow}
 							>
 								Cancelar
 							</Button>
@@ -632,7 +668,9 @@ export default function TurmasPage() {
 													</span>
 												</td>
 												<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-													{new Date(turma.created_at).toLocaleDateString('pt-BR')}
+													{turma.created_at && !isNaN(new Date(turma.created_at))
+														? new Date(turma.created_at).toLocaleDateString('pt-BR')
+														: '-'}
 												</td>
 												<td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
 													<Button 
@@ -643,6 +681,14 @@ export default function TurmasPage() {
 													>
 														<Users className="h-4 w-4 mr-1" />
 														Ver Turma
+													</Button>
+													<Button
+														variant="ghost"
+														size="sm"
+														onClick={() => handleDeleteTurma(turma)}
+														className="text-red-500 hover:bg2-red-700 ml-2"
+													>
+														<Trash2 className="h-4 w-4" />
 													</Button>
 												</td>
 											</tr>
@@ -764,6 +810,26 @@ export default function TurmasPage() {
 
 			{/* Modal de Criar Turma */}
 			<CreateClassModal />
+
+			{/* Modal de Deletar Turma */}
+			<Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Deletar Turma</DialogTitle>
+					</DialogHeader>
+					<DialogDescription>
+						Tem certeza que deseja deletar a turma "{turmaToDelete?.name}"? Esta ação não pode ser desfeita.
+					</DialogDescription>
+					<DialogFooter>
+						<Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+							Cancelar
+						</Button>
+						<Button className="bg-red-500 hover:bg-red-600" onClick={confirmDeleteTurma}>
+							Deletar
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

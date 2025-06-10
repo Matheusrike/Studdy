@@ -420,47 +420,50 @@ function CadastroForm() {
     };
 
     return (
-        <div className="bg-slate-100 min-h-screen flex items-center justify-center p-4">
-            <div className="w-full max-w-2xl bg-white rounded-lg shadow-lg p-6">
-                <div className="flex flex-col items-center mb-6">
-                    <Logo className="h-9 w-9" variant="icon" />
-                    <h1 className="mt-4 text-2xl font-bold tracking-tight">Cadastro</h1>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#e6eefc] via-[#f8fafc] to-[#c3dafe] p-4 animate-fade-in">
+            <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-8 border border-blue-100">
+                <div className="flex flex-col items-center mb-8">
+                    <Logo className="h-12 w-12" variant="icon" />
+                    <h1 className="mt-4 text-3xl font-bold tracking-tight text-[#133D86]">Cadastro</h1>
                 </div>
 
                 {state.submitSuccess && (
-                    <div className="mb-4 p-4 bg-green-100 text-green-700 rounded-md justify-center flex flex-row gap-3">
-                        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAACXBIWXMAAAsTAAALEwEAmpwYAAACD0lEQVR4nM1WP2sUURBfxUYtlLuZ29MIGtCIqI2iXpKZXVDyCQRLK0kl2CiWv9m9CKLoJzBWBr9AJCkULGy0sPZPpxwm2PgRZDZncuutm93jOBxYHvvezO838968mRcE/4sQZJGgzznR603MHfWRIc8IemssBAw1hn4ii+4QZJ0hv3z0fzb9zKbJqMB32eQNmfxgk/ftB8JFej7v665H0NduV5EgPkmQjVYSLTSWOlNVbBpLnSnXdztKo1O7GhDkkX+VPKpti3gfQ1IPPezqdDCChF2dzrYYkjrekAJDVtnkFSNu1wJO588y9PYOTtzewpHVIpIvBJmp5TqCvQR95yk+ON1M50575hWRfGgm0aU6HORpDH0bBMGewfkwkSuedTnl8PHCQTbtNdLoTFWCEPEJMvlZFL3jON4RXDywE4VpwpAXtaKArLPJ/X+ts8mKX+RBkp6H+Leib1+7O3t8CADzNxnysTCDclumvXwkJisF3i4y5Fsrjc5vG2O2lV066IWySLNIBktO2ZkQoht90Kjv0EuCPiwj+HMmjls5u5rQq2S6ydCnnurHnnT2l5JALzve0AKZfC2rOyHic2zyvZXItTKCDAsy486MdOMPIT68G0HpjZ9I7ZpMFZ5kP8l1RshGtc6om67PpveCUWSr5PR7vOla1uNN17Z7vO//OMRfJWy6nHutmC6P7bUyDvkNKEfqWvhHuk8AAAAASUVORK5CYII=" alt="approval--v1" />
+                    <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-lg flex flex-row gap-3 items-center border border-green-200 animate-fade-in">
+                        <svg className="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                         Cadastro realizado com sucesso!
                     </div>
                 )}
 
                 {state.submitError && (
-                    <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md justify-center flex flex-row gap-3 items-center">
-                        <img src="/assets/alert_error_icon.png" alt="error--v1" />
+                    <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg flex flex-row gap-3 items-center border border-red-200 animate-fade-in">
+                        <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                         {state.submitError}
                     </div>
                 )}
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         <SelectFormField
                             control={form.control}
                             name="tipo"
-                         
                             options={[
                                 { value: "student", label: "Alunos" },
                                 { value: "teacher", label: "Professores" },
                                 { value: "subjects", label: "Disciplinas" }
                             ]}
-                            placeholder="Selecione"
+                            placeholder="Selecione o tipo de cadastro"
                             disabled={state.isSubmitting}
                         />
 
-                        {tipo && renderFormByType()}
+                        {tipo && (
+                            <div className="space-y-6">
+                                {renderFormByType()}
+                            </div>
+                        )}
 
                         <Button
                             type="submit"
-                            className="w-full mt-6"
+                            className="w-full mt-8 h-12 text-lg bg-[#133D86] hover:bg-[#0e2a5c] transition-all duration-300 rounded-xl shadow-md font-semibold"
                             disabled={state.isSubmitting || !tipo}
                         >
                             {state.isSubmitting ? 'Cadastrando...' : 'Cadastrar'}

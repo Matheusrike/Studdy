@@ -108,8 +108,6 @@ export default function Profile() {
 		}
 	};
 
-
-
 	if (isLoading) {
 		return (
 			<div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
@@ -129,23 +127,6 @@ export default function Profile() {
 					<h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
 						Perfil do Usuário
 					</h1>
-					<Button
-						variant={isEditing ? "outline" : "default"}
-						onClick={() => setIsEditing(!isEditing)}
-						className="gap-2"
-					>
-						{isEditing ? (
-							<>
-								<X className="h-4 w-4" />
-								Cancelar
-							</>
-						) : (
-							<>
-								<Edit2 className="h-4 w-4" />
-								Editar Perfil
-							</>
-						)}
-					</Button>
 				</div>
 
 				{/* Profile Content */}
@@ -163,15 +144,6 @@ export default function Profile() {
 										 profile.role}
 									</p>
 								</div>
-								{isEditing && (
-									<Button
-										onClick={handleSave}
-										className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-									>
-										<Save className="h-4 w-4" />
-										Salvar Alterações
-									</Button>
-								)}
 							</div>
 						</CardContent>
 					</Card>
@@ -184,68 +156,26 @@ export default function Profile() {
 								<div className="flex items-center gap-3">
 									<User className="h-5 w-5 text-primary" />
 									<Label className="min-w-[120px] font-medium">Nome Completo:</Label>
-									{isEditing ? (
-										<Input
-											type="text"
-											value={profile.name}
-											onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-											className="flex-1"
-											placeholder="Digite seu nome completo"
-										/>
-									) : (
-										<span className="text-muted-foreground">{profile.name}</span>
-									)}
+									<span className="text-muted-foreground">{profile.name}</span>
 								</div>
 								<div className="flex items-center gap-3">
 									<Mail className="h-5 w-5 text-primary" />
 									<Label className="min-w-[120px] font-medium">E-mail:</Label>
-									{isEditing ? (
-										<Input
-											type="email"
-											value={profile.email}
-											onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-											className="flex-1"
-											placeholder="Digite seu e-mail"
-										/>
-									) : (
-										<span className="text-muted-foreground">{profile.email}</span>
-									)}
+									<span className="text-muted-foreground">{profile.email}</span>
 								</div>
 								<div className="flex items-center gap-3">
 									<Calendar className="h-5 w-5 text-primary" />
 									<Label className="min-w-[120px] font-medium">Data de Nascimento:</Label>
-									{isEditing ? (
-										<Input
-											type="text"
-											value={profile.birthDate}
-											onChange={(e) => setProfile({ ...profile, birthDate: e.target.value })}
-											className="flex-1"
-											placeholder="DD/MM/AAAA"
-										/>
-									) : (
-										<span className="text-muted-foreground">{profile.birthDate || 'Não informado'}</span>
-									)}
+									<span className="text-muted-foreground">{profile.birthDate || 'Não informado'}</span>
 								</div>
 								<div className="flex items-center gap-3">
 									<IdCard className="h-5 w-5 text-primary" />
 									<Label className="min-w-[120px] font-medium">CPF:</Label>
-									{isEditing ? (
-										<Input
-											type="text"
-											value={profile.cpf}
-											onChange={(e) => setProfile({ ...profile, cpf: e.target.value })}
-											className="flex-1"
-											placeholder="Digite seu CPF"
-										/>
-									) : (
-										<span className="text-muted-foreground font-mono">{profile.cpf || 'Não informado'}</span>
-									)}
+									<span className="text-muted-foreground">{profile.cpf || 'Não informado'}</span>
 								</div>
 							</div>
 						</CardContent>
 					</Card>
-
-
 
 					{/* Account Information */}
 					<Card>
@@ -253,12 +183,7 @@ export default function Profile() {
 							<h3 className="text-xl font-semibold mb-4">Informações da Conta</h3>
 							<div className="grid gap-4">
 								<div className="flex items-center gap-3">
-									<IdCard className="h-5 w-5 text-primary" />
-									<Label className="min-w-[120px] font-medium">ID do Usuário:</Label>
-									<span className="text-muted-foreground font-mono">{profile.id}</span>
-								</div>
-								<div className="flex items-center gap-3">
-									<Shield className="h-5 w-5 text-primary" />
+									<UserCheck className="h-5 w-5 text-primary" />
 									<Label className="min-w-[120px] font-medium">Tipo de Conta:</Label>
 									<span className="text-muted-foreground">
 										{profile.role === 'admin' ? 'Administrador' : 
@@ -268,11 +193,15 @@ export default function Profile() {
 									</span>
 								</div>
 								<div className="flex items-center gap-3">
-									<UserCheck className="h-5 w-5 text-primary" />
-									<Label className="min-w-[120px] font-medium">Conta Criada:</Label>
+									<Clock className="h-5 w-5 text-primary" />
+									<Label className="min-w-[120px] font-medium">Membro desde:</Label>
 									<span className="text-muted-foreground">{profile.createdAt}</span>
 								</div>
-								
+								<div className="flex items-center gap-3">
+									<Shield className="h-5 w-5 text-primary" />
+									<Label className="min-w-[120px] font-medium">ID do Usuário:</Label>
+									<span className="text-muted-foreground">{profile.id}</span>
+								</div>
 							</div>
 						</CardContent>
 					</Card>

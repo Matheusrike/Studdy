@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import {
   BookOpen,
   Bot,
-  Frame,
+  Users,
   Map,
   PieChart,
   SquareTerminal,
@@ -43,9 +43,9 @@ const dataAluno = {
       url: "/pages/material",
       icon: BookOpen,
       itemsDropdown: [
-        { title: "Materiais", url: "/pages/material" },
+      
         { title: "Videoaulas", url: "/pages/material/videoaulas" },
-        { title: "Apostilas", url: "/pages/material/apostilas" },
+        
         { title: "Resumos", url: "/pages/material/resumos" },
       ],
     },
@@ -53,7 +53,7 @@ const dataAluno = {
   projects: [
     { name: "Concursos", url: "/pages/concursos", icon: PieChart },
     { name: "Vestibulares", url: "/pages/vestibulares", icon: Map },
-    { name: "Turmas", url: "/pages/turmas", icon: Frame },
+    { name: "Minha Turma", url: "/pages/turmas/student", icon: Users },
   ],
 }
 
@@ -74,9 +74,8 @@ const dataProfessor = {
       url: "/pages/material",
       icon: BookOpen,
       itemsDropdown: [
-        { title: "Materiais", url: "/pages/material" },
         { title: "Criar Videoaulas", url: "/pages/material/videoaulas/criar-videoaulas" },
-        { title: "Criar Apostilas", url: "/pages/material/apostilas/criar-apostilas" },
+  
         { title: "Criar Resumos", url: "/pages/material/resumos/criar-resumos" },
       ],
     },
@@ -84,7 +83,7 @@ const dataProfessor = {
   projects: [
     { name: "Concursos", url: "/pages/concursos", icon: PieChart },
     { name: "Vestibulares", url: "/pages/vestibulares", icon: Map },
-    { name: "Turmas", url: "/pages/turmas/teacher", icon: Frame },
+    { name: "Minhas Turmas", url: "/pages/turmas/teacher", icon: Users },
   ],
 }
 
@@ -106,9 +105,7 @@ const dataAdmin = {
       url: "/pages/material",
       icon: BookOpen,
       itemsDropdown: [
-        { title: "Materiais", url: "/pages/material" },
         { title: "Videoaulas", url: "/pages/material/videoaulas" },
-        { title: "Apostilas", url: "/pages/material/apostilas" },
         { title: "Resumos", url: "/pages/material/resumos" },
       ],
     },
@@ -116,7 +113,7 @@ const dataAdmin = {
   projects: [
     { name: "Concursos", url: "/pages/concursos", icon: PieChart },
     { name: "Vestibulares", url: "/pages/vestibulares", icon: Map },
-    { name: "Turmas", url: "/pages/turmas", icon: Frame },
+    { name: "Minhas Classes", url: "/pages/turmas", icon: Users },
   ],
 }
 

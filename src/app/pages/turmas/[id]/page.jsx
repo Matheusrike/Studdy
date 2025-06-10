@@ -168,7 +168,7 @@ export default function TurmaDetalhesPage() {
           </div>
         </div>
 
-        <Card className="border-2 border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300 mb-6">
+        <Card className="border-2 pt-0 border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300 mb-6">
           <CardHeader className="bg-gradient-to-r from-[#133D86] to-[#1e56b3] text-white rounded-t-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -235,7 +235,7 @@ export default function TurmaDetalhesPage() {
           </div>
         </div>
 
-        <Card className="border-2 border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <Card className="border-2 pt-0 border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
           <CardHeader className="bg-gradient-to-r from-[#133D86] to-[#1e56b3] text-white rounded-t-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

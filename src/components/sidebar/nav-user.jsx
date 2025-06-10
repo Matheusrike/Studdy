@@ -83,11 +83,7 @@ export function NavUser() {
     Cookies.remove('token')
     Cookies.remove('userId')
     Cookies.remove('userRole')
-    Cookies.remove('userName')
-    Cookies.remove('userEmail')
     setUserRole(null)
-    setUserName('')
-    setUserEmail('')
     router.push('/pages/login')
   }
 
@@ -135,8 +131,7 @@ export function NavUser() {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
               <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src="/avatar.png" alt="Avatar" />
-                <AvatarFallback className="rounded-lg">{userName ? userName[0] : 'U'}</AvatarFallback>
+                <AvatarFallback className="rounded-lg bg-[#133D86] text-white">{userName ? userName[0].toUpperCase() : 'U'}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{userName}</span>
@@ -154,8 +149,7 @@ export function NavUser() {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src="/avatar.png" alt="Avatar" />
-                  <AvatarFallback className="rounded-lg">{userName ? userName[0] : 'U'}</AvatarFallback>
+                  <AvatarFallback className="rounded-lg bg-[#133D86] text-white">{userName ? userName[0].toUpperCase() : 'U'}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{userName}</span>

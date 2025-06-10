@@ -16,6 +16,7 @@ import {
 	Star,
 	StarOff,
 	Plus,
+	Trash2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useState, useEffect } from 'react';
@@ -52,6 +53,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { useUser } from '@/contexts/UserContext';
 import { PageLoader } from '@/components/ui/loader';
+import { useRouter } from 'next/navigation';
 
 const CONCURSO_CATEGORIES = [
 	{ value: 'militares', label: 'Militares' },
@@ -73,6 +75,7 @@ const ICON_OPTIONS = {
 
 export default function ConcursosPage() {
 	const { userRole } = useUser();
+	const router = useRouter();
 	const [searchTerm, setSearchTerm] = useState('');
 	const [selectedCategory, setSelectedCategory] = useState('todos');
 	const [favorites, setFavorites] = useState([]);
@@ -81,6 +84,8 @@ export default function ConcursosPage() {
 	const [isAuthorized, setIsAuthorized] = useState(false);
 	const [concursos, setConcursos] = useState([]);
 	const [error, setError] = useState(null);
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [concursoToDelete, setConcursoToDelete] = useState(null);
 
 	const iconMap = {
 		Shield: Shield,
@@ -89,6 +94,12 @@ export default function ConcursosPage() {
 		Building2: Building2,
 		Landmark: Landmark,
 		Scale: Scale,
+	};
+
+	const renderIcon = (iconName) => {
+		const IconComponent = iconMap[iconName];
+		if (!IconComponent) return null;
+		return <IconComponent className="h-6 w-6" />;
 	};
 
 	useEffect(() => {
@@ -131,14 +142,15 @@ export default function ConcursosPage() {
 
 				const data = await response.json();
 				console.log('Lista de concursos recebida:', data);
-				
+
 				// Transformar os dados para o formato esperado pelo componente
 				const formattedConcursos = data.map(concurso => ({
 					...concurso,
+					id: concurso.id,
 					category: concurso.type, // Mapear type para category para compatibilidade com o filtro
 					date: new Date(concurso.date).toLocaleDateString('pt-BR') // Formatar data
 				}));
-				
+
 				setConcursos(formattedConcursos);
 			} catch (err) {
 				console.error('Erro ao buscar concursos:', err);
@@ -232,20 +244,11 @@ export default function ConcursosPage() {
 				const result = await response.json();
 				console.log('Concurso criado:', result);
 
-				// Fechar modal e resetar formulário
-				setIsCreateConcursoModalOpen(false);
-				form.reset();
-
 				// Mostrar mensagem de sucesso
 				toast.success('Concurso criado com sucesso!');
-
-				// Atualizar a lista de concursos
-				const newConcurso = {
-					...result,
-					category: result.type,
-					date: new Date(result.date).toLocaleDateString('pt-BR')
-				};
-				setConcursos(prev => [...prev, newConcurso]);
+				window.location.reload();
+				setIsCreateConcursoModalOpen(false);
+				form.reset();
 			} catch (error) {
 				console.error('Erro ao criar concurso:', error);
 				toast.error('Erro ao criar concurso. Tente novamente.');
@@ -295,13 +298,7 @@ export default function ConcursosPage() {
 									options={ICON_OPTIONS.concursos}
 									form={form}
 								/>
-								<BaseFormField
-									control={form.control}
-									name="color"
-									label="Cor"
-									placeholder="#000000"
-									type="color"
-								/>
+								
 								<BaseFormField
 									control={form.control}
 									name="description"
@@ -343,6 +340,39 @@ export default function ConcursosPage() {
 		});
 	};
 
+	const handleDeleteConcurso = async (concurso) => {
+		setConcursoToDelete(concurso);
+		setDeleteDialogOpen(true);
+	};
+
+	const confirmDelete = async () => {
+		try {
+			const token = Cookies.get('token');
+			if (!token) throw new Error('Token não encontrado');
+
+			const response = await fetch(`http://localhost:3000/contestsEntrace/contests/${concursoToDelete.id}`, {
+				method: 'DELETE',
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (!response.ok) {
+				throw new Error('Erro ao deletar concurso');
+			}
+
+			setConcursos(prev => prev.filter(c => c.id !== concursoToDelete.id));
+			toast.success('Concurso deletado com sucesso!');
+		} catch (error) {
+			console.error('Erro ao deletar concurso:', error);
+			toast.error('Erro ao deletar concurso. Tente novamente.');
+		} finally {
+			setDeleteDialogOpen(false);
+			setConcursoToDelete(null);
+		}
+	};
+
 	if (isLoading) {
 		return <PageLoader />;
 	}
@@ -359,7 +389,7 @@ export default function ConcursosPage() {
 								Acompanhe as principais oportunidades de carreira pública
 							</p>
 						</div>
-						{isAuthorized && (userRole === 'Admin' || userRole === 'Teacher') && (
+						{isAuthorized && (userRole === 'admin' || userRole === 'teacher') && (
 							<Button onClick={() => setIsCreateConcursoModalOpen(true)} className="mb-4">
 								<Plus className="h-4 w-4 mr-2 " />
 								Novo Concurso
@@ -400,7 +430,7 @@ export default function ConcursosPage() {
 									<CardHeader className="pb-2">
 										<div className="flex items-center justify-between">
 											<div className="p-3 rounded-lg text-white" style={{ backgroundColor: concurso.color }}>
-												{React.createElement(iconMap[concurso.icon], { className: 'h-6 w-6' })}
+												{renderIcon(concurso.icon)}
 											</div>
 											<div className="flex items-center gap-2">
 												<button
@@ -417,6 +447,14 @@ export default function ConcursosPage() {
 													<Calendar className="h-4 w-4 mr-1" />
 													{concurso.date}
 												</div>
+												{(userRole === 'admin' || userRole === 'teacher') && (
+													<button
+														onClick={() => handleDeleteConcurso(concurso)}
+														className="text-gray-400 hover:text-red-500 transition-colors ml-2"
+													>
+														<Trash2 className="h-5 w-5" />
+													</button>
+												)}
 											</div>
 										</div>
 										<CardTitle className="text-xl mt-4 h-[32px] line-clamp-1">
@@ -442,6 +480,32 @@ export default function ConcursosPage() {
 				</div>
 			</div>
 			<CreateConcursoModal />
+			<Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+				<DialogContent className="sm:max-w-[425px]">
+					<DialogHeader>
+						<DialogTitle>Deletar Concurso</DialogTitle>
+					</DialogHeader>
+					<DialogDescription>
+						Você tem certeza de que deseja deletar este concurso?
+					</DialogDescription>
+					<DialogFooter>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setDeleteDialogOpen(false)}
+						>
+							Cancelar
+						</Button>
+						<Button
+							type="button"
+							onClick={confirmDelete}
+							className="bg-red-500 hover:bg-red-600"
+						>
+							Deletar
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 }

@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/ui/logo";
-import { ExternalLink, GraduationCap, Calendar, BookOpen, School, Search, Star, StarOff, Plus } from "lucide-react";
+import { ExternalLink, GraduationCap, Calendar, BookOpen, School, Search, Star, StarOff, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { BaseFormField, SelectFormField, IconSelector } from "@/components/ui/formfield";
@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -61,6 +61,8 @@ export default function VestibularesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('todos');
   const [isCreateVestibularModalOpen, setIsCreateVestibularModalOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [vestibularToDelete, setVestibularToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [favorites, setFavorites] = useState([]);
@@ -221,15 +223,11 @@ export default function VestibularesPage() {
         const result = await response.json();
         console.log('Vestibular criado:', result);
 
-        // Fechar modal e resetar formulário
-        setIsCreateVestibularModalOpen(false);
-        form.reset();
-
         // Mostrar mensagem de sucesso
         toast.success('Vestibular criado com sucesso!');
-
-        // Aqui você pode atualizar a lista de vestibulares se necessário
-        // window.location.reload(); // ou implementar uma atualização mais elegante
+        window.location.reload();
+        setIsCreateVestibularModalOpen(false);
+        form.reset();
 
       } catch (error) {
         console.error('Erro ao criar vestibular:', error);
@@ -313,9 +311,51 @@ export default function VestibularesPage() {
     );
   };
 
+  const handleDeleteClick = (vestibular) => {
+    setVestibularToDelete(vestibular);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!vestibularToDelete) return;
+
+    try {
+      const token = Cookies.get('token');
+      if (!token) throw new Error('Token não encontrado');
+
+      const response = await fetch(`http://localhost:3000/contestsEntrace/entrance-exams/${vestibularToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao deletar vestibular');
+      }
+
+      // Atualizar a lista de vestibulares
+      setVestibulares(prev => prev.filter(v => v.id !== vestibularToDelete.id));
+      toast.success('Vestibular deletado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao deletar vestibular:', error);
+      toast.error('Erro ao deletar vestibular. Tente novamente.');
+    } finally {
+      setIsDeleteConfirmOpen(false);
+      setVestibularToDelete(null);
+    }
+  };
+
   const uniqueDates = [...new Set(vestibulares.map(v => v.date))];
   const uniqueTypes = [...new Set(vestibulares.map(v => v.type))];
   const uniqueStates = [...new Set(vestibulares.map(v => v.state))];
+
+  const renderIcon = (iconName) => {
+    const IconComponent = iconMap[iconName];
+    if (!IconComponent) return null;
+    return <IconComponent className="h-6 w-6" />;
+  };
 
   if (isLoading) {
     return <PageLoader />;
@@ -371,8 +411,8 @@ export default function VestibularesPage() {
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <div className="p-3 rounded-lg text-white" style={{ backgroundColor: vestibular.color }}>
-                      {React.createElement(iconMap[vestibular.icon], { className: "h-6 w-6" })}
+                    <div className="p-3 rounded-lg text-white" style={{ backgroundColor: vestibular.color || '#133D86' }}>
+                      {renderIcon(vestibular.icon)}
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -389,6 +429,14 @@ export default function VestibularesPage() {
                         <Calendar className="h-4 w-4 mr-1" />
                         {vestibular.date}
                       </div>
+                      {(userRole === 'admin' || userRole === 'teacher') && (
+                        <button
+                          onClick={() => handleDeleteClick(vestibular)}
+                          className="text-gray-400 hover:text-red-500 transition-colors ml-2"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                      )}
                     </div>
                   </div>
                   <CardTitle className="text-xl mt-4 h-[32px] line-clamp-1">{vestibular.title}</CardTitle>
@@ -410,6 +458,34 @@ export default function VestibularesPage() {
       </div>
     </div>
     <CreateVestibularModal />
+    <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Confirmar Exclusão</DialogTitle>
+          <DialogDescription>
+            Tem certeza que deseja excluir o vestibular "{vestibularToDelete?.title}"? Esta ação não pode ser desfeita.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setIsDeleteConfirmOpen(false);
+              setVestibularToDelete(null);
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            onClick={handleDeleteConfirm}
+            className="bg-red-500 hover:bg-red-600"
+          >
+            Deletar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
