@@ -392,8 +392,6 @@ export default function SimuladoQuestoesPage() {
                 throw new Error('Token não encontrado');
             }
 
-       
-
             // Transformar o objeto respostasUsuario no formato esperado
             const responses = Object.entries(respostasUsuario).map(([questionId, markedAlternativeId]) => ({
                 questionId: parseInt(questionId),
@@ -432,11 +430,13 @@ export default function SimuladoQuestoesPage() {
                 }),
             });
 
-            setResultado(submitData);
-            setMostrarResultado(true);
             setConcluido(true); // Marcar como concluído
             toast.success('Simulado respondido com sucesso!');
             console.log('Attempt marcado como completed');
+            
+            // Redirecionar para a página de resultado
+            router.push(`/pages/simulados/${attempt.id}/result`);
+            
         } catch (error) {
             handleFetchError(error, 'responder simulado');
             setError('Erro ao responder simulado. Tente novamente.');
@@ -647,74 +647,6 @@ export default function SimuladoQuestoesPage() {
                     <p className="text-blue-700 font-medium">
                         👨‍🏫 Visualização do Professor: Você está vendo as questões do simulado.
                     </p>
-                </div>
-            )}
-
-            {mostrarResultado && resultado && (
-                <div className="fixed inset-0 bg-slate-100 bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-8 rounded-xl max-w-2xl w-full mx-4">
-                        <h2 className="text-2xl font-bold text-[#133D86] mb-4">Resultado do Simulado</h2>
-                        
-                        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                            <div className="grid grid-cols-3 gap-4 text-center">
-                                <div>
-                                    <p className="text-sm text-gray-600">Pontuação Total</p>
-                                    <p className="text-2xl font-bold text-[#133D86]">{resultado.totalScore}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-600">Respostas Corretas</p>
-                                    <p className="text-2xl font-bold text-green-600">{resultado.correctAnswers}/{resultado.totalQuestions}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-600">Taxa de Acerto</p>
-                                    <p className="text-2xl font-bold text-[#133D86]">
-                                        {((resultado.correctAnswers / resultado.totalQuestions) * 100).toFixed(1)}%
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            {resultado.details.map((detail, index) => (
-                                <div key={detail.questionId} className={`p-4 rounded-lg border ${detail.isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h3 className="font-semibold">Questão {index + 1}</h3>
-                                        <span className={`px-2 py-1 rounded text-sm ${detail.isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                            {detail.isCorrect ? 'Correta' : 'Incorreta'}
-                                        </span>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div>
-                                            <p className="text-sm text-gray-600">Sua resposta:</p>
-                                            <p className={`font-medium ${detail.isCorrect ? 'text-green-700' : 'text-red-700'}`}>
-                                                {detail.markedAlternative.description}
-                                            </p>
-                                        </div>
-                                        {!detail.isCorrect && (
-                                            <div>
-                                                <p className="text-sm text-gray-600">Resposta correta:</p>
-                                                <p className="font-medium text-green-700">
-                                                    {detail.correctAlternative.description}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="mt-6 flex justify-end">
-                            <Button
-                                onClick={() => {
-                                    setMostrarResultado(false);
-                                    router.push('/pages/simulados');
-                                }}
-                                className="bg-[#133D86] hover:bg-[#0e2a5c] text-white"
-                            >
-                                Voltar para Simulados
-                            </Button>
-                        </div>
-                    </div>
                 </div>
             )}
         </div>

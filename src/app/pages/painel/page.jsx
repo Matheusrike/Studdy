@@ -8,16 +8,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from "@/components/ui/progress";
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
 } from '@/components/ui/table';
 import { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
+import Logo from '@/components/ui/logo';
+import { toast } from 'sonner';
 
 // Dados do usuário
 const user = {
@@ -73,59 +75,81 @@ export default function Dashboard() {
 	const router = useRouter();
 	const { userRole } = useUser();
 	const [data, setData] = useState(null);
-	const [loading, setLoading] = useState(false);
+	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
 	const [quizzes, setQuizzes] = useState([]);
+	const [userData, setUserData] = useState(null);
 
 	// Buscar dados baseado na role do usuário
 	useEffect(() => {
-		const token = Cookies.get('token');
-		if (!token) return;
+		const fetchData = async () => {
+			try {
+				const token = Cookies.get('token');
+				const userId = Cookies.get('userId');
 
-		setLoading(true);
-		let endpoint = '';
-
-		switch (userRole) {
-			case 'student':
-				endpoint = 'http://localhost:3000/student/status';
-				break;
-			case 'teacher':
-				endpoint = 'http://localhost:3000/teacher/status';
-				break;
-			case 'admin':
-				endpoint = 'http://localhost:3000/admin/status';
-				break;
-			default:
-				setLoading(false);
-				return;
-		}
-
-		fetch(endpoint, {
-			headers: {
-				'Authorization': `Bearer ${token}`,
-				'Content-Type': 'application/json'
-			}
-		})
-			.then(response => {
-				if (!response.ok) {
-					throw new Error('Falha ao buscar dados');
+				if (!token || !userId) {
+					toast.error('Token ou userId não encontrado');
+					return;
 				}
-				return response.json();
-			})
-			.then(data => {
+
+				setLoading(true);
+
+				// Buscar dados do usuário
+				const userResponse = await fetch(`http://localhost:3000/user/${userId}`, {
+					headers: {
+						'Authorization': `Bearer ${token}`
+					}
+				});
+
+				if (!userResponse.ok) {
+					throw new Error('Erro ao carregar dados do usuário');
+				}
+
+				const userData = await userResponse.json();
+				setUserData(userData);
+
+				// Buscar dados específicos da role
+				let endpoint = '';
+				switch (userRole) {
+					case 'student':
+						endpoint = 'http://localhost:3000/student/status';
+						break;
+					case 'teacher':
+						endpoint = 'http://localhost:3000/teacher/status';
+						break;
+					case 'admin':
+						endpoint = 'http://localhost:3000/admin/status';
+						break;
+					default:
+						setLoading(false);
+						return;
+				}
+
+				const response = await fetch(endpoint, {
+					headers: {
+						'Authorization': `Bearer ${token}`
+					}
+				});
+
+				if (!response.ok) {
+					throw new Error('Erro ao carregar dados');
+				}
+
+				const data = await response.json();
 				setData(data);
 				if (data.lastCompletedQuizzes) {
 					setQuizzes(data.lastCompletedQuizzes);
 				}
 				setError(null);
-			})
-			.catch(err => {
-				setError(err.message);
-				console.error('Erro ao buscar dados:', err);
-			})
-			.finally(() => {
+			} catch (error) {
+				console.error('Erro ao carregar dados:', error);
+				toast.error('Erro ao carregar dados');
+			} finally {
 				setLoading(false);
-			});
+			}
+		};
+
+		fetchData();
 	}, [userRole]);
 
 	// Mensagens personalizadas baseadas no papel do usuário
@@ -133,17 +157,17 @@ export default function Dashboard() {
 		switch (userRole) {
 			case 'teacher':
 				return {
-					greeting: `Bem-vindo(a), Professor(a) ${user.name}!`,
+					greeting: `Bem-vindo(a), Professor(a) ${userData?.name || user.name}!`,
 					subtitle: 'Bom dia! Pronto para inspirar seus alunos hoje?'
 				};
 			case 'admin':
 				return {
-					greeting: `Bem-vindo(a), ${user.name}!`,
+					greeting: `Bem-vindo(a), ${userData?.name || user.name}!`,
 					subtitle: 'Bom dia! Vamos gerenciar a plataforma hoje?'
 				};
 			default: // student
 				return {
-					greeting: `Bem-vindo(a), ${user.name}!`,
+					greeting: `Bem-vindo(a), ${userData?.name || user.name}!`,
 					subtitle: 'Bom dia! Que tal começar seus estudos hoje?'
 				};
 		}
@@ -152,8 +176,8 @@ export default function Dashboard() {
 	const { greeting, subtitle } = getWelcomeMessage();
 
 	// Título das plataformas baseado no papel
-	const plataformasTitle = userRole === 'professor' || userRole === 'teacher' 
-		? "Plataformas de Ensino" 
+	const plataformasTitle = userRole === 'professor' || userRole === 'teacher'
+		? "Plataformas de Ensino"
 		: "Plataformas de Aprendizagem";
 
 	// Funções do Overview
@@ -523,27 +547,15 @@ export default function Dashboard() {
 						{/* Welcome Section */}
 						<div className="flex items-center justify-between mb-8 bg-white/50 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-slate-200/50">
 							<div className="flex items-center gap-6">
-								<div className="relative h-16 w-16 rounded-2xl overflow-hidden ring-4 ring-primary/10 shadow-lg">
-									<Image
-										src={user.avatar}
-										alt={`${userRole} Avatar`}
-										fill
-										className="object-cover"
-									/>
+								<div className="relative h-16 w-16 text-center rounded-2xl overflow-hidden ring-4 ring-primary/10 shadow-lg flex items-center justify-center">
+									<Logo variant="icon" />
 								</div>
 								<div>
 									<h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">{greeting}</h1>
-									<p className="text-muted-foreground text-lg">{subtitle}</p>
+									<p className="text-muted-foreground text-lg">{userData?.name ? `Bem-vindo(a), ${userData.name}!` : 'Bem-vindo(a)!'}</p>
 								</div>
 							</div>
-							<div className="relative hidden md:block">
-								<Button variant="ghost" size="icon" className="relative">
-									<Bell className="h-6 w-6 text-primary" />
-									<span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs w-5 h-5 rounded-full flex items-center justify-center animate-pulse">
-										2
-									</span>
-								</Button>
-							</div>
+							
 						</div>
 
 						{/* Overview Section */}
@@ -574,10 +586,10 @@ export default function Dashboard() {
 							</div>
 							<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 								{plataformas.map((plataforma) => (
-									<a 
+									<a
 										key={plataforma.nome}
-										href={plataforma.link} 
-										target="_blank" 
+										href={plataforma.link}
+										target="_blank"
 										rel="noopener noreferrer"
 										className="h-full"
 									>
@@ -669,8 +681,8 @@ export default function Dashboard() {
 									<div className="p-6">
 										<div className="flex items-center justify-between mb-6">
 											<h3 className="text-xl font-bold text-gray-800">Últimos Quizzes Completados</h3>
-											<Button 
-												variant="default" 
+											<Button
+												variant="default"
 												size="lg"
 												className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5"
 												onClick={() => router.push('/simulados')}
@@ -742,8 +754,8 @@ export default function Dashboard() {
 													<p className="text-sm text-gray-500">Cadastro e edição de usuários</p>
 												</div>
 											</div>
-											<Button 
-												variant="ghost" 
+											<Button
+												variant="ghost"
 												className="w-full mt-4"
 												onClick={() => router.push('/pages/administracao')}
 											>
@@ -763,8 +775,8 @@ export default function Dashboard() {
 													<p className="text-sm text-gray-500">Cadastro de novos usuários</p>
 												</div>
 											</div>
-											<Button 
-												variant="ghost" 
+											<Button
+												variant="ghost"
 												className="w-full mt-4"
 												onClick={() => router.push('/pages/cadastro')}
 											>
@@ -784,8 +796,8 @@ export default function Dashboard() {
 													<p className="text-sm text-gray-500">Gerenciar concursos</p>
 												</div>
 											</div>
-											<Button 
-												variant="ghost" 
+											<Button
+												variant="ghost"
 												className="w-full mt-4"
 												onClick={() => router.push('/pages/concursos')}
 											>
@@ -805,8 +817,8 @@ export default function Dashboard() {
 													<p className="text-sm text-gray-500">Gerenciar vestibulares</p>
 												</div>
 											</div>
-											<Button 
-												variant="ghost" 
+											<Button
+												variant="ghost"
 												className="w-full mt-4"
 												onClick={() => router.push('/pages/vestibulares')}
 											>
@@ -826,8 +838,8 @@ export default function Dashboard() {
 													<p className="text-sm text-gray-500">Gerenciar turmas</p>
 												</div>
 											</div>
-											<Button 
-												variant="ghost" 
+											<Button
+												variant="ghost"
 												className="w-full mt-4"
 												onClick={() => router.push('/pages/turmas')}
 											>
@@ -847,8 +859,8 @@ export default function Dashboard() {
 													<p className="text-sm text-gray-500">Gerenciar materiais</p>
 												</div>
 											</div>
-											<Button 
-												variant="ghost" 
+											<Button
+												variant="ghost"
 												className="w-full mt-4"
 												onClick={() => router.push('/pages/material')}
 											>

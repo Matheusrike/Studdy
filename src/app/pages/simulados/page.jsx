@@ -196,7 +196,7 @@ export default function SimuladosPage() {
                                          return quiz.filter(q => {
                                              if (filterId === 'todos') return true;
                                              if (filterId === 'disponivel') {
-                                                 return (!q.status || q.status === 'in_Progress') && !q.attempt_id;
+                                                 return q.status === 'not_started';
                                              }
                                              if (filterId === 'em_progresso') {
                                                  return q.status === 'in_progress' && q.attempt_id;
@@ -249,7 +249,7 @@ export default function SimuladosPage() {
                                     if (statusFilter === 'todos') return true;
                                     
                                     if (statusFilter === 'disponivel') {
-                                        return (!q.status || q.status === 'available') && !q.attempt_id;
+                                        return q.status === 'not_started';
                                     }
                                     
                                     if (statusFilter === 'em_progresso') {

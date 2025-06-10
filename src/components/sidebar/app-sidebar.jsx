@@ -74,8 +74,9 @@ const dataProfessor = {
       url: "/pages/material",
       icon: BookOpen,
       itemsDropdown: [
+        { title: "Minhas Videoaulas", url: "/pages/material/videoaulas/teacher" },
         { title: "Criar Videoaulas", url: "/pages/material/videoaulas/criar-videoaulas" },
-  
+        { title: "Meus Resumos", url: "/pages/material/resumos/teacher" },
         { title: "Criar Resumos", url: "/pages/material/resumos/criar-resumos" },
       ],
     },
