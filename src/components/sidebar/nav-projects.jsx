@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/sidebar"
 
 export function NavProjects({
-  projects
+  projects,
+  role
 }) {
   const { isMobile } = useSidebar()
   const [isMounted, setIsMounted] = useState(false)
@@ -30,19 +31,32 @@ export function NavProjects({
     setIsMounted(true)
   }, [])
 
+  const getLabel = () => {
+    switch (role) {
+      case 'admin':
+        return 'Gerenciar'
+      case 'teacher':
+        return 'Turmas'
+      case 'student':
+        return 'Simulados'
+      default:
+        return 'Projetos'
+    }
+  }
+
   if (!isMounted) {
     return null
   }
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Simulados</SidebarGroupLabel>
+      <SidebarGroupLabel>{getLabel()}</SidebarGroupLabel>
       <SidebarMenu>
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
               <a href={item.url}>
-                <item.icon  />
+                <item.icon />
                 <span>{item.name}</span>
               </a>
             </SidebarMenuButton>
@@ -74,12 +88,6 @@ export function NavProjects({
             </DropdownMenu>
           </SidebarMenuItem>
         ))}
-        <SidebarMenuItem>
-          <SidebarMenuButton className="text-sidebar-foreground/70">
-            <MoreHorizontal className="text-sidebar-foreground/70" />
-            <span>Mais opções</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
       </SidebarMenu>
     </SidebarGroup>
   );

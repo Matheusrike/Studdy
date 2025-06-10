@@ -169,14 +169,6 @@ export function NavUser() {
                 <BadgeCheck className="mr-2 h-4 w-4" />
                 Perfil
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                Conta
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell className="mr-2 h-4 w-4" />
-                Notificações
-              </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>

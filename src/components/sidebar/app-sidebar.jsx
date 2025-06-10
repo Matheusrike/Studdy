@@ -36,7 +36,6 @@ const dataAluno = {
     { title: "Painel", url: "/pages/painel", icon: SquareTerminal, isActive: true },
     { title: "Simulados", url: "/pages/simulados", icon: Bot },
     { title: "Estatísticas", url: "/pages/estatisticas", icon: BookOpen },
-    { title: "Perfil", url: "/pages/profile", icon: Frame },
   ],
   navMainDropdown: [
     {
@@ -68,7 +67,6 @@ const dataProfessor = {
   navMain: [
     { title: "Painel", url: "/pages/painel", icon: SquareTerminal, isActive: true },
     { title: "Simulados", url: "/pages/turmas/teacher", icon: Bot },
-    { title: "Perfil", url: "/pages/profile", icon: Frame },
   ],
   navMainDropdown: [
     {
@@ -101,7 +99,6 @@ const dataAdmin = {
     { title: "Painel", url: "/pages/painel", icon: SquareTerminal, isActive: true },
     { title: "Administração", url: "/pages/administracao", icon: BookOpen },
     { title: "Cadastro", url: "/pages/cadastro", icon: Bot },
-    { title: "Perfil", url: "/pages/profile", icon: Frame },
   ],
   navMainDropdown: [
     {
@@ -127,9 +124,9 @@ const dataAdmin = {
 function AlunoNav() {
   return (
     <>
-      <NavMain items={dataAluno.navMain} />
-      <NavMainDropdown itemsDropdown={dataAluno.navMainDropdown} />
-      <NavProjects projects={dataAluno.projects} />
+      <NavMain items={dataAluno.navMain} role="student" />
+      <NavMainDropdown itemsDropdown={dataAluno.navMainDropdown} role="student" />
+      <NavProjects projects={dataAluno.projects} role="student" />
     </>
   )
 }
@@ -137,9 +134,9 @@ function AlunoNav() {
 function ProfessorNav() {
   return (
     <>
-      <NavMain items={dataProfessor.navMain} />
-      <NavMainDropdown itemsDropdown={dataProfessor.navMainDropdown} />
-      <NavProjects projects={dataProfessor.projects} />
+      <NavMain items={dataProfessor.navMain} role="teacher" />
+      <NavMainDropdown itemsDropdown={dataProfessor.navMainDropdown} role="teacher" />
+      <NavProjects projects={dataProfessor.projects} role="teacher" />
     </>
   )
 }
@@ -147,9 +144,9 @@ function ProfessorNav() {
 function AdminNav() {
   return (
     <>
-      <NavMain items={dataAdmin.navMain} />
-      <NavMainDropdown itemsDropdown={dataAdmin.navMainDropdown} />
-      <NavProjects projects={dataAdmin.projects} />
+      <NavMain items={dataAdmin.navMain} role="admin" />
+      <NavMainDropdown itemsDropdown={dataAdmin.navMainDropdown} role="admin" />
+      <NavProjects projects={dataAdmin.projects} role="admin" />
     </>
   )
 }
