@@ -1,5 +1,11 @@
 'use client';
 
+/**
+ * Componente de Questão para Simulados
+ * Permite criar e editar questões com alternativas e geração automática via IA
+ * Inclui validação de formulário e integração com API OpenAI
+ */
+
 import { useState, useEffect, useCallback } from 'react';
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -13,11 +19,17 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { toast } from 'sonner';
 import Cookies from 'js-cookie';
 
+/**
+ * Schema de validação do formulário de questão
+ */
 const formSchema = z.object({
     question: z.string().min(1, 'A pergunta é obrigatória'),
     correct_answer: z.string().min(1, 'A resposta correta é obrigatória')
 });
 
+/**
+ * Componente de formulário para criação/edição de questões
+ */
 function QuestionForm({ questionId, numeroQuestao, onAddQuestion, onDeleteQuestion, onAlternativesGenerated, existingQuestion, onQuestionChange }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alternativas, setAlternativas] = useState({

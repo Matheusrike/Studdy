@@ -1,5 +1,11 @@
 'use client';
 
+/**
+ * Página de Vestibulares
+ * Permite visualizar, criar, editar e excluir vestibulares
+ * Inclui funcionalidades de busca, filtros e favoritos para vestibulares
+ */
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/ui/logo";

@@ -1,5 +1,11 @@
 'use client';
 
+/**
+ * Página de Cadastro de Usuários
+ * Permite cadastro de estudantes e professores com validação de formulário
+ * Inclui seleção de turmas, matérias e turnos baseados no tipo de usuário
+ */
+
 import { useState, useEffect } from "react";
 import {
     Form,
@@ -16,6 +22,9 @@ import { useRouter } from "next/navigation";
 import { PageLoader } from "@/components/ui/loader";
 import Cookies from 'js-cookie';
 
+/**
+ * Endpoints da API para diferentes recursos
+ */
 const API_ENDPOINTS = {
     student: "http://localhost:3000/admin/students",
     teacher: "http://localhost:3000/admin/teachers",
@@ -41,35 +50,90 @@ const formSchema = z.object({
         required_error: "Selecione um tipo",
     }),
     name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").max(100, "Nome deve ter no máximo 100 caracteres"),
-    email: z.string().email("Email inválido").optional().or(z.literal('')),
-    password: z.string()
-        .min(6, "Senha deve ter pelo menos 6 caracteres")
-        .regex(/[A-Z]/, "Senha deve conter pelo menos uma letra maiúscula")
-        .regex(/[a-z]/, "Senha deve conter pelo menos uma letra minúscula")
-        .regex(/[0-9]/, "Senha deve conter pelo menos um número")
-        .optional()
-        .or(z.literal('')),
-    cpf: z.string()
-        .min(11, "CPF deve ter 11 dígitos")
-        .max(14, "CPF deve ter no máximo 14 dígitos")
-        .regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/, "CPF inválido")
-        .optional()
-        .or(z.literal('')),
-    birth_date: z.string()
-        .regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida")
-        .optional()
-        .or(z.literal('')),
-    class: z.string().min(1, "Selecione uma turma").optional().or(z.literal('')), 
+    email: z.string().optional().or(z.literal('')),
+    password: z.string().optional().or(z.literal('')),
+    cpf: z.string().optional().or(z.literal('')),
+    birth_date: z.string().optional().or(z.literal('')),
+    class: z.string().optional().or(z.literal('')), 
     curso: z.string().max(100, "Curso deve ter no máximo 100 caracteres").optional().or(z.literal('')),
-    subjects: z.array(z.string()).min(1, "Selecione pelo menos uma disciplina").max(5, "Máximo de 5 disciplinas permitido").optional().or(z.literal([])),
+    subjects: z.array(z.string()).optional().or(z.literal([])),
 }).refine((data) => {
     // Validações específicas por tipo
-    if (data.tipo === 'teacher' || data.tipo === 'student') {
-        return data.email && data.password && data.cpf && data.birth_date;
+    if (data.tipo === 'teacher') {
+        // Validações para professor
+        if (!data.email || data.email === '') {
+            return false;
+        }
+        if (!z.string().email().safeParse(data.email).success) {
+            return false;
+        }
+        if (!data.password || data.password === '') {
+            return false;
+        }
+        if (!z.string().min(6).regex(/[A-Z]/).regex(/[a-z]/).regex(/[0-9]/).safeParse(data.password).success) {
+            return false;
+        }
+        if (!data.cpf || data.cpf === '') {
+            return false;
+        }
+        if (!z.string().min(11).max(14).regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/).safeParse(data.cpf).success) {
+            return false;
+        }
+        if (!data.birth_date || data.birth_date === '') {
+            return false;
+        }
+        if (!z.string().regex(/^\d{4}-\d{2}-\d{2}$/).safeParse(data.birth_date).success) {
+            return false;
+        }
+        if (!data.subjects || data.subjects.length === 0) {
+            return false;
+        }
+        if (data.subjects.length > 5) {
+            return false;
+        }
     }
+    
+    if (data.tipo === 'student') {
+        // Validações para estudante
+        if (!data.email || data.email === '') {
+            return false;
+        }
+        if (!z.string().email().safeParse(data.email).success) {
+            return false;
+        }
+        if (!data.password || data.password === '') {
+            return false;
+        }
+        if (!z.string().min(6).regex(/[A-Z]/).regex(/[a-z]/).regex(/[0-9]/).safeParse(data.password).success) {
+            return false;
+        }
+        if (!data.cpf || data.cpf === '') {
+            return false;
+        }
+        if (!z.string().min(11).max(14).regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/).safeParse(data.cpf).success) {
+            return false;
+        }
+        if (!data.birth_date || data.birth_date === '') {
+            return false;
+        }
+        if (!z.string().regex(/^\d{4}-\d{2}-\d{2}$/).safeParse(data.birth_date).success) {
+            return false;
+        }
+        if (!data.class || data.class === '') {
+            return false;
+        }
+    }
+    
+    if (data.tipo === 'subjects') {
+        // Validação para disciplina
+        if (!data.name || data.name.trim() === '') {
+            return false;
+        }
+    }
+    
     return true;
 }, {
-    message: "Preencha todos os campos obrigatórios",
+    message: "Preencha todos os campos obrigatórios corretamente",
     path: ["tipo"]
 });
 

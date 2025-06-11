@@ -1,5 +1,11 @@
 'use client';
 
+/**
+ * Página de Gerenciamento de Turmas
+ * Permite visualizar, criar, editar e excluir turmas
+ * Inclui filtros de busca e modais para operações CRUD
+ */
+
 import { useState, useEffect } from 'react';
 import {
 	Table,

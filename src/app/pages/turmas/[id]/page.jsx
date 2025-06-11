@@ -1,5 +1,11 @@
 'use client';
 
+/**
+ * Página de Detalhes da Turma
+ * Permite visualizar e gerenciar estudantes de uma turma específica
+ * Inclui funcionalidades de busca, adição e remoção de estudantes
+ */
+
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import {

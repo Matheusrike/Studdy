@@ -1,5 +1,11 @@
 'use client';
 
+/**
+ * Página de Questões do Simulado
+ * Permite que estudantes respondam questões de um simulado específico
+ * Inclui funcionalidades de navegação, submissão e visualização de resultados
+ */
+
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +19,10 @@ import { useUser } from "@/contexts/UserContext";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
 
-
+/**
+ * Componente da página de questões do simulado
+ * Gerencia estado das respostas e submissão do simulado
+ */
 export default function SimuladoQuestoesPage() {
     const params = useParams();
     const router = useRouter();

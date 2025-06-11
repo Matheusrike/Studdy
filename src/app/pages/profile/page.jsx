@@ -1,5 +1,11 @@
 'use client';
 
+/**
+ * Página de Perfil do Usuário
+ * Permite visualizar e editar informações pessoais do usuário
+ * Inclui dados como nome, email, data de nascimento e outras informações
+ */
+
 import { useState, useEffect } from 'react';
 import {
 	User,
@@ -21,6 +27,10 @@ import { Separator } from '@/components/ui/separator';
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 
+/**
+ * Componente da página de perfil
+ * Permite edição inline dos dados do usuário
+ */
 export default function Profile() {
 	const [isEditing, setIsEditing] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);

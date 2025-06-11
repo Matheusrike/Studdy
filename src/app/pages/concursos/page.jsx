@@ -1,5 +1,11 @@
 'use client';
 
+/**
+ * Página de Concursos
+ * Permite visualizar, criar, editar e excluir concursos públicos
+ * Inclui funcionalidades de busca, filtros e favoritos
+ */
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/ui/logo';

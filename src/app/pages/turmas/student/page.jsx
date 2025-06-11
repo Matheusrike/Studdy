@@ -1,5 +1,11 @@
 'use client';
 
+/**
+ * Página de Turma do Estudante
+ * Permite que estudantes visualizem informações da sua turma
+ * Inclui dados da turma, colegas e funcionalidades de busca
+ */
+
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/contexts/UserContext';
@@ -10,6 +16,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/ui/logo';
 
+/**
+ * Componente da página de turma do estudante
+ * Restrito apenas para usuários com role de student
+ */
 export default function StudentClassPage() {
     const { userRole } = useUser();
     const router = useRouter();

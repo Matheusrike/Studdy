@@ -1,5 +1,11 @@
 "use client"
 
+/**
+ * Componente de navegação do usuário na sidebar
+ * Exibe informações do usuário logado e menu dropdown com opções
+ * Inclui avatar, nome, email e ações como perfil e logout
+ */
+
 import {
   BadgeCheck,
   Bell,

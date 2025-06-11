@@ -1,4 +1,10 @@
-    'use client';
+'use client';
+
+/**
+ * Página de Estatísticas do Estudante
+ * Exibe métricas de desempenho, progresso em simulados e gráficos analíticos
+ * Inclui dados de acertos, tempo médio e evolução do estudante
+ */
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +13,9 @@ import { BarChart2, LineChart, PieChart, TrendingUp, BookOpen, Clock, Award, Ale
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import Cookies from 'js-cookie';
 
+/**
+ * Componente da página de estatísticas
+ */
 export default function EstatisticasPage() {
     const [stats, setStats] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -323,4 +332,4 @@ export default function EstatisticasPage() {
             </div>
         </div>
     );
-} 
+}

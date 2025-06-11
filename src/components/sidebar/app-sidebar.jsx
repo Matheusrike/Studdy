@@ -1,5 +1,11 @@
 "use client"
 
+/**
+ * Componente principal da sidebar da aplicação
+ * Renderiza navegação dinâmica baseada no papel do usuário (Admin, Teacher, Student)
+ * Inclui menu principal, projetos e informações do usuário
+ */
+
 import { useEffect, useState } from "react"
 import {
   BookOpen,

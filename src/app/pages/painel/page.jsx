@@ -1,5 +1,11 @@
 'use client';
 
+/**
+ * Página do Painel Principal (Dashboard)
+ * Exibe informações personalizadas baseadas no papel do usuário
+ * Inclui estatísticas, atividades recentes e navegação rápida
+ */
+
 import { FileText, CheckCircle, LineChart, Users, Bell, Award, BookOpen, Calendar, Clock, Target, ExternalLink, GraduationCap, Frame } from 'lucide-react';
 import Image from 'next/image';
 import { useUser } from '@/contexts/UserContext';
@@ -848,26 +854,6 @@ export default function Dashboard() {
 										</CardContent>
 									</Card>
 
-									<Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-										<CardContent className="p-6">
-											<div className="flex items-center gap-4">
-												<div className="p-3 bg-primary/10 rounded-lg">
-													<BookOpen className="w-6 h-6 text-primary" />
-												</div>
-												<div>
-													<h3 className="font-medium text-lg">Material</h3>
-													<p className="text-sm text-gray-500">Gerenciar materiais</p>
-												</div>
-											</div>
-											<Button
-												variant="ghost"
-												className="w-full mt-4"
-												onClick={() => router.push('/pages/material')}
-											>
-												Acessar
-											</Button>
-										</CardContent>
-									</Card>
 								</div>
 							</div>
 						)}
