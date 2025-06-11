@@ -265,8 +265,6 @@ export default function CriarSimuladosPage() {
 			title: titulo,
 			description: descricao,
 			icon: icone,
-			class_id: parseInt(selectedClass),
-			subject_id: parseInt(selectedSubject),
 			max_attempt: tentativas_maximas,
 			duration_minutes: duracao_minutos,
 			visibility: visibility.toLowerCase(),
@@ -341,7 +339,7 @@ export default function CriarSimuladosPage() {
 		setQuestions([...questions, {
 			id: Date.now(),
 			statement: '',
-			points: 1,
+			points: 10,
 			alternatives: [
 				{ id: Date.now(), text: '', isCorrect: true },
 				{ id: Date.now() + 1, text: '', isCorrect: false },

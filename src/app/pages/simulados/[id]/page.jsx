@@ -392,18 +392,18 @@ export default function SimuladoQuestoesPage() {
                 throw new Error('Token não encontrado');
             }
 
+            // Verificar se todas as questões foram respondidas
+            if (Object.keys(respostasUsuario).length !== questoes.length) {
+                throw new Error('Por favor, responda todas as questões antes de finalizar.');
+            }
+
             // Transformar o objeto respostasUsuario no formato esperado
             const responses = Object.entries(respostasUsuario).map(([questionId, markedAlternativeId]) => ({
                 questionId: parseInt(questionId),
                 markedAlternativeId: parseInt(markedAlternativeId)
             }));
 
-            const dataToSend = {
-                responses: responses
-            };
-
-            console.log('Enviando dados das respostas:', dataToSend);
-            console.log('Attempt ID:', attempt.id);
+            const dataToSend = { responses };
 
             // Enviar as respostas
             const submitResponse = await fetch(`http://localhost:3000/student/attempt/${attempt.id}/submit`, {
@@ -415,31 +415,40 @@ export default function SimuladoQuestoesPage() {
                 body: JSON.stringify(dataToSend),
             });
 
+            if (!submitResponse.ok) {
+                const errorData = await submitResponse.json();
+                throw new Error(errorData.message || 'Erro ao enviar respostas');
+            }
+
             const submitData = await submitResponse.json();
-            console.log('Resposta da tentativa:', submitData);
+            console.log('Resposta do envio:', submitData);
 
             // Marcar o attempt como completed
-            await fetch(`http://localhost:3000/student/attempt/${attempt.id}`, {
+            const completeResponse = await fetch(`http://localhost:3000/student/attempt/${attempt.id}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    status: 'completed'
-                }),
+                body: JSON.stringify({ status: 'completed' }),
             });
 
-            setConcluido(true); // Marcar como concluído
+            if (!completeResponse.ok) {
+                const errorData = await completeResponse.json();
+                throw new Error(errorData.message || 'Erro ao finalizar tentativa');
+            }
+
+            const completeData = await completeResponse.json();
+            console.log('Resposta da finalização:', completeData);
+
+            setConcluido(true);
             toast.success('Simulado respondido com sucesso!');
-            console.log('Attempt marcado como completed');
-            
-            // Redirecionar para a página de resultado
             router.push(`/pages/simulados/${attempt.id}/result`);
             
         } catch (error) {
-            handleFetchError(error, 'responder simulado');
-            setError('Erro ao responder simulado. Tente novamente.');
+            console.error('Erro ao enviar respostas:', error);
+            toast.error(error.message || 'Erro ao responder simulado. Tente novamente.');
+            setError(error.message || 'Erro ao responder simulado. Tente novamente.');
         } finally {
             setIsLoading(false);
         }

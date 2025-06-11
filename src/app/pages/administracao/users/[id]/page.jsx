@@ -100,6 +100,14 @@ export default function EditUserPage() {
             };
 
             console.log('Dados a serem enviados:', dataToSend);
+            const userResponse = await fetch(`http://localhost:3000/user/${params.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            });
 
             const response = await fetch(`http://localhost:3000/user/${params.id}`, {
                 method: 'PUT',

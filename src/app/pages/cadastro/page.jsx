@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import Logo from '@/components/ui/logo';
-import { BaseFormField, SelectFormField } from "@/components/ui/formfield";
+import { BaseFormField, SelectFormField, MultiSelectFormField } from "@/components/ui/formfield";
 import { useUser } from "@/contexts/UserContext";
 import { useRouter } from "next/navigation";
 import { PageLoader } from "@/components/ui/loader";
@@ -61,8 +61,7 @@ const formSchema = z.object({
         .or(z.literal('')),
     class: z.string().min(1, "Selecione uma turma").optional().or(z.literal('')), 
     curso: z.string().max(100, "Curso deve ter no máximo 100 caracteres").optional().or(z.literal('')),
-    subject: z.string().optional().or(z.literal('')),
-    subject2: z.string().optional().or(z.literal('')),
+    subjects: z.array(z.string()).min(1, "Selecione pelo menos uma disciplina").max(5, "Máximo de 5 disciplinas permitido").optional().or(z.literal([])),
 }).refine((data) => {
     // Validações específicas por tipo
     if (data.tipo === 'teacher' || data.tipo === 'student') {
@@ -119,28 +118,17 @@ const ProfessorForm = ({ control, subjects, isLoading, error }) => (
             type="date"
             placeholder="Data de Nascimento"
         />
-        <SelectFormField
+        <MultiSelectFormField
             control={control}
-            name="subject"
-            label="Disciplina 1"
+            name="subjects"
+            label="Disciplinas"
             options={subjects.map((subject, index) => ({
                 value: (index + 1).toString(),
                 label: subject.charAt(0).toUpperCase() + subject.slice(1)
             }))}
-            placeholder="Selecione uma disciplina"
+            placeholder="Selecione as disciplinas"
             disabled={isLoading}
-        />
-        <SelectFormField
-            control={control}
-            name="subject2"
-            label="Disciplina 2"
-            options={subjects.map((subject, index) => ({
-                value: (index + 1).toString(),
-                label: subject.charAt(0).toUpperCase() + subject.slice(1)
-            }))
-            }
-            placeholder="Selecione uma disciplina"
-            disabled={isLoading}
+            maxSelections={5}
         />
         {error && <p className="text-red-500 text-sm">{error}</p>}
         {isLoading && <p className="text-sm text-muted-foreground">Carregando disciplinas...</p>}
@@ -240,8 +228,7 @@ function CadastroForm() {
             password: "",
             cpf: "",
             birth_date: "",
-            subject: "",
-            subject2: "",
+            subjects: [],
             class: "",
         },
     });
@@ -339,10 +326,7 @@ function CadastroForm() {
                     role: "Teacher"
                 },
                 teacher: {
-                    subjects: [
-                        { id: parseInt(data.subject) },
-                        ...(data.subject2 ? [{ id: parseInt(data.subject2) }] : [])
-                    ]
+                    subjects: data.subjects.map(subjectId => ({ id: parseInt(subjectId) }))
                 }
             },
             student: {
@@ -393,6 +377,7 @@ function CadastroForm() {
             }
 
             setState(prev => ({ ...prev, submitSuccess: true }));
+            window.location.reload();
             form.reset();
         } catch (error) {
             console.error("Erro no cadastro:", error);
@@ -425,7 +410,6 @@ function CadastroForm() {
                 return null;
         }
     };
-
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#e6eefc] via-[#f8fafc] to-[#c3dafe] p-4 animate-fade-in">
             <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-8 border border-blue-100">

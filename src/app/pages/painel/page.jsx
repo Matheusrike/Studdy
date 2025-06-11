@@ -685,7 +685,7 @@ export default function Dashboard() {
 												variant="default"
 												size="lg"
 												className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5"
-												onClick={() => router.push('/simulados')}
+												onClick={() => router.push('/pages/simulados')}
 											>
 												<ExternalLink className="h-4 w-4" />
 												Ver todos os simulados
