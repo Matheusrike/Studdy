@@ -77,7 +77,7 @@ const dataProfessor = {
         { title: "Minhas Videoaulas", url: "/pages/material/videoaulas/teacher" },
         { title: "Criar Videoaulas", url: "/pages/material/videoaulas/criar-videoaulas" },
         { title: "Meus Resumos", url: "/pages/material/resumos/teacher" },
-        { title: "Criar Resumos", url: "/pages/material/resumos/criar-resumos" },
+        { title: "Criar Resumos", url: "/pages/turmas/teacher" },
       ],
     },
   ],
