@@ -32,6 +32,11 @@ const statusFilters = [
     { id: 'public', label: 'Público', icon: Eye },
     { id: 'draft', label: 'Rascunho', icon: Pen }
 ];
+const SHIFT_OPTIONS = [
+    { value: 'Morning', label: 'Manhã' },
+    { value: 'Afternoon', label: 'Tarde' },
+    { value: 'Night', label: 'Noite' }
+]
 
 export default function ClassDetailsClient({ classId }) {
     const router = useRouter();
@@ -365,14 +370,15 @@ export default function ClassDetailsClient({ classId }) {
                                                                     <TableCell className="font-medium w-1/3 bg-gray-50/80 text-gray-700 py-4 px-6">Nome</TableCell>
                                                                     <TableCell className="text-gray-600 py-4 px-6">{classData?.name || 'Não informado'}</TableCell>
                                                                 </TableRow>
-                                                                <TableRow className="hover:bg-gray-50/50 border-b border-gray-100">
-                                                                    <TableCell className="font-medium bg-gray-50/80 text-gray-700 py-4 px-6">Professor</TableCell>
-                                                                    <TableCell className="text-gray-600 py-4 px-6">{classData?.teachers?.[0]?.teacher_name || 'Não informado'}</TableCell>
+                                                                <TableRow className="hover:bg-gray-50/50">
+                                                                    <TableCell className="font-medium bg-gray-50/80 text-gray-700 py-4 px-6">Curso</TableCell>
+                                                                    <TableCell className="text-gray-600 py-4 px-6">{classData?.course || 'Não informado'}</TableCell>
                                                                 </TableRow>
-                                                                <TableRow className="hover:bg-gray-50/50 border-b border-gray-100">
-                                                                    <TableCell className="font-medium bg-gray-50/80 text-gray-700 py-4 px-6">Matéria</TableCell>
-                                                                    <TableCell className="text-gray-600 py-4 px-6">{classData?.teachers?.[0]?.subjects?.[0]?.name || 'Não informado'}</TableCell>
+                                                                <TableRow className="hover:bg-gray-50/50">
+                                                                    <TableCell className="font-medium bg-gray-50/80 text-gray-700 py-4 px-6">Turno</TableCell>
+                                                                    <TableCell className="text-gray-600 py-4 px-6">{classData?.shift ? SHIFT_OPTIONS.find(option => option.value === classData.shift)?.label : 'Não informado'}</TableCell>
                                                                 </TableRow>
+                                                               
                                                                 <TableRow className="hover:bg-gray-50/50">
                                                                     <TableCell className="font-medium bg-gray-50/80 text-gray-700 py-4 px-6">Total de Alunos</TableCell>
                                                                     <TableCell className="text-gray-600 py-4 px-6">{classData?.students?.length || 0}</TableCell>

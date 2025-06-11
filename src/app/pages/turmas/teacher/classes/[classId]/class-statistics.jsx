@@ -37,6 +37,14 @@ export default function ClassStatistics({ classId }) {
             } catch (error) {
                 console.error('Erro ao carregar estatísticas:', error);
                 setError(error.message);
+                // Em caso de erro, definir estatísticas padrão com zeros
+                setStatistics({
+                    totalStudents: 0,
+                    totalQuizzes: 0,
+                    classAverageAccuracy: 0,
+                    subjectStats: [],
+                    studentStats: []
+                });
                 toast.error(error.message || 'Erro ao carregar estatísticas');
             } finally {
                 setLoading(false);
@@ -47,8 +55,15 @@ export default function ClassStatistics({ classId }) {
     }, [classId]);
 
     if (loading) return <PageLoader />;
-    if (error) return <div className="text-red-500 text-center p-4">{error}</div>;
-    if (!statistics) return null;
+    
+    // Garantir que sempre temos estatísticas, mesmo que vazias
+    const stats = statistics || {
+        totalStudents: 0,
+        totalQuizzes: 0,
+        classAverageAccuracy: 0,
+        subjectStats: [],
+        studentStats: []
+    };
 
     return (
         <div className="space-y-6">
@@ -62,7 +77,7 @@ export default function ClassStatistics({ classId }) {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-3xl font-bold text-blue-600">{statistics.totalStudents}</p>
+                        <p className="text-3xl font-bold text-blue-600">{stats.totalStudents}</p>
                     </CardContent>
                 </Card>
 
@@ -74,7 +89,7 @@ export default function ClassStatistics({ classId }) {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-3xl font-bold text-green-600">{statistics.totalQuizzes}</p>
+                        <p className="text-3xl font-bold text-green-600">{stats.totalQuizzes}</p>
                     </CardContent>
                 </Card>
 
@@ -86,7 +101,7 @@ export default function ClassStatistics({ classId }) {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-3xl font-bold text-purple-600">{statistics.classAverageAccuracy}%</p>
+                        <p className="text-3xl font-bold text-purple-600">{stats.classAverageAccuracy}%</p>
                     </CardContent>
                 </Card>
             </div>
@@ -101,26 +116,33 @@ export default function ClassStatistics({ classId }) {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {statistics.subjectStats.map((subject, index) => (
-                            <div key={index} className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                    <span className="font-medium text-gray-700">{subject.subjectName}</span>
-                                    <span className="text-sm font-medium text-gray-600">
-                                        {subject.accuracy}% de acerto
-                                    </span>
+                        {stats.subjectStats && stats.subjectStats.length > 0 ? (
+                            stats.subjectStats.map((subject, index) => (
+                                <div key={index} className="space-y-2">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium text-gray-700">{subject.subjectName}</span>
+                                        <span className="text-sm font-medium text-gray-600">
+                                            {subject.accuracy}% de acerto
+                                        </span>
+                                    </div>
+                                    <div className="h-2 bg-gray-200 rounded-full">
+                                        <div
+                                            className="h-2 bg-blue-600 rounded-full transition-all duration-500"
+                                            style={{ width: `${subject.accuracy}%` }}
+                                        />
+                                    </div>
+                                    <div className="flex justify-between text-xs text-gray-500">
+                                        <span>{subject.correctResponses} acertos</span>
+                                        <span>{subject.totalResponses} total</span>
+                                    </div>
                                 </div>
-                                <div className="h-2 bg-gray-200 rounded-full">
-                                    <div
-                                        className="h-2 bg-blue-600 rounded-full transition-all duration-500"
-                                        style={{ width: `${subject.accuracy}%` }}
-                                    />
-                                </div>
-                                <div className="flex justify-between text-xs text-gray-500">
-                                    <span>{subject.correctResponses} acertos</span>
-                                    <span>{subject.totalResponses} total</span>
-                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center text-gray-500 py-8">
+                                <p>Nenhum dado de matéria disponível</p>
+                                <p className="text-sm">Os dados aparecerão quando houver simulados respondidos</p>
                             </div>
-                        ))}
+                        )}
                     </div>
                 </CardContent>
             </Card>
@@ -135,29 +157,36 @@ export default function ClassStatistics({ classId }) {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {statistics.studentStats.map((student, index) => (
-                            <div key={index} className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                    <span className="font-medium text-gray-700">Aluno {index + 1}</span>
-                                    <span className="text-sm font-medium text-gray-600">
-                                        {student.accuracy}% de acerto
-                                    </span>
+                        {stats.studentStats && stats.studentStats.length > 0 ? (
+                            stats.studentStats.map((student, index) => (
+                                <div key={index} className="space-y-2">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium text-gray-700">Aluno {index + 1}</span>
+                                        <span className="text-sm font-medium text-gray-600">
+                                            {student.accuracy}% de acerto
+                                        </span>
+                                    </div>
+                                    <div className="h-2 bg-gray-200 rounded-full">
+                                        <div
+                                            className="h-2 bg-green-600 rounded-full transition-all duration-500"
+                                            style={{ width: `${student.accuracy}%` }}
+                                        />
+                                    </div>
+                                    <div className="flex justify-between text-xs text-gray-500">
+                                        <span>{student.correctResponses} acertos</span>
+                                        <span>{student.totalResponses} total</span>
+                                    </div>
                                 </div>
-                                <div className="h-2 bg-gray-200 rounded-full">
-                                    <div
-                                        className="h-2 bg-green-600 rounded-full transition-all duration-500"
-                                        style={{ width: `${student.accuracy}%` }}
-                                    />
-                                </div>
-                                <div className="flex justify-between text-xs text-gray-500">
-                                    <span>{student.correctResponses} acertos</span>
-                                    <span>{student.totalResponses} total</span>
-                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center text-gray-500 py-8">
+                                <p>Nenhum dado de aluno disponível</p>
+                                <p className="text-sm">Os dados aparecerão quando houver alunos com simulados respondidos</p>
                             </div>
-                        ))}
+                        )}
                     </div>
                 </CardContent>
             </Card>
         </div>
     );
-} 
+}

@@ -194,7 +194,7 @@ export default function Profile() {
 								</div>
 								<div className="flex items-center gap-3">
 									<Clock className="h-5 w-5 text-primary" />
-									<Label className="min-w-[120px] font-medium">Membro desde:</Label>
+									<Label className="min-w-[120px] font-medium">Cadastrado desde:</Label>
 									<span className="text-muted-foreground">{profile.createdAt}</span>
 								</div>
 								<div className="flex items-center gap-3">

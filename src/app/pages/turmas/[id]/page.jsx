@@ -371,12 +371,46 @@ export default function TurmaDetalhesPage() {
 
         <div className="flex flex-col items-center mb-8 bg-white rounded-xl shadow-lg p-6 border border-gray-100">
           <Logo className="h-12 w-12" variant="icon" />
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-[#133D86]">{turma?.name}</h1>
-          <div className="mt-2 text-center text-gray-600">
-            <p>Curso: {turma?.course}</p>
-            <p>Turno: {getShiftLabel(turma?.shift)}</p>
-          </div>
+          <h1 className="mt-4 text-3xl font-bold tracking-tight text-[#133D86]">Detalhes da Turma</h1>
         </div>
+
+        {/* Detalhes da Turma */}
+        <Card className="border-2 pt-0 border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300 mb-6">
+          <CardHeader className="bg-gradient-to-r pt-1 from-[#133D86] to-[#1e56b3] text-white rounded-t-xl">
+            <div className="flex items-center gap-2">
+              <GraduationCap className="h-6 w-6" />
+              <CardTitle>Informações da Turma</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-500 uppercase tracking-wider">Nome</label>
+                <p className="text-lg font-semibold text-gray-900">{turma?.name}</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-500 uppercase tracking-wider">Curso</label>
+                <p className="text-lg font-semibold text-gray-900">{turma?.course}</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-500 uppercase tracking-wider">Turno</label>
+                <p className="text-lg font-semibold text-gray-900">{getShiftLabel(turma?.shift)}</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total de Alunos</label>
+                <p className="text-lg font-semibold text-blue-600">{alunos.length}</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total de Professores</label>
+                <p className="text-lg font-semibold text-green-600">{professores.length}</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-500 uppercase tracking-wider">Status</label>
+                <Badge className="bg-green-100 text-green-800">Ativa</Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="border-2 pt-0 border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300 mb-6">
           <CardHeader className="bg-gradient-to-r pt-1 from-[#133D86] to-[#1e56b3] text-white rounded-t-xl">
@@ -457,6 +491,47 @@ export default function TurmaDetalhesPage() {
                         </td>
                       </tr>
                     ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Matérias da Turma */}
+        <Card className="border-2 pt-0 border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300 mb-6">
+          <CardHeader className="bg-gradient-to-r pt-1 from-[#133D86] to-[#1e56b3] text-white rounded-t-xl">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-6 w-6" />
+              <CardTitle>Matérias da Turma</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {professores.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                <p>Nenhuma matéria atribuída a esta turma</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 rounded-lg overflow-hidden shadow">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome da Matéria</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Professor</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-100">
+                    {professores.flatMap(professor => 
+                      professor.subjects.map((subject, idx) => (
+                        <tr key={`${professor.teacher_id}-${subject.id}`} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50 hover:bg-blue-50 transition-colors"}>
+                          <td className="px-6 py-4 whitespace-nowrap font-medium">{subject.name}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{professor.teacher_name}</td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
